@@ -21,6 +21,9 @@ let advancedFilters = {
 let currentDashboardTab = 'overview';
 // Filter riêng cho tab Công trình
 let filterProjects = { dateFrom: '', dateTo: '', projectId: 'all' };
+let filterSuppliers = { dateFrom: '', dateTo: '', supplierId: 'all' };
+let filterStructures = { dateFrom: '', dateTo: '' };
+let filterOverview = { dateFrom: '', dateTo: '', transactionType: 'all' };
 // ========== CACHE CHO DASHBOARD ==========
 let dashboardCache = {
     html_cache: null,
@@ -308,8 +311,8 @@ function resetFilters() {
 function updateDashboardContent() {
     const pane = document.getElementById('pane-dashboard');
     if (pane) {
-        if (currentDashboardTab === 'projects') {
-            pane.innerHTML = renderTabContent('projects');
+        if (currentDashboardTab === 'projects' || currentDashboardTab === 'suppliers' || currentDashboardTab === 'structures') {
+            pane.innerHTML = renderTabContent(currentDashboardTab);
         } else {
             pane.innerHTML = renderDashboard();
         }
@@ -317,8 +320,8 @@ function updateDashboardContent() {
             renderDashboardChart(); 
             bindDashboardFilterEvents();
             // RENDER LẠI CHART SAU KHI FILTER
-            if (currentDashboardTab === 'projects') {
-                window.switchDashboardTab('projects');
+            if (currentDashboardTab === 'projects' || currentDashboardTab === 'suppliers' || currentDashboardTab === 'structures') {
+                window.switchDashboardTab(currentDashboardTab);
             }
         }, 200);
     }
@@ -540,10 +543,11 @@ function renderFiltersAndTabs() {
             <div class="dashboard-tab ${currentDashboardTab==='suppliers'?'active':''}" onclick="window.switchDashboardTab('suppliers')">🏭 Nhà cung cấp</div>
             <div class="dashboard-tab ${currentDashboardTab==='structures'?'active':''}" onclick="window.switchDashboardTab('structures')">🏗️ Cấu kiện</div>
         </div>
-        ${currentDashboardTab === 'projects' ? renderFilterProjects() : renderAdvancedFilters()}
+        ${currentDashboardTab === 'projects' ? renderFilterProjects() : currentDashboardTab === 'suppliers' ? renderFilterSuppliers() : currentDashboardTab === 'structures' ? renderFilterStructures() : currentDashboardTab === 'overview' ? renderFilterOverview() : currentDashboardTab === 'forecast' ? '' : ''}
     `;
 }
-window.switchDashboardTab = function(tab) {
+
+        window.switchDashboardTab = function(tab) {
     currentDashboardTab = tab;
     clearDashboardCache();   
  if (tab === 'projects' || tab === 'suppliers' || tab === 'structures' || tab === 'forecast') {
@@ -577,21 +581,27 @@ window.switchDashboardTab = function(tab) {
                 if (ctx1 && ctx2) {
                     if (topSuppliersChart) topSuppliersChart.destroy();
                     if (window._sp) window._sp.destroy();
-                    var sdata = state.data.suppliers.map(function(s){
+                    var filteredSups = state.data.suppliers;
+                    if (filterSuppliers.supplierId !== 'all') {
+                        filteredSups = filteredSups.filter(function(s) { return s.id === filterSuppliers.supplierId; });
+                    }
+                    var sdata = filteredSups.map(function(s){
                         var t = state.data.transactions.filter(function(x){return x.type==='purchase'&&x.supplierId===s.id}).reduce(function(a,x){return a+Number(x.totalAmount||0)},0);
                         return { name: s.name.length>20?s.name.substring(0,20):s.name, total: t };
                     }).sort(function(a,b){return b.total-a.total}).slice(0,5);
                     topSuppliersChart = new Chart(ctx1, { type:'bar', data:{ labels:sdata.map(function(s){return s.name}), datasets:[{ label:'Tong chi', data:sdata.map(function(s){return s.total}), backgroundColor:['#378ADD','#97C459','#FAC775','#F09595','#85B7EB'], borderRadius:6 }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } } });
                     var t5 = sdata.reduce(function(s,p){return s+p.total},0);
-                    var at = state.data.suppliers.reduce(function(s,p){ var t=state.data.transactions.filter(function(x){return x.type==='purchase'&&x.supplierId===p.id}).reduce(function(a,x){return a+Number(x.totalAmount||0)},0); return s+t; },0);
+                    var at = filteredSups.reduce(function(s,p){ var t=state.data.transactions.filter(function(x){return x.type==='purchase'&&x.supplierId===p.id}).reduce(function(a,x){return a+Number(x.totalAmount||0)},0); return s+t; },0);
                     window._sp = new Chart(ctx2, { type:'doughnut', data:{ labels:sdata.map(function(s){return s.name}).concat(['Khac']), datasets:[{ data:sdata.map(function(s){return s.total}).concat([Math.max(0,at-t5)]), backgroundColor:['#378ADD','#97C459','#FAC775','#F09595','#85B7EB','#BA7517'], borderWidth:0 }] }, options:{ responsive:true, maintainAspectRatio:false } });
                 }
-            }
-	    if (tab === 'structures') {
+            }	    if (tab === 'structures') {
                 renderStructureDashboardCharts();            
 		}
 		if (tab === 'forecast') {
 		 loadForecast();
+         loadForecastProjects();
+         loadForecastStructures();
+
             }
         }, 500);
     } else {
@@ -661,10 +671,13 @@ function renderTabContent(tab) {
             </div>
         `;
     }
-    
+                               
     if (tab === 'suppliers') {
-        const suppliers = state.data.suppliers.map(s => {
-            const txns = state.data.transactions.filter(t=>t.type==='purchase'&&t.supplierId===s.id);
+        var filteredSuppliers = state.data.suppliers;
+        if (filterSuppliers.supplierId !== 'all') {
+            filteredSuppliers = filteredSuppliers.filter(function(s) { return s.id === filterSuppliers.supplierId; });
+        }
+        const suppliers = filteredSuppliers.map(s => {            const txns = state.data.transactions.filter(t=>t.type==='purchase'&&t.supplierId===s.id);
             return { ...s, total: txns.reduce((sum,t)=>sum+(parseFloat(parseFloat(t.totalAmount))||0),0), count: txns.length };
         }).sort((a,b)=>b.total-a.total);
         const displaySuppliers = suppliers.slice(0, _supLimit);
@@ -889,6 +902,18 @@ if (tab === 'forecast') {
             <div class="sec-title">📦 DỰ BÁO NHU CẦU VẬT TƯ (3 tháng gần nhất)</div>
             <div id="forecast-container">
                 <div class="metric-sub" style="text-align:center;">🔄 Đang tải dữ liệu...</div>
+            </div>
+        </div>
+                <div class="card" style="margin-top:16px;">
+            <div class="sec-title">🏗️ DỰ BÁO CÔNG TRÌNH</div>
+            <div id="forecast-projects-container">
+                <div class="metric-sub" style="text-align:center;">🔄 Đang tải...</div>
+            </div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+            <div class="sec-title">🏭 DỰ BÁO CẤU KIỆN</div>
+            <div id="forecast-structures-container">
+                <div class="metric-sub" style="text-align:center;">🔄 Đang tải...</div>
             </div>
         </div>
     `;
@@ -1230,6 +1255,118 @@ window.resetFilterProjects = function() {
     clearDashboardCache();
     updateDashboardContent();
 };
+
+function renderFilterSuppliers() {
+    var suppliers = [{ id: 'all', name: 'Tất cả' }].concat(state.data.suppliers || []);
+    var opts = suppliers.map(function(s) {
+        return '<option value="' + s.id + '"' + (filterSuppliers.supplierId===s.id?' selected':'') + '>' + s.name + '</option>';
+    }).join('');
+    return '<div class="card" style="margin-bottom:16px;padding:10px 14px;">' +
+        '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
+        '<span style="font-weight:600;">🔧 LỌC NHÀ CUNG CẤP:</span>' +
+        '<input type="date" id="fsup-date-from" value="' + filterSuppliers.dateFrom + '" style="width:130px;">' +
+        '<input type="date" id="fsup-date-to" value="' + filterSuppliers.dateTo + '" style="width:130px;">' +
+        '<select id="fsup-supplier" style="width:200px;">' + opts + '</select>' +
+        '<button class="sm primary" onclick="applyFilterSuppliers()">🔍 Áp dụng</button>' +
+        '<button class="sm" onclick="resetFilterSuppliers()">🗑️ Bỏ</button>' +
+        '</div></div>';
+}
+
+window.applyFilterSuppliers = function() {
+    filterSuppliers.dateFrom = document.getElementById('fsup-date-from')?.value || '';
+    filterSuppliers.dateTo = document.getElementById('fsup-date-to')?.value || '';
+    filterSuppliers.supplierId = document.getElementById('fsup-supplier')?.value || 'all';
+    advancedFilters.dateFrom = filterSuppliers.dateFrom;
+    advancedFilters.dateTo = filterSuppliers.dateTo;
+    advancedFilters.supplierId = filterSuppliers.supplierId;
+    clearDashboardCache();
+    updateDashboardContent();
+};
+
+window.resetFilterSuppliers = function() {
+    filterSuppliers = { dateFrom: '', dateTo: '', supplierId: 'all' };
+    advancedFilters.dateFrom = '';
+    advancedFilters.dateTo = '';
+    advancedFilters.supplierId = 'all';
+    clearDashboardCache();
+    updateDashboardContent();
+};
+
+function renderFilterOverview() {
+    return '<div class="card" style="margin-bottom:16px;padding:10px 14px;"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><span style="font-weight:600;">🔧 LỌC TỔNG QUAN:</span><input type="date" id="fover-date-from" value="' + filterOverview.dateFrom + '" style="width:130px;"><input type="date" id="fover-date-to" value="' + filterOverview.dateTo + '" style="width:130px;"><select id="fover-type" style="width:140px;"><option value="all">Tất cả</option><option value="purchase"' + (filterOverview.transactionType==='purchase'?' selected':'') + '>📥 Nhập</option><option value="usage"' + (filterOverview.transactionType==='usage'?' selected':'') + '>📤 Xuất</option></select><button class="sm primary" onclick="applyFilterOverview()">🔍 Áp dụng</button><button class="sm" onclick="resetFilterOverview()">🗑️ Bỏ</button></div></div>';
+}
+window.applyFilterOverview = function() {
+    filterOverview.dateFrom = document.getElementById('fover-date-from')?.value || '';
+    filterOverview.dateTo = document.getElementById('fover-date-to')?.value || '';
+    filterOverview.transactionType = document.getElementById('fover-type')?.value || 'all';
+    advancedFilters.dateFrom = filterOverview.dateFrom;
+    advancedFilters.dateTo = filterOverview.dateTo;
+    advancedFilters.transactionType = filterOverview.transactionType;
+    clearDashboardCache(); updateDashboardContent();
+};
+window.resetFilterOverview = function() {
+    filterOverview = { dateFrom: '', dateTo: '', transactionType: 'all' };
+    advancedFilters.dateFrom = ''; advancedFilters.dateTo = ''; advancedFilters.transactionType = 'all';
+    clearDashboardCache(); updateDashboardContent();
+};
+
+function renderFilterStructures() {
+    return '<div class="card" style="margin-bottom:16px;padding:10px 14px;"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><span style="font-weight:600;">🔧 LỌC CẤU KIỆN:</span><input type="date" id="fstr-date-from" value="' + filterStructures.dateFrom + '" style="width:130px;"><input type="date" id="fstr-date-to" value="' + filterStructures.dateTo + '" style="width:130px;"><button class="sm primary" onclick="applyFilterStructures()">🔍 Áp dụng</button><button class="sm" onclick="resetFilterStructures()">🗑️ Bỏ</button></div></div>';
+}
+window.applyFilterStructures = function() {
+    filterStructures.dateFrom = document.getElementById('fstr-date-from')?.value || '';
+    filterStructures.dateTo = document.getElementById('fstr-date-to')?.value || '';
+    advancedFilters.dateFrom = filterStructures.dateFrom;
+    advancedFilters.dateTo = filterStructures.dateTo;
+    clearDashboardCache(); updateDashboardContent();
+};
+window.resetFilterStructures = function() {
+    filterStructures = { dateFrom: '', dateTo: '' };
+    advancedFilters.dateFrom = ''; advancedFilters.dateTo = '';
+    clearDashboardCache(); updateDashboardContent();
+};
+async function loadForecastProjects() {
+    try {
+        const res = await fetch('/api/forecast-projects');
+        const data = await res.json();
+        const container = document.getElementById('forecast-projects-container');
+        if (!container || !data.success) return;
+        
+        let html = '<div class="tbl-wrap"><table><thead><tr><th>Công trình</th><th style="text-align:right;">NS còn lại</th><th style="text-align:center;">Tiến độ</th><th style="text-align:center;">Dự kiến</th><th>Trạng thái</th></tr></thead><tbody>';
+        data.data.forEach(p => {
+            const cls = p.status === 'VƯỢT NS' ? 'status-danger' : p.status === 'SẮP HẾT' ? 'status-warn' : 'status-good';
+            const remainColor = p.remain < 0 ? 'color:var(--danger-text);' : '';
+            html += '<tr><td><strong>' + escapeHtml(p.name) + '</strong></td>' +
+                '<td style="text-align:right;' + remainColor + '">' + formatMoneyVND(p.remain) + '</td>' +
+                '<td style="text-align:center;">' + p.pct + '%</td>' +
+                '<td style="text-align:center;">' + (p.estMonths === '—' ? '—' : p.estMonths + ' tháng') + '</td>' +
+                '<td><span class="status-badge ' + cls + '">' + p.status + '</span></td></tr>';
+        });
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+    } catch(e) {}
+}
+
+async function loadForecastStructures() {
+    try {
+        const res = await fetch('/api/forecast-structures');
+        const data = await res.json();
+        const container = document.getElementById('forecast-structures-container');
+        if (!container || !data.success) return;
+        
+        let html = '<div class="tbl-wrap"><table><thead><tr><th>Cấu kiện</th><th style="text-align:right;">Tồn kho</th><th style="text-align:right;">Xuất TB/tháng</th><th style="text-align:center;">Dự kiến hết</th><th>Trạng thái</th></tr></thead><tbody>';
+        data.data.forEach(s => {
+            const cls = s.status === 'CẦN SX' ? 'status-danger' : s.status === 'SẮP HẾT' ? 'status-warn' : 'status-good';
+            html += '<tr><td><strong>' + escapeHtml(s.name) + '</strong></td>' +
+                '<td style="text-align:right;">' + Number(s.stock).toLocaleString('vi-VN') + ' ' + s.unit + '</td>' +
+                '<td style="text-align:right;">' + Number(s.avgMonthly).toLocaleString('vi-VN') + ' ' + s.unit + '</td>' +
+                '<td style="text-align:center;">' + (s.estMonths === '99+' ? '> 99 tháng' : s.estMonths + ' tháng') + '</td>' +
+                '<td><span class="status-badge ' + cls + '">' + s.status + '</span></td></tr>';
+        });
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+    } catch(e) {}
+}
 // Export global
 window.loadForecast = loadForecast;
 window.renderForecastTable = renderForecastTable;

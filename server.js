@@ -460,6 +460,47 @@ app.get('/api/forecast', async (req, res) => {
                 warning_level: warningLevel
             };
         });
+ // ========== DỰ BÁO CÔNG TRÌNH ==========
+app.get('/api/forecast-projects', async (req, res) => {
+    try {
+        const projects = await pool.query('SELECT * FROM projects');
+        const txns = await pool.query("SELECT * FROM transactions WHERE type IN ('usage','return')");
+        const result = projects.rows.map(p => {
+            const spent = txns.rows.filter(t => t.project_id === p.id && t.type === 'usage').reduce((s,t) => s + Number(t.total_amount||0), 0);
+            const ret = txns.rows.filter(t => t.project_id === p.id && t.type === 'return').reduce((s,t) => s + Number(t.total_amount||0), 0);
+            const net = spent - ret;
+            const remain = Number(p.budget) - net;
+            const pct = Number(p.budget) > 0 ? (net / Number(p.budget) * 100) : 0;
+            let status = 'OK', estMonths = '—';
+            if (remain < 0) { status = 'VƯỢT NS'; estMonths = 0; }
+            else if (pct > 90) { status = 'SẮP HẾT'; estMonths = Math.ceil(remain / ((net||1)/3)) || '—'; }
+            else if (pct > 50) { status = 'ĐANG THI CÔNG'; estMonths = Math.ceil(remain / ((net||1)/3)) || '—'; }
+            else { status = 'MỚI BẮT ĐẦU'; estMonths = Math.ceil(remain / ((net||1)/3)) || '—'; }
+            return { id: p.id, name: p.name, budget: p.budget, spent: net, remain, pct: pct.toFixed(1), status, estMonths };
+        });
+        res.json({ success: true, data: result });
+    } catch(e) { res.json({ success: false, error: e.message }); }
+});
+
+// ========== DỰ BÁO CẤU KIỆN ==========
+app.get('/api/forecast-structures', async (req, res) => {
+    try {
+        const structures = await pool.query('SELECT * FROM structures');
+        const txns = await pool.query("SELECT * FROM transactions WHERE type = 'structure_export'");
+        const result = structures.rows.map(s => {
+            const exports = txns.rows.filter(t => t.mid === s.id);
+            const totalExported = exports.reduce((sum, t) => sum + Number(t.qty||0), 0);
+            const firstExport = exports.length > 0 ? new Date(exports[exports.length-1].datetime || new Date()) : new Date();
+            const months = Math.max(1, (new Date() - firstExport) / (30*24*60*60*1000));
+            const avgMonthly = totalExported / months;
+            const stock = Number(s.qty||0);
+            let estMonths = avgMonthly > 0 ? (stock / avgMonthly).toFixed(1) : '99+';
+            let status = estMonths > 3 ? 'ĐỦ' : estMonths > 1 ? 'SẮP HẾT' : 'CẦN SX';
+            return { id: s.id, name: s.name, unit: s.unit, stock, avgMonthly: avgMonthly.toFixed(1), estMonths, status };
+        });
+        res.json({ success: true, data: result });
+    } catch(e) { res.json({ success: false, error: e.message }); }
+});
         
 console.log('📊 Sending response with', result.length, 'items');
         res.json({ success: true, data: result });
