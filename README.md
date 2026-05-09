@@ -23,4 +23,4 @@ Hệ thống quản lý kho thép chuyên nghiệp với các tính năng:
 ### Cách 1: Chạy trực tiếp (không cần server)
 ```bash
 # Mở file index.html bằng trình duyệt
-# Hoặc dùng Live Server trong VS Code
+# Hoặc dùng Live Server trong VS Code# vattu-new
