@@ -501,6 +501,45 @@ app.get('/api/forecast-structures', async (req, res) => {
         res.json({ success: true, data: result });
     } catch(e) { res.json({ success: false, error: e.message }); }
 });
+// ========== TRẢ CẤU KIỆN VỀ KHO ==========
+app.post('/api/return-structure', async (req, res) => {
+    const { structureId, projectId, qty, note } = req.body;
+    try {
+        await pool.query('BEGIN');
+        // Kiểm tra số lượng đã xuất ra công trình
+        const exported = await pool.query(
+            "SELECT COALESCE(SUM(qty),0) as total FROM transactions WHERE mid=$1 AND project_id=$2 AND type='structure_export'",
+            [structureId, projectId]
+        );
+        const returned = await pool.query(
+            "SELECT COALESCE(SUM(qty),0) as total FROM transactions WHERE mid=$1 AND project_id=$2 AND type='structure_return'",
+            [structureId, projectId]
+        );
+        const avail = Number(exported.rows[0].total) - Number(returned.rows[0].total);
+        if (avail < qty) {
+            await pool.query('ROLLBACK');
+            return res.json({ success: false, error: `Không đủ để trả! Đã xuất: ${exported.rows[0].total}, đã trả: ${returned.rows[0].total}` });
+        }
+        // Cộng lại kho cấu kiện
+        await pool.query('UPDATE structures SET qty = qty + $1 WHERE id=$2', [qty, structureId]);
+        // Lấy đơn giá
+        const structure = await pool.query('SELECT cost FROM structures WHERE id=$1', [structureId]);
+        const cost = Number(structure.rows[0]?.cost || 0);
+        const totalCost = cost * qty;
+        // Tạo transaction trả
+        const tid = 'tvskh' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(2,14) + '000';
+        await pool.query('INSERT INTO transactions (id, mid, project_id, type, qty, unit_price, total_amount, note, date, datetime) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
+            [tid, structureId, projectId, 'structure_return', qty, cost, totalCost, note || 'Trả cấu kiện về kho', new Date().toISOString().split('T')[0], new Date().toISOString()]);
+        // Trừ spent của project
+        await pool.query('UPDATE projects SET spent = spent - $1 WHERE id=$2', [totalCost, projectId]);
+        await pool.query('COMMIT');
+        await clearCache();
+        res.json({ success: true });
+    } catch(e) {
+        await pool.query('ROLLBACK');
+        res.json({ success: false, error: e.message });
+    }
+});
         
 console.log('📊 Sending response with', result.length, 'items');
         res.json({ success: true, data: result });

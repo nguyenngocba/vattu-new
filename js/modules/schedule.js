@@ -6,7 +6,7 @@ import { formatMoneyVND, setupNumberInput, parseNumber } from './utils.js?v=1777
 function getMaterialsExportedToProject(projectId) {
     // Lấy tất cả giao dịch xuất kho (usage) cho công trình này
     const usageTransactions = state.data.transactions.filter(
-        t => t.projectId === projectId && t.type === 'usage'
+        t => t.projectId === projectId && (t.type === 'usage' || t.type === 'structure_export')
     );
     
     // Lấy tất cả giao dịch trả hàng (return) cho công trình này
@@ -19,7 +19,8 @@ function getMaterialsExportedToProject(projectId) {
     
     // Trả về thông tin vật tư kèm số lượng đã xuất (đã trừ trả hàng)
     return materialIds.map(mid => {
-        const mat = state.data.materials.find(m => m.id === mid);
+        var mat = state.data.materials.find(m => m.id === mid);
+        if (!mat) mat = (state.data.structures || []).find(s => s.id === mid);
         if (!mat) return null;
         
         const totalExported = usageTransactions
@@ -234,12 +235,13 @@ export function assignMaterialToTask(projectId, taskId, materialId, quantity) {
     const exportedMaterials = getMaterialsExportedToProject(projectId);
     const exportedMat = exportedMaterials.find(m => m.id === materialId);
     
-    if (!exportedMat) {
-        alert('Vật tư này chưa được xuất cho công trình. Vui lòng xuất kho trước!');
+        if (!exportedMat) {
+        alert('Vật tư/Cấu kiện này chưa được xuất cho công trình. Vui lòng xuất kho trước!');
         return null;
     }
     
-    const material = state.data.materials.find(m => m.id === materialId);
+    var material = state.data.materials.find(m => m.id === materialId);
+    if (!material) material = (state.data.structures || []).find(s => s.id === materialId);
     if (!material) return null;
     
     // Kiểm tra tổng số lượng đã gán cho tất cả công việc

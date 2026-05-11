@@ -443,3 +443,73 @@ window.confirmExportStructure = function(sid) {
             } else alert('❌ Lỗi: ' + d.error);
         });
 };
+window.returnStructureToWarehouse = function(projectId) {
+    // Lấy cấu kiện đã xuất cho công trình này
+    var exportedStructures = [];
+    var txns = state.data.transactions.filter(function(t) { 
+        return t.projectId === projectId && t.type === 'structure_export'; 
+    });
+    var returnTxns = state.data.transactions.filter(function(t) { 
+        return t.projectId === projectId && t.type === 'structure_return'; 
+    });
+    
+    var structureIds = [...new Set(txns.map(function(t) { return t.mid; }))];
+    structureIds.forEach(function(sid) {
+        var s = (state.data.structures || []).find(function(x) { return x.id === sid; });
+        if (!s) return;
+        var totalExp = txns.filter(function(t) { return t.mid === sid; }).reduce(function(sum, t) { return sum + Number(t.qty||0); }, 0);
+        var totalRet = returnTxns.filter(function(t) { return t.mid === sid; }).reduce(function(sum, t) { return sum + Number(t.qty||0); }, 0);
+        var avail = totalExp - totalRet;
+        if (avail > 0) {
+            exportedStructures.push({ id: sid, name: s.name, unit: s.unit, cost: s.cost, avail: avail });
+        }
+    });
+    
+    if (exportedStructures.length === 0) {
+        alert('Không có cấu kiện nào đã xuất cho công trình này!');
+        return;
+    }
+    
+    var opts = exportedStructures.map(function(s) {
+        return '<option value="' + s.id + '" data-cost="' + s.cost + '">' + s.name + ' (Có thể trả: ' + Number(s.avail).toLocaleString('vi-VN') + ' ' + s.unit + ')</option>';
+    }).join('');
+    
+    var html = '<div class="modal-hd" style="background:#0891b2;"><span class="modal-title">🏗️ Trả cấu kiện về kho</span><button class="xbtn" onclick="closeModal()">✕</button></div>' +
+        '<div class="modal-bd">' +
+        '<div class="form-group"><label class="form-label">Cấu kiện</label><select id="return-structure-id">' + opts + '</select></div>' +
+        '<div class="form-group"><label class="form-label">Số lượng</label><input type="text" id="return-structure-qty" value="1" dir="ltr"></div>' +
+        '<div class="form-group"><label class="form-label">Ghi chú</label><input type="text" id="return-structure-note" placeholder="Lý do trả..."></div>' +
+        '</div>' +
+        '<div class="modal-ft"><button onclick="closeModal()">Hủy</button><button class="primary" style="background:#0891b2;" onclick="window.confirmReturnStructure(\'' + projectId + '\')">Xác nhận trả</button></div>';
+    
+    showModal(html);
+    setTimeout(function() {
+        var qtyInput = document.getElementById('return-structure-qty');
+        if (qtyInput) setupNumberInput(qtyInput, { isInteger: false, decimals: null });
+    }, 100);
+};
+
+window.confirmReturnStructure = function(projectId) {
+    var sid = document.getElementById('return-structure-id')?.value;
+    var qty = parseFloat(document.getElementById('return-structure-qty')?.value?.replace(',', '.')) || 0;
+    var note = document.getElementById('return-structure-note')?.value || '';
+    
+    if (!sid || qty <= 0) { alert('Vui lòng nhập đầy đủ!'); return; }
+    
+    var s = (state.data.structures || []).find(function(x) { return x.id === sid; });
+    fetch('/api/return-structure', { 
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ structureId: sid, projectId: projectId, qty: qty, note: note }) 
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) {
+            addLog('Trả cấu kiện', (s?.name||sid) + ' - SL: ' + qty + ' ' + (s?.unit||''));
+            closeModal();
+            window.loadState().then(function() { window.render(); });
+            alert('✅ Đã trả cấu kiện về kho!');
+        } else {
+            alert('❌ ' + d.error);
+        }
+    });
+};

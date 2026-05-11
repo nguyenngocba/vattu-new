@@ -341,7 +341,8 @@ export function showProjectDetail(projectId) {
             <button onclick="closeModal()">Đóng</button>
             ${hasPermission('canExport')?`<button class="primary" onclick="closeModal();window.openTxnModal('usage','${projectId}')">📥 Nhận hàng</button>`:''}
             ${hasPermission('canImport')?`<button class="primary" style="background:var(--success);" onclick="closeModal();window.openReturnModal('${projectId}')">🔄 Trả hàng</button>`:''}
-        </div>`;
+            <button class="primary" style="background:#0891b2;" onclick="closeModal();window.returnStructureToWarehouse('${projectId}')">🏗️ Trả cấu kiện</button>
+            </div>`;
     
     showModal(html, null);
     
