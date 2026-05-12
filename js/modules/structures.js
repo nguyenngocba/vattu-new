@@ -305,25 +305,34 @@ window.showStructureDetail = function(sid) {
     const exportTxns = state.data.transactions
         .filter(t => t.mid === sid && t.type === 'structure_export')
         .sort((a,b) => new Date(b.datetime||b.date) - new Date(a.datetime||a.date));
+    const returnTxns = state.data.transactions
+        .filter(t => t.mid === sid && t.type === 'structure_return')
+        .sort((a,b) => new Date(b.datetime||b.date) - new Date(a.datetime||a.date));        
     
     const totalProduced = produceTxns.reduce((sum, t) => sum + Number(t.qty||0), 0);
     const totalExported = exportTxns.reduce((sum, t) => sum + Number(t.qty||0), 0);
+    const totalReturned = returnTxns.reduce((sum, t) => sum + Number(t.qty||0), 0);
     const currentStock = Number(s.qty || 0);
     
     // Kết hợp cả 2 loại lịch sử
-    const allHistory = [...produceTxns.map(t => ({ ...t, historyType: 'produce' })), ...exportTxns.map(t => ({ ...t, historyType: 'export' }))]
+    const allHistory = [
+        ...produceTxns.map(t => ({ ...t, historyType: 'produce' })), 
+        ...exportTxns.map(t => ({ ...t, historyType: 'export' })),
+        ...returnTxns.map(t => ({ ...t, historyType: 'return' }))
+    ]
         .sort((a,b) => new Date(b.datetime||b.date) - new Date(a.datetime||a.date));
     
     let historyHtml = '';
     if (allHistory.length > 0) {
         historyHtml = allHistory.map(t => {
             const isProduce = t.historyType === 'produce';
+            const isReturn = t.historyType === 'return';
             const dt = t.datetime ? new Date(t.datetime).toLocaleString('vi-VN', {hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'}) : t.date;
             const projectName = !isProduce ? (state.data.projects.find(p => p.id === t.projectId)?.name || 'N/A') : '';
             return `<tr>
                 <td style="white-space:nowrap;">${dt}</td>
-                <td style="text-align:center; ${isProduce ? 'color:var(--accent);' : 'color:var(--warn-text);'} font-weight:bold;">
-                    ${isProduce ? '🏭 Sản xuất' : '📤 Xuất ra CT'}
+                <td style="text-align:center; ${isProduce ? 'color:var(--accent);' : isReturn ? 'color:var(--success-text);' : 'color:var(--warn-text);'} font-weight:bold;">
+                    ${isProduce ? '🏭 Sản xuất' : isReturn ? '🔄 Trả về kho' : '📤 Xuất ra CT'}
                 </td>
                 <td style="text-align:center;">${!isProduce ? escapeHtml(projectName) : '—'}</td>
                 <td style="text-align:right;">${Number(t.qty||0).toLocaleString('vi-VN')} ${s.unit}</td>
@@ -358,6 +367,11 @@ window.showStructureDetail = function(sid) {
                 <div class="metric-val" style="font-size:18px;color:var(--warn-text);">${totalExported.toLocaleString('vi-VN')} ${s.unit}</div>
                 <div class="metric-sub">${exportTxns.length} lần xuất</div>
             </div>
+            <div class="metric-card">
+                <div class="metric-label">🔄 ĐÃ TRẢ</div>
+                <div class="metric-val" style="font-size:18px;color:var(--success-text);">${totalReturned.toLocaleString('vi-VN')} ${s.unit}</div>
+                <div class="metric-sub">${returnTxns.length} lần trả</div>
+            </div>            
         </div>
         
         <div class="sec-title">📦 THÀNH PHẦN (BOM)</div>
@@ -504,10 +518,9 @@ window.confirmReturnStructure = function(projectId) {
     .then(function(r) { return r.json(); })
     .then(function(d) {
         if (d.success) {
-            addLog('Trả cấu kiện', (s?.name||sid) + ' - SL: ' + qty + ' ' + (s?.unit||''));
+            addLog('Trả cấu kiện', (s?.name||sid) + ' - SL: ' + qty + ' ' + (s?.unit||'') + ' - CT: ' + projectId);
             closeModal();
             window.loadState().then(function() { window.render(); });
-            alert('✅ Đã trả cấu kiện về kho!');
         } else {
             alert('❌ ' + d.error);
         }

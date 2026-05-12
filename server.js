@@ -460,6 +460,11 @@ app.get('/api/forecast', async (req, res) => {
                 warning_level: warningLevel
             };
         });
+    } catch(e) {
+        console.error('❌ Forecast API error:', e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
  // ========== DỰ BÁO CÔNG TRÌNH ==========
 app.get('/api/forecast-projects', async (req, res) => {
     try {
@@ -540,12 +545,5 @@ app.post('/api/return-structure', async (req, res) => {
         res.json({ success: false, error: e.message });
     }
 });
-        
-console.log('📊 Sending response with', result.length, 'items');
-        res.json({ success: true, data: result });
-    } catch(e) {
-        console.error('❌ Forecast API error:', e);
-        res.status(500).json({ success: false, error: e.message });
-    }
-});
+
 server.listen(PORT, '0.0.0.0', () => console.log('OK'));
