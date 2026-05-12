@@ -36,15 +36,15 @@ function timeCode() {
 export async function loadState() {
   try {
     // KHÔI PHỤC USER TỪ LOCALSTORAGE
-    if (!state.currentUser || !state.currentUser.id) {
-      var saved = localStorage.getItem('steeltrack_current_user');
-      if (saved) {
-        try { 
-          state.currentUser = JSON.parse(saved); 
-          console.log('Đã khôi phục user:', state.currentUser.name);
-        } catch(e) {}
-      }
-    }
+  //  if (!state.currentUser || !state.currentUser.id) {
+  //    var saved = localStorage.getItem('steeltrack_current_user');
+  //    if (saved) {
+  //      try { 
+  //        state.currentUser = JSON.parse(saved); 
+  //       console.log('Đã khôi phục user:', state.currentUser.name);
+  //      } catch(e) {}
+  //   }
+  //  }
     
     const res = await fetch('/api/data').then(r => r.json());
  // LƯU USER HIỆN TẠI TRƯỚC KHI LOAD
@@ -52,9 +52,18 @@ export async function loadState() {
     if (res.success && res.data) {
 // Giữ lại user đang đăng nhập
       if (res.data.materials?.length) state.data.materials = res.data.materials;
-      if (res.data.transactions?.length) state.data.transactions = res.data.transactions.map(t => ({ ...t, supplierId: t.supplier_id, projectId: t.project_id, unitPrice: t.unit_price, vatRate: t.vat_rate, totalAmount: t.total_amount, vatAmount: t.vat_amount, invoiceImage: t.invoice_image }));
+if (res.data.transactions?.length) state.data.transactions = res.data.transactions.map(t => ({ 
+    ...t, 
+    supplierId: t.supplier_id || '', 
+    projectId: t.project_id || '', 
+    unitPrice: Number(t.unit_price || t.unitPrice || 0), 
+    vatRate: Number(t.vat_rate || t.vatRate || 0), 
+    totalAmount: Number(t.total_amount || t.totalAmount || 0), 
+    vatAmount: Number(t.vat_amount || t.vatAmount || 0),
+    qty: Number(t.qty || 0),
+    invoiceImage: t.invoice_image || '' 
+}));
   console.log("First transaction attachment:", res.data.transactions[0]?.attachment);
-      state.data.transactions = state.data.transactions.map(t => ({ ...t, attachment: t.attachment || "[]" }));
       if (res.data.projects?.length) state.data.projects = res.data.projects;
       if (res.data.suppliers?.length) state.data.suppliers = res.data.suppliers;
       if (res.data.users?.length) state.data.users = res.data.users;
@@ -73,10 +82,10 @@ if (res.data.logs?.length) state.data.logs = res.data.logs.map(function(l) { ret
   } catch(e) {}
 //  if (savedUser) state.currentUser = savedUser;
 // LUÔN KHÔI PHỤC USER TỪ LOCALSTORAGE SAU KHI LOAD
-  var saved = localStorage.getItem('steeltrack_current_user');
-  if (saved) {
-    try { state.currentUser = JSON.parse(saved); } catch(e) {}
-  }
+//  var saved = localStorage.getItem('steeltrack_current_user');
+//  if (saved) {
+//    try { state.currentUser = JSON.parse(saved); } catch(e) {}
+//  }
   applyTheme(state.theme);
 }
 
@@ -139,3 +148,6 @@ export function escapeHtml(s) { return s ? s.replace(/[&<>]/g, m => ({'&':'&amp;
 let modalCb = null;
 export function showModal(h, cb) { modalCb = cb; const a = document.getElementById('modal-area'); if (a) a.innerHTML = '<div class="modal-overlay"><div class="modal">' + h + '</div></div>'; }
 export function closeModal() { const a = document.getElementById('modal-area'); if (a) a.innerHTML = ''; if (modalCb) modalCb(); modalCb = null; }
+export function formatTimeVN(datetime) {
+    return new Date(datetime).toLocaleString('vi-VN', {hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric', timeZone: 'Asia/Ho_Chi_Minh'});
+}

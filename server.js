@@ -232,12 +232,11 @@ app.delete('/api/structures/:id', async (req, res) => {
 
 // Xuất sản xuất: trừ vật tư, cộng cấu kiện
 app.post('/api/produce-structure', async (req, res) => {
-    const { structureId, quantity } = req.body;
+    const { structureId, quantity, datetime, note, attachment } = req.body;
     try {
         await pool.query('BEGIN');
         const bom = await pool.query('SELECT * FROM structure_materials WHERE structure_id=$1', [structureId]);
         
-        // Trừ từng vật tư từ KHO CẤU KIỆN
         for (const item of bom.rows) {
             const need = parseFloat(item.quantity) * quantity;
             const swStock = await pool.query('SELECT qty FROM structure_warehouse WHERE material_id=$1 FOR UPDATE', [item.material_id]);
@@ -247,12 +246,11 @@ app.post('/api/produce-structure', async (req, res) => {
             }
             await pool.query('UPDATE structure_warehouse SET qty = qty - $1 WHERE material_id=$2', [need, item.material_id]);
         }
-        // Cộng cấu kiện vào kho
         await pool.query('UPDATE structures SET qty = qty + $1 WHERE id=$2', [quantity, structureId]);
-        // Ghi log giao dịch sản xuất
         const tid = 'tvskh' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(2,14) + '000';
-        await pool.query('INSERT INTO transactions (id, mid, type, qty, total_amount, note, date, datetime) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', 
-            [tid, structureId, 'produce', quantity, 0, 'Sản xuất cấu kiện', new Date().toISOString().split('T')[0], new Date().toISOString()]);
+        const dt = datetime || new Date().toISOString();
+        await pool.query('INSERT INTO transactions (id, mid, type, qty, total_amount, note, date, datetime, attachment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)', 
+            [tid, structureId, 'produce', quantity, 0, note || 'Sản xuất cấu kiện', dt.split('T')[0], dt, attachment || '[]']);
         await pool.query('COMMIT');
         await clearCache();
         res.json({ success: true });
@@ -264,25 +262,22 @@ app.post('/api/produce-structure', async (req, res) => {
 
 
 app.post('/api/export-structure', async (req, res) => {
-    const { structureId, projectId, quantity, note } = req.body;
+    const { structureId, projectId, quantity, note, datetime, attachment } = req.body;
     try {
         await pool.query('BEGIN');
-        // Kiểm tra tồn kho cấu kiện
         const stock = await pool.query('SELECT qty FROM structures WHERE id=$1 FOR UPDATE', [structureId]);
         if (!stock.rows[0] || parseFloat(stock.rows[0].qty) < quantity) {
             await pool.query('ROLLBACK');
             return res.json({ success: false, error: 'Không đủ cấu kiện trong kho!' });
         }
-        // Lấy đơn giá cấu kiện
         const structure = await pool.query('SELECT cost FROM structures WHERE id=$1', [structureId]);
-        const totalCost = parseFloat(structure.rows[0]?.cost || 0) * quantity;
-        // Trừ tồn kho cấu kiện
+        const cost = Number(structure.rows[0]?.cost || 0);
+        const totalCost = cost * quantity;
         await pool.query('UPDATE structures SET qty = qty - $1 WHERE id=$2', [quantity, structureId]);
-        // Ghi giao dịch xuất
         const tid = 'tvskh' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(2,14) + '000';
-        await pool.query('INSERT INTO transactions (id, mid, project_id, type, qty, total_amount, note, date, datetime) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-            [tid, structureId, projectId, 'structure_export', quantity, totalCost, note || 'Xuất cấu kiện ra công trình', new Date().toISOString().split('T')[0], new Date().toISOString()]);
-        // Cập nhật spent của project
+        const dt = datetime || new Date().toISOString();
+        await pool.query('INSERT INTO transactions (id, mid, project_id, type, qty, unit_price, total_amount, note, date, datetime, attachment) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',
+            [tid, structureId, projectId, 'structure_export', quantity, cost, totalCost, note || 'Xuất cấu kiện ra công trình', dt.split('T')[0], dt, attachment || '[]']);
         await pool.query('UPDATE projects SET spent = spent + $1 WHERE id=$2', [totalCost, projectId]);
         await pool.query('COMMIT');
         await clearCache();
@@ -292,7 +287,6 @@ app.post('/api/export-structure', async (req, res) => {
         res.json({ success: false, error: e.message });
     }
 });
-
 // Chuyển vật tư từ kho chính sang kho cấu kiện
 app.post('/api/transfer-to-structure-warehouse', async (req, res) => {
     const { items, note, structureWarehouse } = req.body;
@@ -310,8 +304,9 @@ app.post('/api/transfer-to-structure-warehouse', async (req, res) => {
             // Cộng vào kho cấu kiện (dùng bảng structure_warehouse)
             await pool.query('INSERT INTO sw_logs (material_id, material_name, qty, unit, cost, note, attachment) VALUES ($1,$2,$3,$4,$5,$6,$7)',
                     [item.mid, item.name, item.qty, item.unit, item.cost||0, note, req.body.attachment || '[]']);
-                await pool.query('INSERT INTO structure_warehouse (material_id, material_name, unit, qty, cost) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (material_id) DO UPDATE SET qty = structure_warehouse.qty + $4',
-                [item.mid, item.name, item.unit, item.qty, item.cost || 0]);
+                var cleanName = item.name.replace(/ *\(Tồn:.*\)/, '');
+            await pool.query('INSERT INTO structure_warehouse (material_id, material_name, unit, qty, cost) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (material_id) DO UPDATE SET qty = structure_warehouse.qty + $4',
+                    [item.mid, cleanName, item.unit, item.qty, item.cost || 0]);
             // Ghi log
             const tid = 'tvskh' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(2,14) + '000';
             await pool.query('INSERT INTO transactions (id, mid, type, qty, total_amount, note, date, datetime) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
@@ -508,10 +503,9 @@ app.get('/api/forecast-structures', async (req, res) => {
 });
 // ========== TRẢ CẤU KIỆN VỀ KHO ==========
 app.post('/api/return-structure', async (req, res) => {
-    const { structureId, projectId, qty, note } = req.body;
+    const { structureId, projectId, qty, note, datetime } = req.body;
     try {
         await pool.query('BEGIN');
-        // Kiểm tra số lượng đã xuất ra công trình
         const exported = await pool.query(
             "SELECT COALESCE(SUM(qty),0) as total FROM transactions WHERE mid=$1 AND project_id=$2 AND type='structure_export'",
             [structureId, projectId]
@@ -523,19 +517,16 @@ app.post('/api/return-structure', async (req, res) => {
         const avail = Number(exported.rows[0].total) - Number(returned.rows[0].total);
         if (avail < qty) {
             await pool.query('ROLLBACK');
-            return res.json({ success: false, error: `Không đủ để trả! Đã xuất: ${exported.rows[0].total}, đã trả: ${returned.rows[0].total}` });
+            return res.json({ success: false, error: 'Không đủ để trả! Đã xuất: ' + exported.rows[0].total + ', đã trả: ' + returned.rows[0].total });
         }
-        // Cộng lại kho cấu kiện
         await pool.query('UPDATE structures SET qty = qty + $1 WHERE id=$2', [qty, structureId]);
-        // Lấy đơn giá
         const structure = await pool.query('SELECT cost FROM structures WHERE id=$1', [structureId]);
         const cost = Number(structure.rows[0]?.cost || 0);
         const totalCost = cost * qty;
-        // Tạo transaction trả
         const tid = 'tvskh' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(2,14) + '000';
+        const dt = datetime || new Date().toISOString();
         await pool.query('INSERT INTO transactions (id, mid, project_id, type, qty, unit_price, total_amount, note, date, datetime) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
-            [tid, structureId, projectId, 'structure_return', qty, cost, totalCost, note || 'Trả cấu kiện về kho', new Date().toISOString().split('T')[0], new Date().toISOString()]);
-        // Trừ spent của project
+            [tid, structureId, projectId, 'structure_return', qty, cost, totalCost, note || 'Trả cấu kiện về kho', dt.split('T')[0], dt]);
         await pool.query('UPDATE projects SET spent = spent - $1 WHERE id=$2', [totalCost, projectId]);
         await pool.query('COMMIT');
         await clearCache();

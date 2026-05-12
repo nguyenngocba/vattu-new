@@ -56,8 +56,9 @@ document.addEventListener('keydown', function(e) { if (e.key === 'Enter' && docu
 export function login(uid) { state.currentUser = state.data.users.find(u => u.id === uid); addLog('Đăng nhập', 'Đăng nhập thành công'); state.currentPane = 'dashboard'; if (window.render) window.render(); }
 export function logout() { 
     localStorage.removeItem('steeltrack_current_user');
-    addLog('Đăng xuất', 'Đăng xuất'); 
+    localStorage.removeItem('steeltrack_ui_mode'); // Xóa luôn chế độ giao diện
     state.currentUser = null; 
+    addLog('Đăng xuất', 'Đăng xuất'); 
     if (window.render) window.render(); 
 }
 export function switchPane(pane) { state.currentPane = pane; if (window.render) window.render(); }

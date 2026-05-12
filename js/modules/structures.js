@@ -13,7 +13,7 @@ export function renderStructures() {
         </div>
         <div class="tbl-wrap">
             <table style="min-width:600px;">
-                <thead><tr><th>Tên cấu kiện</th><th style="text-align:right;">Tồn kho</th><th>ĐVT</th><th style="text-align:right;">Đơn giá</th><th>Thao tác</th></tr></thead>
+                <thead><tr><th>Tên cấu kiện</th><th style="text-align:right;">Tồn kho</th><th>ĐVT</th><th style="text-align:right;">Đơn giá</th><th style="text-align:right;">Tổng giá trị</th><th>Thao tác</th></tr></thead>
                 <tbody>`;
     
     if (structures.length === 0) {
@@ -25,6 +25,7 @@ export function renderStructures() {
                 <td style="text-align:right;">${Number(s.qty||0).toLocaleString('vi-VN')} ${s.unit}</td>
                 <td>${s.unit}</td>
                 <td style="text-align:right;">${formatMoneyVND(s.cost)}</td>
+                <td style="text-align:right;color:var(--accent);font-weight:500;">${formatMoneyVND(Number(s.qty||0) * Number(s.cost||0))}</td>
                 <td>
                     <button class="sm" onclick="window.openStructureModal('${s.id}')">✏️</button>
                     <button class="sm primary" onclick="window.produceStructure('${s.id}')">🏭 Sản xuất</button>
@@ -175,30 +176,52 @@ window.saveStructure = function(sid) {
 window.produceStructure = function(sid) {
     const s = (state.data.structures||[]).find(x => x.id === sid);
     if (!s) { alert("Không tìm thấy cấu kiện!"); return; }
-    const qty = prompt("Số lượng sản xuất:", "1");
-    if (!qty || isNaN(qty) || parseFloat(qty) <= 0) return;
     
-    // 🔥 KHÔNG GHI LOG Ở ĐÂY - chỉ ghi khi thành công 🔥
+    var now = new Date();
+    var dt = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + 'T' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
     
+    var html = '<div class="modal-hd"><span class="modal-title">🏭 Sản xuất: ' + escapeHtml(s.name) + '</span><button class="xbtn" onclick="closeModal()">✕</button></div>' +
+        '<div class="modal-bd">' +
+        '<div class="form-group"><label class="form-label">📅 Thời gian sản xuất</label><input type="datetime-local" id="prod-datetime" value="' + dt + '"></div>' +
+        '<div class="form-group"><label class="form-label">Cấu kiện</label><input value="' + escapeHtml(s.name) + ' (Tồn: ' + Number(s.qty).toLocaleString('vi-VN') + ' ' + s.unit + ')" disabled></div>' +
+        '<div class="form-group"><label class="form-label">🔢 Số lượng sản xuất</label><input type="text" id="prod-qty" value="1" dir="ltr"></div>' +
+        '<div class="form-group"><label class="form-label">📝 Ghi chú</label><input type="text" id="prod-note" placeholder="Ghi chú..."></div>' +
+        '<div class="form-group"><label class="form-label">📎 File đính kèm</label><input type="file" id="prod-files" multiple onchange="window.handleMobileFiles(this,\'produce\')"><div id="prod-file-list" style="margin-top:6px;font-size:11px;color:#7a8099;"></div></div>' +
+        '</div>' +
+        '<div class="modal-ft"><button onclick="closeModal()">Hủy</button><button class="primary" onclick="window.confirmProduceStructure(\'' + sid + '\')">🏭 Xác nhận sản xuất</button></div>';
+    
+    showModal(html);
+    setTimeout(function(){
+        var qtyInput = document.getElementById('prod-qty');
+        if (qtyInput) setupNumberInput(qtyInput, { isInteger: false, decimals: null });
+    }, 100);
+};
+
+window.confirmProduceStructure = function(sid) {
+    var dt = document.getElementById('prod-datetime')?.value || new Date().toISOString();
+    var qty = parseFloat(document.getElementById('prod-qty')?.value?.replace(',', '.')) || 0;
+    var note = document.getElementById('prod-note')?.value || '';
+    var attachment = JSON.stringify((window._upPaths && window._upPaths.produce) || []);
+    
+    if (qty <= 0) { alert('Vui lòng nhập số lượng!'); return; }
+    
+    var s = (state.data.structures||[]).find(x => x.id === sid);
     fetch("/api/produce-structure", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ structureId: sid, quantity: parseFloat(qty) })
+        body: JSON.stringify({ structureId: sid, quantity: qty, datetime: dt, note: note, attachment: attachment })
     })
     .then(r => r.json())
     .then(d => {
         if (d.success) {
-            // 🔥 CHỈ GHI LOG KHI SẢN XUẤT THÀNH CÔNG 🔥
-            addLog("Sản xuất cấu kiện", `${s.name} - SL: ${qty} ${s.unit}`);
+            window._upPaths = {};
+            addLog("Sản xuất cấu kiện", s.name + " - SL: " + qty + " " + s.unit);
             alert("✅ Sản xuất thành công!");
+            closeModal();
             window.loadState().then(() => window.render());
         } else {
             alert("❌ Lỗi: " + d.error);
         }
-    })
-    .catch(err => {
-        console.error("Fetch error:", err);
-        alert("❌ Lỗi kết nối: " + err.message);
     });
 };
 window.showSWDetail = function(mid) {
@@ -208,7 +231,7 @@ window.showSWDetail = function(mid) {
         var html = '<div class="modal-hd"><span class="modal-title">📦 Chi tiết Kho CK: '+item.material_name+'</span><button class="xbtn" onclick="closeModal()">✕</button></div>';
         html += '<div class="modal-bd"><div class="tbl-wrap"><table style="min-width:700px;"><thead><tr><th>Thời gian</th><th style="text-align:center;">Loại</th><th style="text-align:right;">SL</th><th>ĐVT</th><th style="text-align:right;">Đơn giá</th><th>Ghi chú</th><th>File</th></tr></thead><tbody>';
         d.data.forEach(function(l){
-            var dt = new Date(l.created_at).toLocaleString('vi-VN');
+            var dt = new Date(l.created_at).toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'});
             var files = '';
             try { var att = JSON.parse(l.attachment||'[]'); att.forEach(function(f){ files += '<a href="'+f+'" target="_blank">📎</a> '; }); } catch(e){}
             var typeIcon = l.type === 'return_to_main' ? '🔄 Trả lại kho chính' : '📦 Chuyển sang kho CK';
@@ -327,7 +350,12 @@ window.showStructureDetail = function(sid) {
         historyHtml = allHistory.map(t => {
             const isProduce = t.historyType === 'produce';
             const isReturn = t.historyType === 'return';
-            const dt = t.datetime ? new Date(t.datetime).toLocaleString('vi-VN', {hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'}) : t.date;
+            var dt = t.date || '';
+            if (t.datetime) {
+               var d = new Date(t.datetime);
+                d.setHours(d.getHours()); // UTC -> GMT+7
+                dt = d.toLocaleString('vi-VN', {hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
+            }
             const projectName = !isProduce ? (state.data.projects.find(p => p.id === t.projectId)?.name || 'N/A') : '';
             return `<tr>
                 <td style="white-space:nowrap;">${dt}</td>
@@ -413,14 +441,19 @@ window.exportStructure = function(sid) {
     if (!s || parseFloat(s.qty) <= 0) return alert('Không có cấu kiện trong kho!');
     if (state.data.projects.length === 0) return alert('Chưa có công trình!');
 
+    var now = new Date();
+    var dt = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + 'T' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
     var projOpts = state.data.projects.map(p => '<option value="' + p.id + '">' + escapeHtml(p.name) + '</option>').join('');
     showModal(`
         <div class="modal-hd"><span class="modal-title">📤 Xuất cấu kiện ra công trình</span><button class="xbtn" onclick="closeModal()">✕</button></div>
         <div class="modal-bd">
+            <div class="form-group"><label class="form-label">📅 Thời gian xuất</label><input type="datetime-local" id="exp-datetime" value="${dt}"></div>
             <div class="form-group"><label class="form-label">Cấu kiện</label><input value="${escapeHtml(s.name)} (Tồn: ${Number(s.qty).toLocaleString('vi-VN')} ${s.unit})" disabled></div>
             <div class="form-group"><label class="form-label">Công trình</label><select id="exp-proj">${projOpts}</select></div>
             <div class="form-group"><label class="form-label">Số lượng</label><input type="text" id="exp-qty" value="1" dir="ltr"></div>
             <div class="form-group"><label class="form-label">Ghi chú</label><input id="exp-note" placeholder="Ghi chú..."></div>
+            <div class="form-group"><label class="form-label">📎 File đính kèm</label><input type="file" id="exp-files" multiple onchange="window.handleMobileFiles(this,'structure_export')"><div id="exp-file-list" style="margin-top:6px;font-size:11px;color:#7a8099;"></div></div>
         </div>
         <div class="modal-ft"><button onclick="closeModal()">Hủy</button><button class="primary" onclick="window.confirmExportStructure('${sid}')">Xác nhận xuất</button></div>
     `);
@@ -436,21 +469,25 @@ window.exportStructure = function(sid) {
 };
 window.confirmExportStructure = function(sid) {
     var pid = document.getElementById('exp-proj')?.value;
+    var dt = document.getElementById('exp-datetime')?.value || new Date().toISOString();
     var qty = parseFloat(document.getElementById('exp-qty')?.value?.replace(/\./g,'').replace(',','.')) || 0;
     var note = document.getElementById('exp-note')?.value || '';
+    var attachment = JSON.stringify((window._upPaths && window._upPaths.structure_export) || []);
+    
     if (!pid || qty <= 0) return alert('Thiếu thông tin!');
     
     var s = (state.data.structures||[]).find(x => x.id === sid);
     if (!s || parseFloat(s.qty) < qty) return alert('Không đủ cấu kiện trong kho!');
     
     var projectName = state.data.projects.find(p => p.id === pid)?.name || '';
-	addLog('Xuất cấu kiện', `${s?.name} - SL: ${qty} ${s?.unit} ra công trình ${projectName}`);    
+    addLog('Xuất cấu kiện', `${s?.name} - SL: ${qty} ${s?.unit} ra công trình ${projectName}`);    
     
     fetch('/api/export-structure', { method: 'POST', headers: {'Content-Type':'application/json'}, 
-        body: JSON.stringify({ structureId: sid, projectId: pid, quantity: qty, note: note }) })
+        body: JSON.stringify({ structureId: sid, projectId: pid, quantity: qty, note: note, datetime: dt, attachment: attachment }) })
         .then(r => r.json())
         .then(d => {
             if (d.success) {
+                window._upPaths = {};
                 alert('✅ Đã xuất cấu kiện ra công trình!');
                 closeModal();
                 window.loadState().then(() => window.render());
@@ -473,7 +510,24 @@ window.returnStructureToWarehouse = function(projectId) {
         if (!s) return;
         var totalExp = txns.filter(function(t) { return t.mid === sid; }).reduce(function(sum, t) { return sum + Number(t.qty||0); }, 0);
         var totalRet = returnTxns.filter(function(t) { return t.mid === sid; }).reduce(function(sum, t) { return sum + Number(t.qty||0); }, 0);
-        var avail = totalExp - totalRet;
+        
+        // Tính số đã gán vào tiến độ (schedule)
+        var usedInSchedule = 0;
+        var sched = state.data.projectSchedules?.find(function(s) { return s.projectId === projectId; });
+        if (sched?.tasks?.length > 0) {
+            function flatTasks(tasks) { var r = []; for (var i = 0; i < tasks.length; i++) { r.push(tasks[i]); if (tasks[i].subTasks?.length > 0) r = r.concat(flatTasks(tasks[i].subTasks)); } return r; }
+            var allTasks = flatTasks(sched.tasks);
+            allTasks.forEach(function(task) {
+                if (task.materials?.length > 0) {
+                    task.materials.forEach(function(mat) {
+                        if (mat.materialId === sid) usedInSchedule += mat.quantity || 0;
+                    });
+                }
+            });
+        }
+        var usedManual = (state.data.projectMaterialUsage || []).filter(function(u) { return u.projectId === projectId && u.materialId === sid; }).reduce(function(s, u) { return s + Number(u.usedQty||0); }, 0);
+        var totalUsed = Math.max(usedInSchedule, usedManual);
+        var avail = totalExp - totalRet - totalUsed;
         if (avail > 0) {
             exportedStructures.push({ id: sid, name: s.name, unit: s.unit, cost: s.cost, avail: avail });
         }
@@ -487,9 +541,12 @@ window.returnStructureToWarehouse = function(projectId) {
     var opts = exportedStructures.map(function(s) {
         return '<option value="' + s.id + '" data-cost="' + s.cost + '">' + s.name + ' (Có thể trả: ' + Number(s.avail).toLocaleString('vi-VN') + ' ' + s.unit + ')</option>';
     }).join('');
+        var now = new Date();
+    var dt = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + 'T' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
     
     var html = '<div class="modal-hd" style="background:#0891b2;"><span class="modal-title">🏗️ Trả cấu kiện về kho</span><button class="xbtn" onclick="closeModal()">✕</button></div>' +
         '<div class="modal-bd">' +
+        '<div class="form-group"><label class="form-label">📅 Thời gian trả</label><input type="datetime-local" id="return-structure-datetime" value="' + dt + '"></div>' +
         '<div class="form-group"><label class="form-label">Cấu kiện</label><select id="return-structure-id">' + opts + '</select></div>' +
         '<div class="form-group"><label class="form-label">Số lượng</label><input type="text" id="return-structure-qty" value="1" dir="ltr"></div>' +
         '<div class="form-group"><label class="form-label">Ghi chú</label><input type="text" id="return-structure-note" placeholder="Lý do trả..."></div>' +
@@ -505,6 +562,7 @@ window.returnStructureToWarehouse = function(projectId) {
 
 window.confirmReturnStructure = function(projectId) {
     var sid = document.getElementById('return-structure-id')?.value;
+    var dt = document.getElementById('return-structure-datetime')?.value || new Date().toISOString();
     var qty = parseFloat(document.getElementById('return-structure-qty')?.value?.replace(',', '.')) || 0;
     var note = document.getElementById('return-structure-note')?.value || '';
     
@@ -513,7 +571,7 @@ window.confirmReturnStructure = function(projectId) {
     var s = (state.data.structures || []).find(function(x) { return x.id === sid; });
     fetch('/api/return-structure', { 
         method: 'POST', headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ structureId: sid, projectId: projectId, qty: qty, note: note }) 
+        body: JSON.stringify({ structureId: sid, projectId: projectId, qty: qty, note: note, datetime: dt }) 
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
@@ -526,3 +584,9 @@ window.confirmReturnStructure = function(projectId) {
         }
     });
 };
+function toVNTime(utcStr) {
+    if (!utcStr) return '';
+    var d = new Date(utcStr);
+    d.setHours(d.getHours() + 7); // UTC+7
+    return d.toLocaleString('vi-VN', {hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
+}

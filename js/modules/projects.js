@@ -12,7 +12,8 @@ if (savedView) projectViewMode = savedView;
 
 function formatDateTime(dateTimeStr) {
     if (!dateTimeStr) return '';
-    return new Date(dateTimeStr).toLocaleString('vi-VN', {hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
+    var d = new Date(dateTimeStr);
+    return d.toLocaleString('vi-VN', {hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
 }
 
 function getCurrentDateTime() {
@@ -46,8 +47,8 @@ function getProjectTotalReceived(projectId) {
 }
 
 function getMaterialUsageDetails(projectId) {
-    const receiveTxns = state.data.transactions.filter(t => t.projectId === projectId && (t.type === 'usage' || t.type === 'structure_export' || t.type === 'structure_export'));
-    const returnTxns = state.data.transactions.filter(t => t.projectId === projectId && t.type === 'return');
+    const receiveTxns = state.data.transactions.filter(t => t.projectId === projectId && (t.type === 'usage' || t.type === 'structure_export'));
+    const returnTxns = state.data.transactions.filter(t => t.projectId === projectId && (t.type === 'return' || t.type === 'structure_return'));
     const usageRecords = state.data.projectMaterialUsage?.filter(u => u.projectId === projectId) || [];
     const schedule = state.data.projectSchedules?.find(s => s.projectId === projectId);
     const scheduleMaterialUsage = {};
@@ -72,8 +73,18 @@ function getMaterialUsageDetails(projectId) {
             materialMap.get(t.mid).totalReceived += t.qty;
         }
     });
-    returnTxns.forEach(t => { if (materialMap.has(t.mid)) materialMap.get(t.mid).totalReturned += t.qty; });
-    usageRecords.forEach(r => { if (materialMap.has(r.materialId)) materialMap.get(r.materialId).fromManualUpdate = Math.max(materialMap.get(r.materialId).fromManualUpdate, r.usedQty || 0); });
+    returnTxns.forEach(t => {
+        if (materialMap.has(t.mid)) {
+            materialMap.get(t.mid).totalReturned += t.qty;
+        } else {
+            // Thêm vào map nếu chưa có (trường hợp trả cấu kiện/vật tư đã trả hết)
+            const mat = state.data.materials.find(m => m.id === t.mid) || state.data.structures?.find(s => s.id === t.mid);
+            if (mat) {
+                materialMap.set(t.mid, { id: t.mid, name: mat.name, unit: mat.unit, totalReceived: 0, totalUsed: 0, totalReturned: t.qty, fromSchedule: 0, fromManualUpdate: 0, lastUnitPrice: t.unitPrice });
+            }
+        }
+    });
+        usageRecords.forEach(r => { if (materialMap.has(r.materialId)) materialMap.get(r.materialId).fromManualUpdate = Math.max(materialMap.get(r.materialId).fromManualUpdate, r.usedQty || 0); });
     for (const [matId, data] of Object.entries(scheduleMaterialUsage)) {
         if (materialMap.has(matId)) materialMap.get(matId).fromSchedule = data.quantity;
     }
@@ -87,7 +98,7 @@ function getMaterialUsageDetails(projectId) {
 
 function renderProjectHistory() {
     const transactions = state.data.transactions
-        .filter(t => (t.type === 'usage' || t.type === 'structure_export' || t.type === 'return') && t.projectId)
+        .filter(t => (t.type === 'usage' || t.type === 'structure_export' || t.type === 'structure_return' || t.type === 'return') && t.projectId)
         .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date))
         .slice(0, 50);
     
@@ -96,7 +107,9 @@ function renderProjectHistory() {
     return transactions.map(t => {
         const mat = state.data.materials.find(m => m.id === t.mid) || state.data.structures?.find(s => s.id === t.mid);
         const proj = projectById(t.projectId);
-        const isReturn = t.type === 'return';
+        const isReturn = t.type === 'return' || t.type === 'structure_return';
+        const isStructureExport = t.type === 'structure_export';
+        const isStructureReturn = t.type === 'structure_return';
         return `<tr>
             <td style="white-space:nowrap;">${formatDateTime(t.datetime || t.date)}</td>
             <td style="text-align:left;"><strong>${escapeHtml(proj?.name || 'N/A')}</strong></td>
@@ -104,7 +117,7 @@ function renderProjectHistory() {
             <td style="text-align:right;">${Number(t.qty||0).toLocaleString('vi-VN')} ${mat?.unit||''}</td>
             <td style="text-align:right;white-space:nowrap;">${formatMoneyVND(t.unitPrice)}</td>
             <td class="amount" style="text-align:right;white-space:nowrap;" ${isReturn?'text-success':'text-warning'}">${isReturn?'- ':''}${formatMoneyVND(Number(t.totalAmount))}</td>
-            <td style="text-align:center;color:${isReturn?'var(--success-text)':'var(--accent)'}">${t.type==='structure_export'?'🏗️ Cấu kiện':isReturn?'🔄 Trả kho':'📥 Nhận từ kho'}</td>
+            <td style="text-align:center;color:${isReturn?'var(--success-text)':'var(--accent)'}">${isStructureExport?'🏗️ Cấu kiện':isStructureReturn?'🔄 Trả CK':isReturn?'🔄 Trả kho':'📥 Nhận từ kho'}</td>
             <td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td>
         </tr>`;
     }).join('');
@@ -251,7 +264,7 @@ export function showProjectDetail(projectId) {
     window.currentScheduleProjectId = projectId;
     
     const rTxns = state.data.transactions.filter(t => t.projectId === projectId && (t.type === 'usage' || t.type === 'structure_export' || t.type === 'structure_export'));
-    const retTxns = state.data.transactions.filter(t => t.projectId === projectId && t.type === 'return');
+    const retTxns = state.data.transactions.filter(t => t.projectId === projectId && (t.type === 'return' || t.type === 'structure_return'));
     const totalR = rTxns.reduce((s,t) => s + (Number(t.totalAmount)||0), 0);
     const totalRet = retTxns.reduce((s,t) => s + (Number(t.totalAmount)||0), 0);
     const spent = totalR - totalRet;
@@ -284,7 +297,7 @@ export function showProjectDetail(projectId) {
         datetime: l.timestamp, type: 'log', logType: 'log',
         materialName: '', qty: 0, unit: '', note: l.action + ': ' + (l.details||'')
     }));
-    const allLogs = [...allTxns.map(t=>({...t, logType: t.type})), ...scheduleLogs, ...logEntries].sort((a,b) => new Date(b.datetime||b.date) - new Date(a.datetime||a.date));
+    const allLogs = [...allTxns.map(t=>({...t, logType: t.type})), ...scheduleLogs].sort((a,b) => new Date(b.datetime||b.date) - new Date(a.datetime||a.date));
     const matUsage = getMaterialUsageDetails(projectId);
     const schedule = getProjectSchedule(projectId);
     
@@ -329,8 +342,10 @@ export function showProjectDetail(projectId) {
                     }
                     const t = item;
                     const mat = state.data.materials.find(m=>m.id===t.mid) || state.data.structures?.find(s=>s.id===t.mid);
-                    const isRet = t.type === "return"; const isStructureExport = t.type === "structure_export";
-                    return `<tr><td style="text-align:left;white-space:nowrap;">${formatDateTime(t.datetime||t.date)}</td><td style="text-align:center;color:${isStructureExport?'var(--warn-text)':isRet?'var(--success-text)':'var(--accent)'};font-weight:bold;">${isStructureExport?'🏗️ CK':isRet?'🔄 Trả':'📥 Nhận'}</td><td style="text-align:left;">${escapeHtml(mat?.name||'N/A')}</td><td style="text-align:right;">${Number(t.qty||0).toLocaleString('vi-VN')} ${mat?.unit||''}</td><td style="text-align:right;white-space:nowrap;">${formatMoneyVND(t.unitPrice)}</td><td class="amount" style="text-align:right;white-space:nowrap;" ${isRet?'text-success':'text-warning'}">${isRet?'- ':''}${formatMoneyVND(Number(t.totalAmount))}</td><td style="text-align:left;">${escapeHtml(t.note||'—')}</td><td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td></tr>`;
+                    const isRet = t.type === "return" || t.type === "structure_return"; 
+                    const isStructureExport = t.type === "structure_export";
+                    const isStructureReturn = t.type === "structure_return";
+                    return `<tr><td style="text-align:left;white-space:nowrap;">${formatDateTime(t.datetime||t.date)}</td><td style="text-align:center;color:${isStructureExport?'var(--warn-text)':isRet?'var(--success-text)':'var(--accent)'};font-weight:bold;">${isStructureExport?'🏗️ CK':isStructureReturn?'🔄 Trả CK':isRet?'🔄 Trả':'📥 Nhận'}</td><td style="text-align:left;">${escapeHtml(mat?.name||'N/A')}</td><td style="text-align:right;">${Number(t.qty||0).toLocaleString('vi-VN')} ${mat?.unit||''}</td><td style="text-align:right;white-space:nowrap;">${formatMoneyVND(t.unitPrice)}</td><td class="amount" style="text-align:right;white-space:nowrap;" ${isRet?'text-success':'text-warning'}">${isRet?'- ':''}${formatMoneyVND(Number(t.totalAmount))}</td><td style="text-align:left;">${escapeHtml(t.note||'—')}</td><td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td></tr>`;
                 }).join('') || '<tr><td colspan="7">📭 Chưa có giao dịch</td></tr>'}</tbody></table></div>
             </div>
             <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end;">
