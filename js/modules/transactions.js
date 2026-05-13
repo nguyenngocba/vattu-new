@@ -81,34 +81,19 @@ export function openPurchaseModal() {
 
     setTimeout(() => {
         const qtyInput = document.getElementById('purchase-qty');
-        const priceInput = document.getElementById('purchase-price'); if (priceInput) { setupNumberInput(priceInput, { isInteger: false, decimals: 2 }); priceInput.addEventListener('change', calculatePurchaseTotal); }
+        const priceInput = document.getElementById('purchase-price'); 
         const vatInput = document.getElementById('purchase-vat');
         const midSelect = document.getElementById('purchase-mid');
-        const fileInput = document.getElementById('purchase-invoice');
 
         if (qtyInput) { setupNumberInput(qtyInput, { isInteger: false, decimals: 3 }); qtyInput.addEventListener('change', calculatePurchaseTotal); }
         if (priceInput) { setupNumberInput(priceInput, { isInteger: false, decimals: 2 }); priceInput.addEventListener('change', calculatePurchaseTotal); }
         if (vatInput) { setupNumberInput(vatInput, { isInteger: false, decimals: 1 }); vatInput.addEventListener('change', calculatePurchaseTotal); }
-        
-        if (fileInput) {
-            fileInput.addEventListener('change', function() {
-                const file = this.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    currentInvoiceBase64 = e.target.result;
-                    const previewDiv = document.getElementById('invoice-preview');
-                    if (previewDiv) previewDiv.innerHTML = `<img src="${currentInvoiceBase64}" class="invoice-img" onclick="window.open(this.src)"><br><button class="sm" onclick="window.clearInvoiceImage()">🗑️ Xóa ảnh</button>`;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
 
         const updateDefaultPrice = () => {
             const mid = midSelect?.value;
             const mat = matById(mid);
             if (mat && priceInput) {
-                priceInput.value = Number(mat.cost).toLocaleString('vi-VN', {minimumFractionDigits: 0, maximumFractionDigits: 2});                
+                priceInput.value = Math.round(Number(mat.cost)).toLocaleString('vi-VN');                
             }
             calculatePurchaseTotal();
         };
@@ -178,7 +163,7 @@ export function openPurchaseModalWithSupplier(supplierId) {
             const mid = midSelect?.value;
             const mat = matById(mid);
             if (mat && priceInput) {
-                priceInput.value = mat.cost.toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3});
+                priceInput.value = Math.round(Number(mat.cost)).toLocaleString('vi-VN');
             }
             calculatePurchaseTotal();
         };
@@ -187,7 +172,8 @@ export function openPurchaseModalWithSupplier(supplierId) {
     }, 150);
 }
 
-export function savePurchase() {
+// SỬA: async + moveUploadedFiles
+export async function savePurchase() {
     const supplierId = document.getElementById('purchase-supplier')?.value;
     const mid = document.getElementById('purchase-mid')?.value;
     const dt = document.getElementById('purchase-datetime')?.value || getCurrentDateTime();
@@ -211,17 +197,20 @@ export function savePurchase() {
     mat.qty = parseFloat(mat.qty||0) + parseFloat(qty||0);
     if (mat.qty > 0) mat.cost = Math.round((oldValue + totalAmount) / mat.qty);
 
-    state.data.transactions.unshift({
+    // Chuyển file từ temp sang purchase/
+    var finalPaths = [];
+    if (window.moveUploadedFiles) {
+        finalPaths = await window.moveUploadedFiles('purchase');
+    }
 
+    state.data.transactions.unshift({
         id: genTid(), mid, supplierId, date: dt.split('T')[0], datetime: dt,
         type: 'purchase', qty, unitPrice, vatRate, subtotal, vatAmount, totalAmount,
-        note, invoiceImage: currentInvoiceBase64 || null
+        note, invoiceImage: currentInvoiceBase64 || null,
+        attachment: JSON.stringify(finalPaths)
     });
 
-    state.data.transactions[0].attachment = JSON.stringify(window._upPaths && (window._upPaths.purchase || window._upPaths.usage || window._upPaths.return) || []);
-    state.data.transactions[0].attachment = JSON.stringify((window._upPaths && window._upPaths.purchase) || (window._upPaths && window._upPaths.usage) || (window._upPaths && window._upPaths.return) || []);
     fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.data.transactions[0]) });
-    window._upPaths = {};
     window._upPaths = {};
     addLog('Nhập kho', `${mat.name} - SL: ${qty.toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3})} - ${formatMoneyVND(totalAmount)} - NCC: ${supplierById(supplierId)?.name}`);
     saveState(); closeModal(); currentInvoiceBase64 = null;
@@ -229,7 +218,8 @@ export function savePurchase() {
     alert('✅ Nhập kho thành công!');
 }
 
-export function savePurchaseWithSupplier(supplierId) {
+
+export async function savePurchaseWithSupplier(supplierId) {
     const mid = document.getElementById('purchase-mid')?.value;
     const dt = document.getElementById('purchase-datetime')?.value || getCurrentDateTime();
     const qty = getNumberFromInput(document.getElementById('purchase-qty'));
@@ -254,8 +244,14 @@ export function savePurchaseWithSupplier(supplierId) {
         note, invoiceImage: currentInvoiceBase64 || null
     });
 
-    state.data.transactions[0].attachment = JSON.stringify(window._upPaths && (window._upPaths.purchase || window._upPaths.usage || window._upPaths.return) || []);
-    state.data.transactions[0].attachment = JSON.stringify((window._upPaths && window._upPaths.purchase) || (window._upPaths && window._upPaths.usage) || (window._upPaths && window._upPaths.return) || []);
+    var finalPaths = window.moveUploadedFiles ? await window.moveUploadedFiles('purchase') : [];
+
+    state.data.transactions.unshift({
+        id: genTid(), mid, supplierId, date: dt.split('T')[0], datetime: dt,
+        type: 'purchase', qty, unitPrice, vatRate, subtotal, vatAmount, totalAmount,
+        note, invoiceImage: currentInvoiceBase64 || null,
+        attachment: JSON.stringify(finalPaths)
+    });
     fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.data.transactions[0]) });
     window._upPaths = {};
     window._upPaths = {};
@@ -311,7 +307,8 @@ export function openTxnModal(type, preselectedProjectId = null) {
     }, 150);
 }
 
-export function saveExport() {
+// Tương tự async + moveUploadedFiles cho saveExport
+export async function saveExport() {
     const pid = document.getElementById('txn-project')?.value;
     const mid = document.getElementById('txn-mid')?.value;
     const dt = document.getElementById('export-datetime')?.value || getCurrentDateTime();
@@ -328,16 +325,18 @@ export function saveExport() {
     const proj = projectById(pid);
     if (proj) proj.spent = (proj.spent || 0) + total;
 
-    state.data.transactions.unshift({
+    var finalPaths = [];
+    if (window.moveUploadedFiles) {
+        finalPaths = await window.moveUploadedFiles('usage');
+    }
 
+    state.data.transactions.unshift({
         id: genTid(), mid, projectId: pid, date: dt.split('T')[0], datetime: dt,
         type: 'usage', qty, unitPrice: mat.cost, totalAmount: total, note,
-        attachment: currentExportAttachmentBase64 || null
+        attachment: JSON.stringify(finalPaths)
     });
-    state.data.transactions[0].attachment = JSON.stringify(window._upPaths && (window._upPaths.purchase || window._upPaths.usage || window._upPaths.return) || []);
-    state.data.transactions[0].attachment = JSON.stringify((window._upPaths && window._upPaths.purchase) || (window._upPaths && window._upPaths.usage) || (window._upPaths && window._upPaths.return) || []);
+
     fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.data.transactions[0]) });
-    window._upPaths = {};
     window._upPaths = {};
     addLog('Xuất kho', `${mat.name} - SL: ${qty.toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3})} - ${formatMoneyVND(total)}`);
     saveState(); closeModal(); currentExportAttachmentBase64 = null;
@@ -443,7 +442,8 @@ ms.innerHTML = list.map(m=>`<option value="${m.id}" data-up="${m.up}">${escapeHt
     }, 150);
 }
 
-export function saveReturn() {
+// Tương tự async + moveUploadedFiles cho saveReturn
+export async function saveReturn() {
     const pid = document.getElementById('return-project')?.value;
     const mid = document.getElementById('return-mid')?.value;
     const dt = document.getElementById('return-datetime')?.value || getCurrentDateTime();
@@ -454,14 +454,14 @@ export function saveReturn() {
     if (!pid || !mid || !qty || qty <= 0 || !up) return alert('Thiếu thông tin');
     const mat = matById(mid);
     if (!mat) return alert('Không tìm thấy vật tư');
-// Kiểm tra số lượng đã nhận của công trình
-const received = state.data.transactions
-    .filter(t => t.projectId === pid && t.mid === mid && t.type === 'usage')
-    .reduce((s, t) => s + Number(t.qty||0), 0);
-const returned = state.data.transactions
-    .filter(t => t.projectId === pid && t.mid === mid && t.type === 'return')
-    .reduce((s, t) => s + Number(t.qty||0), 0);
-let usedQty2 = 0;
+
+    const received = state.data.transactions
+        .filter(t => t.projectId === pid && t.mid === mid && t.type === 'usage')
+        .reduce((s, t) => s + Number(t.qty||0), 0);
+    const returned = state.data.transactions
+        .filter(t => t.projectId === pid && t.mid === mid && t.type === 'return')
+        .reduce((s, t) => s + Number(t.qty||0), 0);
+    let usedQty2 = 0;
     const usageRecs = state.data.projectMaterialUsage?.filter(u => u.projectId === pid && u.materialId === mid) || [];
     const sched2 = state.data.projectSchedules?.find(s => s.projectId === pid);
     usageRecs.forEach(r => { usedQty2 = Math.max(usedQty2, r.usedQty || 0); });
@@ -472,30 +472,33 @@ let usedQty2 = 0;
         }
     }
     const available = received - returned - usedQty2;
-if (qty > available) {
-    return alert(`Không thể trả ${qty} ${mat.unit}! Công trình này chỉ có ${available} ${mat.unit} có thể trả.`);
-}
+    if (qty > available) {
+        return alert(`Không thể trả ${qty} ${mat.unit}! Công trình này chỉ có ${available} ${mat.unit} có thể trả.`);
+    }
     const total = qty * up;
     mat.qty = parseFloat(mat.qty||0) + parseFloat(qty||0);
     const proj = projectById(pid);
     if (proj) proj.spent = Math.max(0, (proj.spent || 0) - total);
 
-    state.data.transactions.unshift({
+    var finalPaths = [];
+    if (window.moveUploadedFiles) {
+        finalPaths = await window.moveUploadedFiles('return');
+    }
 
+    state.data.transactions.unshift({
         id: genTid(), mid, projectId: pid, date: dt.split('T')[0], datetime: dt,
         type: 'return', qty, unitPrice: up, totalAmount: total, note: note || 'Trả hàng',
-        attachment: currentReturnAttachmentBase64 || null
+        attachment: JSON.stringify(finalPaths)
     });
-    state.data.transactions[0].attachment = JSON.stringify(window._upPaths && (window._upPaths.purchase || window._upPaths.usage || window._upPaths.return) || []);
-    state.data.transactions[0].attachment = JSON.stringify((window._upPaths && window._upPaths.purchase) || (window._upPaths && window._upPaths.usage) || (window._upPaths && window._upPaths.return) || []);
+
     fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.data.transactions[0]) });
-    window._upPaths = {};
     window._upPaths = {};
     addLog('Trả hàng', `${mat.name} - SL: ${qty.toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3})} - ${formatMoneyVND(total)}`);
     saveState(); closeModal(); currentReturnAttachmentBase64 = null;
     if (window.render) window.render();
     alert('✅ Đã nhập lại kho!');
 }
+
 
 export function clearExportAttachment() {
     currentExportAttachmentBase64 = null;
@@ -513,6 +516,7 @@ export function clearInvoiceImage() {
     const fi = document.getElementById('purchase-invoice'); if (fi) fi.value = '';
 }
 
+// Export
 export { calculatePurchaseTotal, calculateExportTotal };
 export const importMaterial = savePurchase;
 export const exportMaterial = saveExport;

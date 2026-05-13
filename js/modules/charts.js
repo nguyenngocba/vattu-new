@@ -505,16 +505,27 @@ export function renderDashboard() {
                 <table class="dashboard-table" style="min-width: 800px;">
                     <thead><tr><th>Thời gian</th><th>Loại</th><th>Vật tư</th><th style="text-align:right;">SL</th><th style="text-align:right;">Thành tiền</th><th>Đối tượng</th></tr></thead>
                     <tbody>
-                        ${recentTxns.map(t => {
-                            const mat = state.data.materials.find(m=>m.id===t.mid);
+                                                ${recentTxns.map(t => {
+                            const mat = state.data.materials.find(m=>m.id===t.mid) || (state.data.structures||[]).find(s=>s.id===t.mid);
                             const dt = t.datetime ? new Date(t.datetime).toLocaleString('vi-VN', {hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'}) : t.date;
                             let icon = '📥', label = 'Nhập kho', target = '';
                             if (t.type === 'usage') { icon = '📤'; label = 'Xuất kho'; target = state.data.projects.find(p=>p.id===t.projectId)?.name || ''; }
                             else if (t.type === 'return') { icon = '🔄'; label = 'Trả hàng'; target = state.data.projects.find(p=>p.id===t.projectId)?.name || ''; }
+                            else if (t.type === 'structure_export') { icon = '🏗️'; label = 'Xuất CK'; target = state.data.projects.find(p=>p.id===t.projectId)?.name || ''; }
+                            else if (t.type === 'structure_return') { icon = '🔄'; label = 'Trả CK'; target = state.data.projects.find(p=>p.id===t.projectId)?.name || ''; }
+                            else if (t.type === 'produce') { icon = '🏭'; label = 'Sản xuất'; target = ''; }
+                            else if (t.type === 'transfer_sw') { icon = '📦'; label = 'Chuyển CK'; target = ''; }
+                            else if (t.type === 'return_from_sw') { icon = '🔄'; label = 'Trả CK'; target = ''; }
                             else { target = state.data.suppliers.find(s=>s.id===t.supplierId)?.name || ''; }
+                            
+                            let badgeClass = 'status-good';
+                            if (t.type === 'usage' || t.type === 'structure_export') badgeClass = 'status-warn';
+                            else if (t.type === 'return' || t.type === 'structure_return' || t.type === 'return_from_sw') badgeClass = 'status-danger';
+                            else if (t.type === 'produce') badgeClass = 'status-good';
+                            
                             return `<tr>
                                 <td style="white-space:nowrap;">${dt}</td>
-                                <td><span class="status-badge ${t.type==='purchase'?'status-good':t.type==='usage'?'status-warn':'status-danger'}" style="font-size:11px;">${icon} ${label}</span></td>
+                                <td><span class="status-badge ${badgeClass}" style="font-size:11px;">${icon} ${label}</span></td>
                                 <td>${escapeHtml(mat?.name||'N/A')}</td>
                                 <td style="text-align:right;">${Number(t.qty||0).toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3})} ${mat?.unit||''}</td>
                                 <td style="text-align:right;font-weight:500;">${formatMoneyVND(parseFloat(parseFloat(t.totalAmount)))}</td>

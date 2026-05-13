@@ -197,11 +197,12 @@ window.produceStructure = function(sid) {
     }, 100);
 };
 
-window.confirmProduceStructure = function(sid) {
+window.confirmProduceStructure = async function(sid) {
     var dt = document.getElementById('prod-datetime')?.value || new Date().toISOString();
     var qty = parseFloat(document.getElementById('prod-qty')?.value?.replace(',', '.')) || 0;
     var note = document.getElementById('prod-note')?.value || '';
-    var attachment = JSON.stringify((window._upPaths && window._upPaths.produce) || []);
+    var finalPaths = window.moveUploadedFiles ? await window.moveUploadedFiles('produce') : [];
+    var attachment = JSON.stringify(finalPaths);
     
     if (qty <= 0) { alert('Vui lòng nhập số lượng!'); return; }
     
@@ -467,12 +468,13 @@ window.exportStructure = function(sid) {
         }
     }, 100);
 };
-window.confirmExportStructure = function(sid) {
+window.confirmExportStructure = async function(sid) {
     var pid = document.getElementById('exp-proj')?.value;
     var dt = document.getElementById('exp-datetime')?.value || new Date().toISOString();
     var qty = parseFloat(document.getElementById('exp-qty')?.value?.replace(/\./g,'').replace(',','.')) || 0;
     var note = document.getElementById('exp-note')?.value || '';
-    var attachment = JSON.stringify((window._upPaths && window._upPaths.structure_export) || []);
+    var finalPaths = window.moveUploadedFiles ? await window.moveUploadedFiles('structure_export') : [];
+    var attachment = JSON.stringify(finalPaths);
     
     if (!pid || qty <= 0) return alert('Thiếu thông tin!');
     
@@ -544,15 +546,15 @@ window.returnStructureToWarehouse = function(projectId) {
         var now = new Date();
     var dt = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + 'T' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
     
-    var html = '<div class="modal-hd" style="background:#0891b2;"><span class="modal-title">🏗️ Trả cấu kiện về kho</span><button class="xbtn" onclick="closeModal()">✕</button></div>' +
+        var html = '<div class="modal-hd" style="background:#0891b2;"><span class="modal-title">🏗️ Trả cấu kiện về kho</span><button class="xbtn" onclick="closeModal()">✕</button></div>' +
         '<div class="modal-bd">' +
         '<div class="form-group"><label class="form-label">📅 Thời gian trả</label><input type="datetime-local" id="return-structure-datetime" value="' + dt + '"></div>' +
         '<div class="form-group"><label class="form-label">Cấu kiện</label><select id="return-structure-id">' + opts + '</select></div>' +
         '<div class="form-group"><label class="form-label">Số lượng</label><input type="text" id="return-structure-qty" value="1" dir="ltr"></div>' +
         '<div class="form-group"><label class="form-label">Ghi chú</label><input type="text" id="return-structure-note" placeholder="Lý do trả..."></div>' +
+        '<div class="form-group"><label class="form-label">📎 File đính kèm</label><input type="file" id="return-structure-files" multiple onchange="window.handleMobileFiles(this,\'structure_return\')"><div id="return-structure-file-list" style="margin-top:6px;font-size:11px;color:#7a8099;"></div></div>' +
         '</div>' +
         '<div class="modal-ft"><button onclick="closeModal()">Hủy</button><button class="primary" style="background:#0891b2;" onclick="window.confirmReturnStructure(\'' + projectId + '\')">Xác nhận trả</button></div>';
-    
     showModal(html);
     setTimeout(function() {
         var qtyInput = document.getElementById('return-structure-qty');
@@ -560,7 +562,7 @@ window.returnStructureToWarehouse = function(projectId) {
     }, 100);
 };
 
-window.confirmReturnStructure = function(projectId) {
+window.confirmReturnStructure = async function(projectId) {
     var sid = document.getElementById('return-structure-id')?.value;
     var dt = document.getElementById('return-structure-datetime')?.value || new Date().toISOString();
     var qty = parseFloat(document.getElementById('return-structure-qty')?.value?.replace(',', '.')) || 0;
@@ -569,13 +571,17 @@ window.confirmReturnStructure = function(projectId) {
     if (!sid || qty <= 0) { alert('Vui lòng nhập đầy đủ!'); return; }
     
     var s = (state.data.structures || []).find(function(x) { return x.id === sid; });
+    var finalPaths = window.moveUploadedFiles ? await window.moveUploadedFiles('structure_return') : [];
+    var attachment = JSON.stringify(finalPaths);
+    
     fetch('/api/return-structure', { 
         method: 'POST', headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ structureId: sid, projectId: projectId, qty: qty, note: note, datetime: dt }) 
+        body: JSON.stringify({ structureId: sid, projectId: projectId, qty: qty, note: note, datetime: dt, attachment: attachment }) 
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
         if (d.success) {
+            window._upPaths = {};
             addLog('Trả cấu kiện', (s?.name||sid) + ' - SL: ' + qty + ' ' + (s?.unit||'') + ' - CT: ' + projectId);
             closeModal();
             window.loadState().then(function() { window.render(); });
@@ -590,3 +596,11 @@ function toVNTime(utcStr) {
     d.setHours(d.getHours() + 7); // UTC+7
     return d.toLocaleString('vi-VN', {hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
 }
+// confirmProduceStructure:
+var finalPaths = await window.moveUploadedFiles('produce');
+
+// confirmExportStructure:
+var finalPaths = await window.moveUploadedFiles('structure_export');
+
+// confirmReturnStructure:
+var finalPaths = await window.moveUploadedFiles('structure_return');

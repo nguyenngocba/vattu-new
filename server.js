@@ -151,13 +151,13 @@ app.post('/api/logs', async (req, res) => { const l=req.body; await pool.query('
 // Upload file
 const multer = require('multer');
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => { const dir = '/var/www/steeltrack/uploads/' + (req.params.type||'purchase'); require('fs').mkdirSync(dir, { recursive: true }); cb(null, dir); },
+    destination: (req, file, cb) => { const dir = '/var/www/steeltrack/uploads/temp'; require('fs').mkdirSync(dir, { recursive: true }); cb(null, dir); },
     filename: (req, file, cb) => cb(null, req.params.id + '_' + Date.now() + require('path').extname(file.originalname))
 });
 const upload = multer({ storage, limits: { fileSize: 10*1024*1024 } });
 app.post('/api/upload/:type/:id', upload.single('file'), (req, res) => {
     if (!req.file) return res.json({ success: false });
-    res.json({ success: true, filename: req.file.filename, path: '/uploads/' + req.params.type + '/' + req.file.filename });
+    res.json({ success: true, filename: req.file.filename, path: '/uploads/temp/' + req.file.filename });
 });
 app.use('/uploads', express.static('/var/www/steeltrack/uploads'));
 app.post('/api/project-schedules', async (req, res) => {
@@ -503,7 +503,7 @@ app.get('/api/forecast-structures', async (req, res) => {
 });
 // ========== TRẢ CẤU KIỆN VỀ KHO ==========
 app.post('/api/return-structure', async (req, res) => {
-    const { structureId, projectId, qty, note, datetime } = req.body;
+        const { structureId, projectId, qty, note, datetime, attachment } = req.body;
     try {
         await pool.query('BEGIN');
         const exported = await pool.query(
@@ -525,8 +525,8 @@ app.post('/api/return-structure', async (req, res) => {
         const totalCost = cost * qty;
         const tid = 'tvskh' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(2,14) + '000';
         const dt = datetime || new Date().toISOString();
-        await pool.query('INSERT INTO transactions (id, mid, project_id, type, qty, unit_price, total_amount, note, date, datetime) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
-            [tid, structureId, projectId, 'structure_return', qty, cost, totalCost, note || 'Trả cấu kiện về kho', dt.split('T')[0], dt]);
+        await pool.query('INSERT INTO transactions (id, mid, project_id, type, qty, unit_price, total_amount, note, date, datetime, attachment) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',
+    [tid, structureId, projectId, 'structure_return', qty, cost, totalCost, note || 'Trả cấu kiện về kho', dt.split('T')[0], dt, attachment || '[]']);
         await pool.query('UPDATE projects SET spent = spent - $1 WHERE id=$2', [totalCost, projectId]);
         await pool.query('COMMIT');
         await clearCache();
@@ -537,4 +537,24 @@ app.post('/api/return-structure', async (req, res) => {
     }
 });
 
+// API chuyển file từ temp sang thư mục chính
+app.post('/api/move-file', (req, res) => {
+    const { path: tempPath, type } = req.body;
+    const oldPath = '/var/www/steeltrack' + tempPath;
+    const filename = require('path').basename(tempPath);
+    const newDir = '/var/www/steeltrack/uploads/' + (type || 'purchase');
+    const newPath = newDir + '/' + filename;
+    require('fs').mkdirSync(newDir, { recursive: true });
+    require('fs').rename(oldPath, newPath, (err) => {
+        if (err) return res.json({ success: false });
+        res.json({ success: true, path: '/uploads/' + type + '/' + filename });
+    });
+});
+
+// API xóa file tạm
+app.post('/api/delete-temp', (req, res) => {
+    const tempPath = '/var/www/steeltrack' + req.body.path;
+    require('fs').unlink(tempPath, () => {});
+    res.json({ success: true });
+});
 server.listen(PORT, '0.0.0.0', () => console.log('OK'));

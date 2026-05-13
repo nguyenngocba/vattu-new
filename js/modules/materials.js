@@ -629,7 +629,7 @@ window.addSWRow = function() {
     document.getElementById('sw-items').appendChild(div);
 };
 
-window.confirmTransferSW = function() {
+window.confirmTransferSW = async function() {
     const items = [];
     document.querySelectorAll('.sw-row').forEach(row => {
         const sel = row.querySelector('.sw-mat');
@@ -640,7 +640,9 @@ window.confirmTransferSW = function() {
     });
     if (items.length === 0) return alert('Chưa có vật tư nào!');
     const note = document.getElementById('sw-note')?.value || '';
-    const attachment = JSON.stringify(window._upPaths?.transfer_sw || []);
+    
+    var finalPaths = window.moveUploadedFiles ? await window.moveUploadedFiles('transfer_sw') : [];
+    const attachment = JSON.stringify(finalPaths);
     
     addLog("Chuyển kho CK", items.map(i => `${i.name}: ${i.qty} ${i.unit}`).join(", "));
     fetch('/api/transfer-to-structure-warehouse', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({items, note, attachment}) })

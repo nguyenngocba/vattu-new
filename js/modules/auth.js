@@ -88,7 +88,7 @@ export function renderSidebar() {
             <span>Quản lý kho</span>
         </div>
         <div class="nav-item ${state.currentPane === 'structures' ? 'active' : ''}" onclick="switchPane('structures')">
-            <img src="/images/logo-ct.png" class="nav-icon" style="width:24px;height:24px;">
+            <img src="/images/logo-ck.png" class="nav-icon" style="width:24px;height:24px;">
             <span>Cấu kiện</span>
         </div>
         <div class="nav-item ${state.currentPane === 'projects' ? 'active' : ''}" onclick="switchPane('projects')">
@@ -132,4 +132,20 @@ export function getPaneTitle() {
 
 let currentModalCallback = null;
 export function showModal(html, callback) { currentModalCallback = callback; const modalArea = document.getElementById('modal-area'); if (modalArea) modalArea.innerHTML = `<div class="modal-overlay"><div class="modal">${html}</div></div>`; }
-export function closeModal() { const modalArea = document.getElementById('modal-area'); if (modalArea) modalArea.innerHTML = ''; if (currentModalCallback) currentModalCallback(); currentModalCallback = null; }
+export function closeModal() { 
+    // Xóa file tạm nếu không dùng
+    if (window._upPaths) {
+        Object.values(window._upPaths).forEach(function(paths) {
+            if (Array.isArray(paths)) {
+                paths.forEach(function(p) {
+                    fetch('/api/delete-temp', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({path: p}) });
+                });
+            }
+        });
+    }
+    window._upPaths = {};
+    const modalArea = document.getElementById('modal-area'); 
+    if (modalArea) modalArea.innerHTML = ''; 
+    if (currentModalCallback) currentModalCallback(); 
+    currentModalCallback = null; 
+}

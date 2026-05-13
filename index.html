@@ -45,6 +45,24 @@ window.upFiles = function upFiles(input, type) {
             });
     }
 }
+window.moveUploadedFiles = async function(type) {
+    if (!window._upPaths || !window._upPaths[type]) return [];
+    var finalPaths = [];
+    for (var i = 0; i < window._upPaths[type].length; i++) {
+        try {
+            var res = await fetch('/api/move-file', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ path: window._upPaths[type][i], type: type }) 
+            });
+            var data = await res.json();
+            if (data.success) finalPaths.push(data.path);
+        } catch(e) {
+            console.error('Move file error:', e);
+        }
+    }
+    return finalPaths;
+};
 </script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
