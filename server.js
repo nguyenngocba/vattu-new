@@ -424,20 +424,23 @@ app.get('/api/forecast', async (req, res) => {
         
         console.log('📊 Query returned:', forecast.rows.length, 'rows');
         
-        const result = forecast.rows.map(row => {
-            const avgMonthlyUsage = row.total_exported / 3;
-            const suggestedOrder = Math.max(0, Math.ceil((avgMonthlyUsage * 2) - Number(row.current_stock)));
+                const result = forecast.rows.map(row => {
+            const totalExported = Number(row.total_exported || 0);
+            const currentStock = Number(row.current_stock || 0);
+            const minStock = Number(row.min_stock || 0);
+            const avgMonthlyUsage = totalExported / 3;
+            const suggestedOrder = Math.max(0, Math.ceil((avgMonthlyUsage * 2) - currentStock));
             
             let status = 'ĐỦ';
             let warningLevel = 'good';
             
-            if (Number(row.current_stock) <= Number(row.min_stock)) {
+            if (currentStock <= minStock) {
                 status = 'CẦN NHẬP NGAY';
                 warningLevel = 'danger';
-            } else if (row.total_exported > 0 && Number(row.current_stock) < avgMonthlyUsage) {
+            } else if (totalExported > 0 && currentStock < avgMonthlyUsage) {
                 status = 'SẮP HẾT';
                 warningLevel = 'warning';
-            } else if (row.total_exported === 0) {
+            } else if (totalExported === 0) {
                 status = 'CHƯA XUẤT';
                 warningLevel = 'info';
             }
@@ -446,15 +449,18 @@ app.get('/api/forecast', async (req, res) => {
                 id: row.id,
                 name: row.name,
                 unit: row.unit,
-                current_stock: Number(row.current_stock),
-                min_stock: Number(row.min_stock),
-                total_exported: Number(row.total_exported),
+                current_stock: currentStock,
+                min_stock: minStock,
+                total_exported: totalExported,
                 avg_monthly_usage: Math.ceil(avgMonthlyUsage),
                 suggested_order: suggestedOrder,
                 status: status,
                 warning_level: warningLevel
             };
         });
+
+        res.json({ success: true, data: result });
+
     } catch(e) {
         console.error('❌ Forecast API error:', e);
         res.status(500).json({ success: false, error: e.message });
