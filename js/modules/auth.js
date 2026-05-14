@@ -55,6 +55,7 @@ window.doLogin = async function() {
 
 
 
+
 document.addEventListener('keydown', function(e) { if (e.key === 'Enter' && document.getElementById('login-username')) window.doLogin(); });
 
 export function login(uid) { state.currentUser = state.data.users.find(u => u.id === uid); addLog('Đăng nhập', 'Đăng nhập thành công'); state.currentPane = 'dashboard'; if (window.render) window.render(); }

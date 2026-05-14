@@ -156,19 +156,22 @@ export function renderMobileView() {
                 </div>
             </div>
             
-            <!-- GIAO DỊCH GẦN ĐÂY -->
+                       <!-- GIAO DỊCH GẦN ĐÂY -->
             <div class="m-section">
                 <div class="m-section-title">📋 GIAO DỊCH GẦN ĐÂY</div>
-				<div id="m-txn-list">
-				${renderRecentTxns(transactions, txnPage, txnLimit)}
-				 </div>
-				</div>
+                <div id="m-txn-list">
+                    ${renderRecentTxns(transactions, txnPage, txnLimit)}
+                </div>
             </div>
+
             <!-- MENU POPUP -->
             <div id="m-menu" class="m-menu" style="display:none;" onclick="event.stopPropagation()">
                 <div class="m-menu-item" onclick="logout()">🚪 Đăng xuất</div>
-            </div>            
+            </div>
+
+            <div id="modal-area"></div>
         </div>
+
     `;
 }
 

@@ -37,7 +37,11 @@ function render() {
     const currentUser = getCurrentUser();
     if (!currentUser) { root.innerHTML = renderLogin(); return; }
 // ===== MOBILE: GIAO DIỆN RIÊNG =====
-    if (isMobile) {
+    const currentMode = localStorage.getItem('steeltrack_ui_mode');
+    const shouldUseMobile = currentMode === 'mobile' || (!currentMode && isMobileDevice());
+
+    if (shouldUseMobile) {
+
         import('./modules/mobile_view.js').then(function(m) {
             root.innerHTML = m.renderMobileView();
             m.initMobileEvents();
