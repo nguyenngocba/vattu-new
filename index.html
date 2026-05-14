@@ -20,50 +20,6 @@
 </head>
 <body>
     <div id="root"></div>
-<script>
-window._upPaths = {};
-window.upFiles = function upFiles(input, type) {
-    console.log("upFiles called!", type, input.files.length);
-    if (!window._upPaths[type]) window._upPaths[type] = [];
-    var list = document.getElementById((type==="usage"?"usage":type) + "-file-list");
-    for (var i = 0; i < input.files.length; i++) {
-        var f = input.files[i];
-        var fd = new FormData();
-        fd.append("file", f);
-        var id = (type + "_" + Date.now() + "_" + Math.random().toString(36).substr(2,4));
-        fetch("/api/upload/" + type + "/" + id, { method: "POST", body: fd })
-            .then(function(r) { console.log("Upload status:", r.status); return r.json(); })
-            .then(d => {
-                if (d.success) {
-                    window._upPaths[type].push(d.path);
-    console.log("List element:", list, "Path:", d.path);
-                    if (list) list.innerHTML += "<a href=\"" + d.path + "\" target=\"_blank\" style=\"color:var(--accent);margin-right:6px;\">📎 " + d.filename + "</a> ";
-    console.log("After innerHTML:", list.innerHTML);
-    console.log("After innerHTML:", list.innerHTML);
-    console.log("After innerHTML:", list.innerHTML);
-                }
-            });
-    }
-}
-window.moveUploadedFiles = async function(type) {
-    if (!window._upPaths || !window._upPaths[type]) return [];
-    var finalPaths = [];
-    for (var i = 0; i < window._upPaths[type].length; i++) {
-        try {
-            var res = await fetch('/api/move-file', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ path: window._upPaths[type][i], type: type }) 
-            });
-            var data = await res.json();
-            if (data.success) finalPaths.push(data.path);
-        } catch(e) {
-            console.error('Move file error:', e);
-        }
-    }
-    return finalPaths;
-};
-</script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
   const socket = io();

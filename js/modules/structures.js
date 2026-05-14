@@ -1,25 +1,118 @@
 import { state, saveState, addLog, escapeHtml, showModal, closeModal } from './state.js';
-import { formatMoneyVND, setupNumberInput } from './utils.js';
+import { formatMoneyVND, setupNumberInput, getNumberFromInput } from './utils.js';
 
 let structureListContainer = null;
+const STRUCTURE_PAGE_SIZES = [10, 50, 100, 200];
+
+window.structurePaging = window.structurePaging || {
+    structures: { page: 1, size: 10 },
+    sw: { page: 1, size: 10 }
+};
+
+function getStructurePaging(key) {
+    if (!window.structurePaging[key]) {
+        window.structurePaging[key] = { page: 1, size: 10 };
+    }
+    return window.structurePaging[key];
+}
+
+function getStructurePage(key, rows) {
+    const paging = getStructurePaging(key);
+    const size = Number(paging.size) || 10;
+    const totalItems = rows.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / size));
+    const page = Math.min(Math.max(1, Number(paging.page) || 1), totalPages);
+    paging.page = page;
+
+    const start = (page - 1) * size;
+    return {
+        rows: rows.slice(start, start + size),
+        page,
+        size,
+        totalItems,
+        totalPages
+    };
+}
+
+function renderStructurePageSize(key, pageData) {
+    return `
+        <div style="display:flex;align-items:center;gap:8px;">
+            <span class="metric-sub">Hiển thị:</span>
+            <select onchange="window.setStructurePageSize('${key}', this.value)" style="width:80px;">
+                ${STRUCTURE_PAGE_SIZES.map(size => `<option value="${size}" ${pageData.size === size ? 'selected' : ''}>${size}</option>`).join('')}
+            </select>
+        </div>
+    `;
+}
+
+
+function renderStructurePager(key, pageData, label) {
+    return `
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-top:12px;padding:8px 0;">
+            <div style="text-align:left;">
+                <button class="sm" onclick="window.setStructurePage('${key}', ${pageData.page - 1})" ${pageData.page <= 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>◀ Trang trước</button>
+            </div>
+            <span class="metric-sub" style="text-align:center;">Trang ${pageData.page} / ${pageData.totalPages} (${pageData.totalItems} ${label})</span>
+            <div style="text-align:right;">
+                <button class="sm" onclick="window.setStructurePage('${key}', ${pageData.page + 1})" ${pageData.page >= pageData.totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>Trang sau ▶</button>
+            </div>
+        </div>
+    `;
+}
+
+window.setStructurePageSize = function(key, size) {
+    const paging = getStructurePaging(key);
+    paging.size = Number(size) || 10;
+    paging.page = 1;
+
+    if (key.startsWith('sw_detail_')) {
+        window.showSWDetail(key.replace('sw_detail_', ''));
+    } else if (key.startsWith('structure_detail_')) {
+        window.showStructureDetail(key.replace('structure_detail_', ''));
+    } else if (window.render) {
+        window.render();
+    }
+};
+
+window.setStructurePage = function(key, page) {
+    const paging = getStructurePaging(key);
+    paging.page = Number(page) || 1;
+
+    if (key.startsWith('sw_detail_')) {
+        window.showSWDetail(key.replace('sw_detail_', ''));
+    } else if (key.startsWith('structure_detail_')) {
+        window.showStructureDetail(key.replace('structure_detail_', ''));
+    } else if (window.render) {
+        window.render();
+    }
+};
+
+
 
 export function renderStructures() {
     const structures = state.data.structures || [];
-    
+    const structurePage = getStructurePage('structures', structures);
+    const displayStructures = structurePage.rows;
+
     let html = `<div class="card">
-        <div class="sec-title" style="display:flex;justify-content:space-between;">
-            <span>🏗️ DANH SÁCH CẤU KIỆN</span>
-            <button class="sm primary" onclick="window.openStructureModal()">+ Thêm cấu kiện</button>
-        </div>
+        <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+    <span>🏗️ DANH SÁCH CẤU KIỆN</span>
+    <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+        ${renderStructurePageSize('structures', structurePage)}
+        <button class="sm primary" onclick="window.openStructureModal()">+ Thêm cấu kiện</button>
+    </div>
+</div>
+
         <div class="tbl-wrap">
             <table style="min-width:600px;">
                 <thead><tr><th>Tên cấu kiện</th><th style="text-align:right;">Tồn kho</th><th>ĐVT</th><th style="text-align:right;">Đơn giá</th><th style="text-align:right;">Tổng giá trị</th><th>Thao tác</th></tr></thead>
                 <tbody>`;
     
-    if (structures.length === 0) {
-        html += '<tr><td colspan="5" style="text-align:center;">📭 Chưa có cấu kiện nào</td></tr>';
+    if (displayStructures.length === 0) {
+        html += '<tr><td colspan="6" style="text-align:center;">📭 Chưa có cấu kiện nào</td></tr>';
+
     } else {
-        structures.forEach(s => {
+        displayStructures.forEach(s => {
             html += `<tr>
                 <td><strong style="cursor:pointer;color:var(--accent);" onclick="window.showStructureDetail('${s.id}')">${escapeHtml(s.name)}</strong></td>
                 <td style="text-align:right;">${Number(s.qty||0).toLocaleString('vi-VN')} ${s.unit}</td>
@@ -36,21 +129,66 @@ export function renderStructures() {
         });
     }
     
-    html += `</tbody></table></div></div>`;
-    html += '<div class="card" style="margin-top:16px;"><div class="sec-title" style="display:flex;justify-content:space-between;"><span>📦 KHO CẤU KIỆN</span><button class="sm" onclick="window.openTransferToSW()">+ Nhập từ kho chính</button></div><div class="tbl-wrap"><table style="min-width:650px;"><thead><tr><th>STT</th><th>Tên vật tư</th><th>Loại</th><th style="text-align:right;">Tồn CK</th><th>ĐVT</th><th style="text-align:right;">Tồn kho chính</th><th>TT</th><th>Thao tác</th></tr></thead><tbody id="sw-table-body"><tr><td colspan="8">Đang tải...</td></tr></tbody></table></div></div>';
+    html += `</tbody></table></div>
+    ${renderStructurePager('structures', structurePage, 'cấu kiện')}
+</div>`;
+
+html += `
+<div class="card" style="margin-top:16px;">
+
+    <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+        <span>📦 KHO CẤU KIỆN</span>
+        <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+            <div id="sw-page-size-holder"></div>
+            <button class="sm" onclick="window.openTransferToSW()">+ Nhập từ kho chính</button>
+        </div>
+    </div>
+    <div class="tbl-wrap">
+        <table style="min-width:650px;">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Tên vật tư</th>
+                    <th>Loại</th>
+                    <th style="text-align:right;">Tồn CK</th>
+                    <th>ĐVT</th>
+                    <th style="text-align:right;">Tồn kho chính</th>
+                    <th>TT</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="sw-table-body">
+                <tr><td colspan="8">Đang tải...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="sw-pager-holder"></div>
+</div>`;
+
     
     setTimeout(function(){
         fetch('/api/structure-warehouse').then(r=>r.json()).then(d=>{
             var tb = document.getElementById('sw-table-body');
             if(tb && d.success) {
-                tb.innerHTML = d.data.length === 0 ? '<tr><td colspan="8">Kho rỗng</td></tr>' : d.data.map(function(m,i){
+    var rows = d.data || [];
+    var swPage = getStructurePage('sw', rows);
+    var swRows = swPage.rows;
+    var pageSizeHolder = document.getElementById('sw-page-size-holder');
+    var pagerHolder = document.getElementById('sw-pager-holder');
+
+    if (pageSizeHolder) pageSizeHolder.innerHTML = renderStructurePageSize('sw', swPage);
+    if (pagerHolder) pagerHolder.innerHTML = renderStructurePager('sw', swPage, 'vật tư');
+
+    tb.innerHTML = swRows.length === 0 ? '<tr><td colspan="8">Kho rỗng</td></tr>' : swRows.map(function(m,i){
+        var index = ((swPage.page - 1) * swPage.size) + i + 1;
+
                     var cat = (state.data.materials.find(x=>x.id===m.material_id)||{}).cat||'—';
                     var mainQty = (state.data.materials.find(x=>x.id===m.material_id)||{}).qty||0;
                     var sc = Number(m.qty)<=5?'b-low':'b-ok';
                     var st = Number(m.qty)<=5?'⚠️':'✅';
-                    var name = m.material_name.replace(/ \\(Tồn:.*\\)/,'');
+                    var name = String(m.material_name || '').replace(/\s*\(Tồn:.*\)$/,'');
                     return `<tr>
-                        <td>${i+1}</td>
+                        <td>${index}</td>
                         <td><strong style="cursor:pointer;color:var(--accent);" onclick="showSWDetail('${m.material_id}')">${name}</strong></td>
                         <td>${cat}</td>
                         <td style="text-align:right;">${Number(m.qty).toLocaleString('vi-VN')} ${m.unit}</td>
@@ -199,7 +337,7 @@ window.produceStructure = function(sid) {
 
 window.confirmProduceStructure = async function(sid) {
     var dt = document.getElementById('prod-datetime')?.value || new Date().toISOString();
-    var qty = parseFloat(document.getElementById('prod-qty')?.value?.replace(',', '.')) || 0;
+    var qty = getNumberFromInput(document.getElementById('prod-qty'));
     var note = document.getElementById('prod-note')?.value || '';
     var finalPaths = window.moveUploadedFiles ? await window.moveUploadedFiles('produce') : [];
     var attachment = JSON.stringify(finalPaths);
@@ -228,84 +366,121 @@ window.confirmProduceStructure = async function(sid) {
 window.showSWDetail = function(mid) {
     fetch('/api/sw-logs/' + mid).then(r=>r.json()).then(d=>{
         if(!d.success || d.data.length===0) { alert('Chưa có lịch sử chuyển kho!'); return; }
-        var item = d.data[0];
-        var html = '<div class="modal-hd"><span class="modal-title">📦 Chi tiết Kho CK: '+item.material_name+'</span><button class="xbtn" onclick="closeModal()">✕</button></div>';
-        html += '<div class="modal-bd"><div class="tbl-wrap"><table style="min-width:700px;"><thead><tr><th>Thời gian</th><th style="text-align:center;">Loại</th><th style="text-align:right;">SL</th><th>ĐVT</th><th style="text-align:right;">Đơn giá</th><th>Ghi chú</th><th>File</th></tr></thead><tbody>';
-        d.data.forEach(function(l){
+
+        var rows = d.data || [];
+        var detailKey = 'sw_detail_' + mid;
+        var detailPage = getStructurePage(detailKey, rows);
+        var displayRows = detailPage.rows;
+        var item = rows[0];
+
+        var html = '<div class="modal-hd"><span class="modal-title">📦 Chi tiết Kho CK: '+escapeHtml(item.material_name || '')+'</span><button class="xbtn" onclick="closeModal()">✕</button></div>';
+
+        html += '<div class="modal-bd" style="max-height:70vh;overflow-y:auto;">';
+        html += '<div class="sec-title" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
+            '<span>📜 LỊCH SỬ CHUYỂN / TRẢ KHO CK</span>' +
+            renderStructurePageSize(detailKey, detailPage) +
+            '</div>';
+
+        html += '<div class="tbl-wrap"><table style="min-width:700px;"><thead><tr><th>Thời gian</th><th style="text-align:center;">Loại</th><th style="text-align:right;">SL</th><th>ĐVT</th><th style="text-align:right;">Đơn giá</th><th>Ghi chú</th><th>File</th></tr></thead><tbody>';
+
+        displayRows.forEach(function(l){
             var dt = new Date(l.created_at).toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'});
             var files = '';
-            try { var att = JSON.parse(l.attachment||'[]'); att.forEach(function(f){ files += '<a href="'+f+'" target="_blank">📎</a> '; }); } catch(e){}
+            try {
+                var att = JSON.parse(l.attachment || '[]');
+                att.forEach(function(f){ files += '<a href="'+f+'" target="_blank">📎</a> '; });
+            } catch(e){}
+
             var typeIcon = l.type === 'return_to_main' ? '🔄 Trả lại kho chính' : '📦 Chuyển sang kho CK';
             var typeColor = l.type === 'return_to_main' ? 'color: var(--success-text);' : 'color: var(--accent);';
             var absQty = Math.abs(Number(l.qty));
             var qtyDisplay = absQty.toLocaleString('vi-VN');
             var qtySign = l.type === 'return_to_main' ? '-' : '+';
             var qtyColor = l.type === 'return_to_main' ? 'color: var(--success-text);' : 'color: var(--accent);';
+
             html += '<tr>' +
                 '<td style="white-space:nowrap;">'+dt+'</td>' +
                 '<td style="text-align:center; '+typeColor+' font-weight:bold;">'+typeIcon+'</td>' +
-                '<td style="text-align:right; '+qtyColor+' font-weight:bold;">'+qtySign+qtyDisplay+' '+l.unit+'</td>' +
-                '<td>'+l.unit+'</td>' +
+                '<td style="text-align:right; '+qtyColor+' font-weight:bold;">'+qtySign+qtyDisplay+' '+escapeHtml(l.unit || '')+'</td>' +
+                '<td>'+escapeHtml(l.unit || '')+'</td>' +
                 '<td style="text-align:right;">'+Number(l.cost||0).toLocaleString('vi-VN')+' ₫</td>' +
-                '<td>'+ (l.note||'—') +'</td>' +
+                '<td>'+escapeHtml(l.note || '—')+'</td>' +
                 '<td style="text-align:center;">'+(files||'—')+'</td>' +
                 '</tr>';
         });
-        html += '</tbody></table></div></div><div class="modal-ft"><button onclick="closeModal()">Đóng</button></div>';
+
+        html += '</tbody></table></div>';
+        html += renderStructurePager(detailKey, detailPage, 'giao dịch');
+        html += '</div><div class="modal-ft"><button onclick="closeModal()">Đóng</button></div>';
+
         showModal(html);
     });
 };
 
+
 window.returnToMainWarehouse = function(mid) {
     const material = state.data.materials.find(m => m.id === mid);
     if (!material) return alert('Không tìm thấy vật tư!');
-    
+
     fetch('/api/structure-warehouse')
         .then(r => r.json())
         .then(swData => {
             const swItem = swData.data.find(w => w.material_id === mid);
-            const maxQty = swItem ? parseFloat(swItem.qty) : 0;
-            if (maxQty <= 0) {
-                alert('Kho CK không còn vật tư này để trả!');
-                return;
-            }
-            
-            const qty = prompt(`Số lượng trả lại kho chính (tối đa ${maxQty.toLocaleString('vi-VN')} ${material.unit}):`);
-            if (!qty || isNaN(qty) || parseFloat(qty) <= 0) return;
-            if (parseFloat(qty) > maxQty) {
-                alert(`Không thể trả quá ${maxQty} ${material.unit}!`);
-                return;
-            }
-            
-            const note = prompt('Ghi chú (không bắt buộc):', 'Trả lại kho chính');
-            const qtyNum = parseFloat(qty);
-            
-            fetch('/api/return-from-sw', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ 
-                    material_id: mid, 
-                    qty: qtyNum,
-                    note: note || 'Trả lại kho chính'
-                }) 
-            })
-            .then(r => r.json())
-            .then(d => {
-                if (d.success) {
-                    // 🔥 GHI LOG ĐẦY ĐỦ SỐ LƯỢNG SAU KHI TRẢ THÀNH CÔNG 🔥
-                    addLog("Trả lại kho chính", `${material.name} - SL: ${qtyNum.toLocaleString('vi-VN')} ${material.unit}`);
-                    alert('✅ Đã trả lại kho chính!');
-                    window.loadState().then(() => window.render());
-                } else {
-                    alert('❌ ' + d.error);
-                }
-            });
-        })
-        .catch(err => {
-            console.error('Lỗi lấy thông tin kho CK:', err);
-            alert('Có lỗi xảy ra, vui lòng thử lại!');
+            const maxQty = swItem ? Number(swItem.qty) : 0;
+            if (maxQty <= 0) return alert('Kho CK không còn vật tư này để trả!');
+
+            const now = new Date();
+            const dt = now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0') + 'T' +
+                String(now.getHours()).padStart(2, '0') + ':' +
+                String(now.getMinutes()).padStart(2, '0');
+
+            showModal(`
+                <div class="modal-hd"><span class="modal-title">🔄 Trả vật tư về kho chính</span><button class="xbtn" onclick="closeModal()">✕</button></div>
+                <div class="modal-bd">
+                    <div class="form-group"><label class="form-label">📅 Thời gian trả</label><input type="datetime-local" id="sw-return-datetime" value="${dt}"></div>
+                    <div class="form-group"><label class="form-label">Vật tư</label><input value="${escapeHtml(material.name)} (Tối đa: ${maxQty.toLocaleString('vi-VN')} ${material.unit})" disabled></div>
+                    <div class="form-group"><label class="form-label">Số lượng trả</label><input type="text" id="sw-return-qty" value="1" dir="ltr"></div>
+                    <div class="form-group"><label class="form-label">Ghi chú</label><input id="sw-return-note" value="Trả lại kho chính"></div>
+                </div>
+                <div class="modal-ft"><button onclick="closeModal()">Hủy</button><button class="primary" onclick="window.confirmReturnToMainWarehouse('${mid}', ${maxQty})">Xác nhận trả</button></div>
+            `);
+
+            setTimeout(function() {
+                const qtyInput = document.getElementById('sw-return-qty');
+                if (qtyInput) setupNumberInput(qtyInput, { isInteger: false, decimals: null });
+            }, 100);
         });
 };
+
+window.confirmReturnToMainWarehouse = function(mid, maxQty) {
+    const material = state.data.materials.find(m => m.id === mid);
+    const qty = getNumberFromInput(document.getElementById('sw-return-qty'));
+    const datetime = document.getElementById('sw-return-datetime')?.value || new Date().toISOString();
+    const note = document.getElementById('sw-return-note')?.value || 'Trả lại kho chính';
+
+    if (!qty || qty <= 0) return alert('Vui lòng nhập số lượng hợp lệ!');
+    if (qty > maxQty) return alert(`Không thể trả quá ${maxQty.toLocaleString('vi-VN')} ${material?.unit || ''}!`);
+
+    fetch('/api/return-from-sw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ material_id: mid, qty, datetime, note })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            addLog("Trả lại kho chính", `${material?.name || mid} - SL: ${qty.toLocaleString('vi-VN')} ${material?.unit || ''}`);
+            alert('✅ Đã trả lại kho chính!');
+            closeModal();
+            window.loadState().then(() => window.render());
+        } else {
+            alert('❌ ' + d.error);
+        }
+    });
+};
+
 window.deleteStructure = function(sid) {
     const s = (state.data.structures||[]).find(x => x.id === sid);
     if (!confirm(`Xóa cấu kiện "${s?.name}"?`)) return;
@@ -320,15 +495,14 @@ window.showStructureDetail = function(sid) {
     const s = (state.data.structures||[]).find(x => x.id === sid);
     if (!s) return;
     
-    // Lấy lịch sử sản xuất
     const produceTxns = state.data.transactions
         .filter(t => t.mid === sid && t.type === 'produce')
         .sort((a,b) => new Date(b.datetime||b.date) - new Date(a.datetime||a.date));
     
-    // Lấy lịch sử xuất cấu kiện ra công trình
     const exportTxns = state.data.transactions
         .filter(t => t.mid === sid && t.type === 'structure_export')
         .sort((a,b) => new Date(b.datetime||b.date) - new Date(a.datetime||a.date));
+
     const returnTxns = state.data.transactions
         .filter(t => t.mid === sid && t.type === 'structure_return')
         .sort((a,b) => new Date(b.datetime||b.date) - new Date(a.datetime||a.date));        
@@ -338,26 +512,45 @@ window.showStructureDetail = function(sid) {
     const totalReturned = returnTxns.reduce((sum, t) => sum + Number(t.qty||0), 0);
     const currentStock = Number(s.qty || 0);
     
-    // Kết hợp cả 2 loại lịch sử
     const allHistory = [
         ...produceTxns.map(t => ({ ...t, historyType: 'produce' })), 
         ...exportTxns.map(t => ({ ...t, historyType: 'export' })),
         ...returnTxns.map(t => ({ ...t, historyType: 'return' }))
-    ]
-        .sort((a,b) => new Date(b.datetime||b.date) - new Date(a.datetime||a.date));
+    ].sort((a,b) => new Date(b.datetime||b.date) - new Date(a.datetime||a.date));
+    const detailKey = 'structure_detail_' + sid;
+    const historyPage = getStructurePage(detailKey, allHistory);
+    const displayHistory = historyPage.rows;
+
     
     let historyHtml = '';
-    if (allHistory.length > 0) {
-        historyHtml = allHistory.map(t => {
+    if (displayHistory.length > 0) {
+        historyHtml = displayHistory.map(t => {
             const isProduce = t.historyType === 'produce';
             const isReturn = t.historyType === 'return';
+
             var dt = t.date || '';
             if (t.datetime) {
-               var d = new Date(t.datetime);
-                d.setHours(d.getHours()); // UTC -> GMT+7
-                dt = d.toLocaleString('vi-VN', {hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
+                var d = new Date(t.datetime);
+                dt = d.toLocaleString('vi-VN', {
+                    hour:'2-digit',
+                    minute:'2-digit',
+                    second:'2-digit',
+                    day:'2-digit',
+                    month:'2-digit',
+                    year:'numeric'
+                });
             }
+
             const projectName = !isProduce ? (state.data.projects.find(p => p.id === t.projectId)?.name || 'N/A') : '';
+
+            let files = '—';
+            try {
+                const att = JSON.parse(t.attachment || '[]');
+                if (Array.isArray(att) && att.length > 0) {
+                    files = att.map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ');
+                }
+            } catch (e) {}
+
             return `<tr>
                 <td style="white-space:nowrap;">${dt}</td>
                 <td style="text-align:center; ${isProduce ? 'color:var(--accent);' : isReturn ? 'color:var(--success-text);' : 'color:var(--warn-text);'} font-weight:bold;">
@@ -366,10 +559,11 @@ window.showStructureDetail = function(sid) {
                 <td style="text-align:center;">${!isProduce ? escapeHtml(projectName) : '—'}</td>
                 <td style="text-align:right;">${Number(t.qty||0).toLocaleString('vi-VN')} ${s.unit}</td>
                 <td style="text-align:left;">${escapeHtml(t.note || '—')}</td>
+                <td style="text-align:center;">${files}</td>
             </tr>`;
         }).join('');
     } else {
-        historyHtml = '<tr><td colspan="5" style="text-align:center;">📭 Chưa có lịch sử</td></tr>';
+        historyHtml = '<tr><td colspan="6" style="text-align:center;">📭 Chưa có lịch sử</td></tr>';
     }
     
     let html = `<div class="modal-hd" style="background:var(--accent-bg);">
@@ -378,29 +572,11 @@ window.showStructureDetail = function(sid) {
     </div>
     <div class="modal-bd" style="max-height:70vh;overflow-y:auto;">
         <div class="grid4" style="margin-bottom:20px;">
-            <div class="metric-card">
-                <div class="metric-label">📦 TỒN KHO</div>
-                <div class="metric-val" style="font-size:18px;">${currentStock.toLocaleString('vi-VN')} ${s.unit}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">💰 ĐƠN GIÁ</div>
-                <div class="metric-val" style="font-size:18px;">${formatMoneyVND(s.cost)}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">🏭 ĐÃ SẢN XUẤT</div>
-                <div class="metric-val" style="font-size:18px;color:var(--accent);">${totalProduced.toLocaleString('vi-VN')} ${s.unit}</div>
-                <div class="metric-sub">${produceTxns.length} lần sản xuất</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">📤 ĐÃ XUẤT CT</div>
-                <div class="metric-val" style="font-size:18px;color:var(--warn-text);">${totalExported.toLocaleString('vi-VN')} ${s.unit}</div>
-                <div class="metric-sub">${exportTxns.length} lần xuất</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">🔄 ĐÃ TRẢ</div>
-                <div class="metric-val" style="font-size:18px;color:var(--success-text);">${totalReturned.toLocaleString('vi-VN')} ${s.unit}</div>
-                <div class="metric-sub">${returnTxns.length} lần trả</div>
-            </div>            
+            <div class="metric-card"><div class="metric-label">📦 TỒN KHO</div><div class="metric-val" style="font-size:18px;">${currentStock.toLocaleString('vi-VN')} ${s.unit}</div></div>
+            <div class="metric-card"><div class="metric-label">💰 ĐƠN GIÁ</div><div class="metric-val" style="font-size:18px;">${formatMoneyVND(s.cost)}</div></div>
+            <div class="metric-card"><div class="metric-label">🏭 ĐÃ SẢN XUẤT</div><div class="metric-val" style="font-size:18px;color:var(--accent);">${totalProduced.toLocaleString('vi-VN')} ${s.unit}</div><div class="metric-sub">${produceTxns.length} lần sản xuất</div></div>
+            <div class="metric-card"><div class="metric-label">📤 ĐÃ XUẤT CT</div><div class="metric-val" style="font-size:18px;color:var(--warn-text);">${totalExported.toLocaleString('vi-VN')} ${s.unit}</div><div class="metric-sub">${exportTxns.length} lần xuất</div></div>
+            <div class="metric-card"><div class="metric-label">🔄 ĐÃ TRẢ</div><div class="metric-val" style="font-size:18px;color:var(--success-text);">${totalReturned.toLocaleString('vi-VN')} ${s.unit}</div><div class="metric-sub">${returnTxns.length} lần trả</div></div>
         </div>
         
         <div class="sec-title">📦 THÀNH PHẦN (BOM)</div>
@@ -410,9 +586,13 @@ window.showStructureDetail = function(sid) {
             </table>
         </div>
         
-        <div class="sec-title">📜 LỊCH SỬ (${allHistory.length} giao dịch)</div>
+        <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+    <span>📜 LỊCH SỬ (${allHistory.length} giao dịch)</span>
+    ${renderStructurePageSize(detailKey, historyPage)}
+</div>
+
         <div class="tbl-wrap">
-            <table style="min-width:600px;">
+            <table style="min-width:700px;">
                 <thead>
                     <tr>
                         <th style="text-align:left;">Thời gian</th>
@@ -420,13 +600,14 @@ window.showStructureDetail = function(sid) {
                         <th style="text-align:center;">Công trình</th>
                         <th style="text-align:right;">Số lượng</th>
                         <th style="text-align:left;">Ghi chú</th>
+                        <th style="text-align:center;">File</th>
                     </tr>
                 </thead>
-                <tbody>
-                    ${historyHtml}
-                </tbody>
+                <tbody>${historyHtml}</tbody>
             </table>
         </div>
+        ${renderStructurePager(detailKey, historyPage, 'giao dịch')}
+
     </div>
     <div class="modal-ft">
         <button onclick="closeModal()">Đóng</button>
@@ -436,6 +617,7 @@ window.showStructureDetail = function(sid) {
     
     showModal(html, null);
 };
+
 window.exportStructure = function(sid) {
     const s = (state.data.structures||[]).find(x => x.id === sid);
     addLog("Mở modal xuất cấu kiện", `${s?.name} - Tồn: ${s?.qty} ${s?.unit}`);
@@ -458,20 +640,17 @@ window.exportStructure = function(sid) {
         </div>
         <div class="modal-ft"><button onclick="closeModal()">Hủy</button><button class="primary" onclick="window.confirmExportStructure('${sid}')">Xác nhận xuất</button></div>
     `);
-    setTimeout(function(){
+        setTimeout(function(){
         var qtyInput = document.getElementById('exp-qty');
-        if (qtyInput) {
-            qtyInput.addEventListener('input', function(){
-                var v = this.value.replace(/[^\d,]/g, '');
-                this.value = v;
-            });
-        }
-    }, 100);
+        if (qtyInput) setupNumberInput(qtyInput, { isInteger: false, decimals: null });
+        }, 100);
+
+
 };
 window.confirmExportStructure = async function(sid) {
     var pid = document.getElementById('exp-proj')?.value;
     var dt = document.getElementById('exp-datetime')?.value || new Date().toISOString();
-    var qty = parseFloat(document.getElementById('exp-qty')?.value?.replace(/\./g,'').replace(',','.')) || 0;
+    var qty = getNumberFromInput(document.getElementById('exp-qty'));
     var note = document.getElementById('exp-note')?.value || '';
     var finalPaths = window.moveUploadedFiles ? await window.moveUploadedFiles('structure_export') : [];
     var attachment = JSON.stringify(finalPaths);
@@ -565,7 +744,7 @@ window.returnStructureToWarehouse = function(projectId) {
 window.confirmReturnStructure = async function(projectId) {
     var sid = document.getElementById('return-structure-id')?.value;
     var dt = document.getElementById('return-structure-datetime')?.value || new Date().toISOString();
-    var qty = parseFloat(document.getElementById('return-structure-qty')?.value?.replace(',', '.')) || 0;
+    var qty = getNumberFromInput(document.getElementById('return-structure-qty'));
     var note = document.getElementById('return-structure-note')?.value || '';
     
     if (!sid || qty <= 0) { alert('Vui lòng nhập đầy đủ!'); return; }
@@ -596,11 +775,3 @@ function toVNTime(utcStr) {
     d.setHours(d.getHours() + 7); // UTC+7
     return d.toLocaleString('vi-VN', {hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
 }
-// confirmProduceStructure:
-var finalPaths = await window.moveUploadedFiles('produce');
-
-// confirmExportStructure:
-var finalPaths = await window.moveUploadedFiles('structure_export');
-
-// confirmReturnStructure:
-var finalPaths = await window.moveUploadedFiles('structure_return');

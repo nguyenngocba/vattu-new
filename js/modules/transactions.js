@@ -139,7 +139,6 @@ export function openPurchaseModalWithSupplier(supplierId) {
         const priceInput = document.getElementById('purchase-price'); if (priceInput) { setupNumberInput(priceInput, { isInteger: false, decimals: 2 }); priceInput.addEventListener('change', calculatePurchaseTotal); }
         const vatInput = document.getElementById('purchase-vat');
         const midSelect = document.getElementById('purchase-mid');
-        const fileInput = document.getElementById('purchase-invoice');
 
         if (qtyInput) { setupNumberInput(qtyInput, { isInteger: false, decimals: 3 }); qtyInput.addEventListener('change', calculatePurchaseTotal); }
         if (priceInput) { setupNumberInput(priceInput, { isInteger: false, decimals: 2 }); priceInput.addEventListener('change', calculatePurchaseTotal); }
@@ -237,23 +236,16 @@ export async function savePurchaseWithSupplier(supplierId) {
     mat.qty = parseFloat(mat.qty||0) + parseFloat(qty||0);
     if (mat.qty > 0) mat.cost = Math.round((oldValue + totalAmount) / mat.qty);
 
-    state.data.transactions.unshift({
-
-        id: genTid(), mid, supplierId, date: dt.split('T')[0], datetime: dt,
-        type: 'purchase', qty, unitPrice, vatRate, subtotal, vatAmount, totalAmount,
-        note, invoiceImage: currentInvoiceBase64 || null
-    });
-
     var finalPaths = window.moveUploadedFiles ? await window.moveUploadedFiles('purchase') : [];
 
-    state.data.transactions.unshift({
-        id: genTid(), mid, supplierId, date: dt.split('T')[0], datetime: dt,
-        type: 'purchase', qty, unitPrice, vatRate, subtotal, vatAmount, totalAmount,
-        note, invoiceImage: currentInvoiceBase64 || null,
-        attachment: JSON.stringify(finalPaths)
-    });
+state.data.transactions.unshift({
+    id: genTid(), mid, supplierId, date: dt.split('T')[0], datetime: dt,
+    type: 'purchase', qty, unitPrice, vatRate, subtotal, vatAmount, totalAmount,
+    note, invoiceImage: currentInvoiceBase64 || null,
+    attachment: JSON.stringify(finalPaths)
+});
+
     fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.data.transactions[0]) });
-    window._upPaths = {};
     window._upPaths = {};
     addLog('Nhập kho', `${mat.name} - SL: ${qty.toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3})} - ${formatMoneyVND(totalAmount)}`);
     saveState(); closeModal(); currentInvoiceBase64 = null;

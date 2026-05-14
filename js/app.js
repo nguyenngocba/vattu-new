@@ -1,4 +1,5 @@
 // Detect mobile device
+import './modules/uploads.js';
 import { isMobileDevice } from './modules/mobile_view.js';
 // Check mobile: ưu tiên lựa chọn của user, sau đó mới detect thiết bị
 var savedMode = localStorage.getItem('steeltrack_ui_mode');

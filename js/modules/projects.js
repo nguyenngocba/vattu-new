@@ -1,6 +1,82 @@
 import { state, saveState, addLog, formatMoney, escapeHtml, showModal, closeModal, genPid, projectById, hasPermission } from './state.js';
 import { handleIntegerInput, formatMoneyVND, setupNumberInput, parseNumber } from './utils.js';
 import { getProjectSchedule, renderScheduleView, updateScheduleInfo, saveScheduleInfo, addTask, updateTask, deleteTask, assignMaterialToTask, removeMaterialFromTask, openTaskDetailModal } from './schedule.js';
+const PROJECT_HISTORY_PAGE_SIZES = [10, 50, 100, 200];
+
+window.projectHistoryPaging = window.projectHistoryPaging || {};
+
+function getProjectHistoryPaging(projectId) {
+    if (!window.projectHistoryPaging[projectId]) {
+        window.projectHistoryPaging[projectId] = { page: 1, size: 10 };
+    }
+    return window.projectHistoryPaging[projectId];
+}
+
+function renderProjectHistoryPageSize(projectId, pageData) {
+    return `
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+            <span class="metric-sub">Hiển thị:</span>
+            <select onchange="window.setProjectHistoryPageSize('${projectId}', this.value)" style="width:80px;">
+                ${PROJECT_HISTORY_PAGE_SIZES.map(size => `<option value="${size}" ${pageData.size === size ? 'selected' : ''}>${size}</option>`).join('')}
+            </select>
+        </div>
+    `;
+}
+
+function renderProjectHistoryPager(projectId, pageData) {
+    return `
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-top:12px;padding:8px 0;">
+            <div style="text-align:left;">
+                <button class="sm" onclick="window.setProjectHistoryPage('${projectId}', ${pageData.page - 1})" ${pageData.page <= 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>◀ Trang trước</button>
+            </div>
+            <span class="metric-sub" style="text-align:center;">Trang ${pageData.page} / ${pageData.totalPages} (${pageData.totalItems} giao dịch)</span>
+            <div style="text-align:right;">
+                <button class="sm" onclick="window.setProjectHistoryPage('${projectId}', ${pageData.page + 1})" ${pageData.page >= pageData.totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>Trang sau ▶</button>
+            </div>
+        </div>
+    `;
+}
+
+function getProjectHistoryPage(projectId, rows) {
+    const paging = getProjectHistoryPaging(projectId);
+    const size = Number(paging.size) || 10;
+    const totalItems = rows.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / size));
+    const page = Math.min(Math.max(1, Number(paging.page) || 1), totalPages);
+    paging.page = page;
+
+    const start = (page - 1) * size;
+    return {
+        rows: rows.slice(start, start + size),
+        page,
+        size,
+        totalItems,
+        totalPages
+    };
+}
+
+window.setProjectHistoryPageSize = function(projectId, size) {
+    const paging = getProjectHistoryPaging(projectId);
+    paging.size = Number(size) || 10;
+    paging.page = 1;
+    if (projectId === 'all') {
+        if (window.render) window.render();
+    } else {
+        window.showProjectDetail(projectId);
+    }
+};
+
+window.setProjectHistoryPage = function(projectId, page) {
+    const paging = getProjectHistoryPaging(projectId);
+    paging.page = Number(page) || 1;
+    if (projectId === 'all') {
+        if (window.render) window.render();
+    } else {
+        window.showProjectDetail(projectId);
+    }
+};
+
+
 
 let projectFilters = { keyword: '', budgetMin: '', budgetMax: '', status: '' };
 let projectListContainer = null;
@@ -95,14 +171,16 @@ function getMaterialUsageDetails(projectId) {
     });
     return Array.from(materialMap.values());
 }
-
-function renderProjectHistory() {
-    const transactions = state.data.transactions
+function getAllProjectHistoryRows() {
+    return state.data.transactions
         .filter(t => (t.type === 'usage' || t.type === 'structure_export' || t.type === 'structure_return' || t.type === 'return') && t.projectId)
-        .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date))
-        .slice(0, 50);
+        .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
+}
+
+function renderProjectHistory(rows = null) {
+    const transactions = rows || getProjectHistoryPage('all', getAllProjectHistoryRows()).rows;
     
-    if (transactions.length === 0) return '<tr><td colspan="7" style="text-align:center;">📭 Chưa có dữ liệu</td></tr>';
+    if (transactions.length === 0) return '<tr><td colspan="8" style="text-align:center;">📭 Chưa có dữ liệu</td></tr>';
     
     return transactions.map(t => {
         const mat = state.data.materials.find(m => m.id === t.mid) || state.data.structures?.find(s => s.id === t.mid);
@@ -116,7 +194,7 @@ function renderProjectHistory() {
             <td style="text-align:left;">${escapeHtml(mat?.name || 'N/A')}</td>
             <td style="text-align:right;">${Number(t.qty||0).toLocaleString('vi-VN')} ${mat?.unit||''}</td>
             <td style="text-align:right;white-space:nowrap;">${formatMoneyVND(t.unitPrice)}</td>
-            <td class="amount" style="text-align:right;white-space:nowrap;" ${isReturn?'text-success':'text-warning'}">${isReturn?'- ':''}${formatMoneyVND(Number(t.totalAmount))}</td>
+            <td class="amount" style="text-align:right;white-space:nowrap;">${isReturn?'- ':''}${formatMoneyVND(Number(t.totalAmount))}</td>
             <td style="text-align:center;color:${isReturn?'var(--success-text)':'var(--accent)'}">${isStructureExport?'🏗️ Cấu kiện':isStructureReturn?'🔄 Trả CK':isReturn?'🔄 Trả kho':'📥 Nhận từ kho'}</td>
             <td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td>
         </tr>`;
@@ -193,8 +271,12 @@ function updateProjectListDisplay() {
 
 function updateProjectHistoryDisplay() {
     const hc = document.getElementById('project-history-tbody');
-    if (hc) hc.innerHTML = renderProjectHistory();
+    if (!hc) return;
+    const rows = getAllProjectHistoryRows();
+    const pageData = getProjectHistoryPage('all', rows);
+    hc.innerHTML = renderProjectHistory(pageData.rows);
 }
+
 
 function renderProjectSearchBar() {
     const statusOpts = [{v:'',l:'📂 Tất cả'},{v:'has_budget',l:'💰 Còn NS'},{v:'out_of_budget',l:'⚠️ Hết NS'},{v:'over_budget',l:'🔥 Quá NS'}];
@@ -262,15 +344,15 @@ export function showProjectDetail(projectId) {
     if (!project) return;
     currentScheduleProjectId = projectId;
     window.currentScheduleProjectId = projectId;
-    
-    const rTxns = state.data.transactions.filter(t => t.projectId === projectId && (t.type === 'usage' || t.type === 'structure_export' || t.type === 'structure_export'));
+    const rTxns = state.data.transactions.filter(t => t.projectId === projectId && (t.type === 'usage' || t.type === 'structure_export'));
     const retTxns = state.data.transactions.filter(t => t.projectId === projectId && (t.type === 'return' || t.type === 'structure_return'));
+    const allTxns = [...rTxns, ...retTxns].sort((a,b) => new Date(b.datetime||b.date) - new Date(a.datetime||a.date));
     const totalR = rTxns.reduce((s,t) => s + (Number(t.totalAmount)||0), 0);
     const totalRet = retTxns.reduce((s,t) => s + (Number(t.totalAmount)||0), 0);
     const spent = totalR - totalRet;
     const rem = project.budget - spent;
-    const pct = project.budget > 0 ? (spent/project.budget)*100 : 0;
-    const allTxns = [...rTxns, ...retTxns].sort((a,b) => new Date(b.datetime||b.date) - new Date(a.datetime||a.date));
+    const pct = project.budget > 0 ? (spent / project.budget) * 100 : 0;
+
     // Lấy lịch sử gán vật tư từ schedule
     const scheduleLogs = [];
     const sched = state.data.projectSchedules?.find(s => s.projectId === projectId);
@@ -298,6 +380,8 @@ export function showProjectDetail(projectId) {
         materialName: '', qty: 0, unit: '', note: l.action + ': ' + (l.details||'')
     }));
     const allLogs = [...allTxns.map(t=>({...t, logType: t.type})), ...scheduleLogs].sort((a,b) => new Date(b.datetime||b.date) - new Date(a.datetime||a.date));
+    const historyPage = getProjectHistoryPage(projectId, allLogs);
+    const displayLogs = historyPage.rows;
     const matUsage = getMaterialUsageDetails(projectId);
     const schedule = getProjectSchedule(projectId);
     
@@ -332,8 +416,15 @@ export function showProjectDetail(projectId) {
             </div>
             <div id="tab-schedule" class="tab-content" style="display:none;"><div id="schedule-view-container"></div></div>
             <div id="tab-history" class="tab-content" style="display:none;">
+            <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+            <span>📜 LỊCH SỬ NHẬN / TRẢ</span>
+                ${renderProjectHistoryPageSize(projectId, historyPage)}
+                </div>
+
+
+
                 <div class="tbl-wrap"><table style="min-width:900px;"><thead><tr><th style="text-align:left;">Thời gian</th><th style="text-align:center;">Loại</th><th style="text-align:left;">Vật tư</th><th style="text-align:right;">SL</th><th style="text-align:right;">Đơn giá</th><th style="text-align:right;">Thành tiền</th><th style="text-align:left;">Ghi chú</th><th style="text-align:center;">File</th></tr></thead>
-                <tbody>${allLogs.map(item => {
+                <tbody>${displayLogs.map(item => {
                     if (item.logType === 'log') {
                         return `<tr><td style="text-align:left;white-space:nowrap;">${formatDateTime(item.datetime)}</td><td style="text-align:center;color:var(--accent-text);font-weight:bold;">📋 Log</td><td style="text-align:left;">—</td><td style="text-align:right;">—</td><td style="text-align:right;">—</td><td style="text-align:right;">—</td><td style="text-align:left;">${escapeHtml(item.note||'—')}</td><td style="text-align:center;">—</td></tr>`;
                     }
@@ -346,10 +437,12 @@ export function showProjectDetail(projectId) {
                     const isStructureExport = t.type === "structure_export";
                     const isStructureReturn = t.type === "structure_return";
                     return `<tr><td style="text-align:left;white-space:nowrap;">${formatDateTime(t.datetime||t.date)}</td><td style="text-align:center;color:${isStructureExport?'var(--warn-text)':isRet?'var(--success-text)':'var(--accent)'};font-weight:bold;">${isStructureExport?'🏗️ CK':isStructureReturn?'🔄 Trả CK':isRet?'🔄 Trả':'📥 Nhận'}</td><td style="text-align:left;">${escapeHtml(mat?.name||'N/A')}</td><td style="text-align:right;">${Number(t.qty||0).toLocaleString('vi-VN')} ${mat?.unit||''}</td><td style="text-align:right;white-space:nowrap;">${formatMoneyVND(t.unitPrice)}</td><td class="amount" style="text-align:right;white-space:nowrap;" ${isRet?'text-success':'text-warning'}">${isRet?'- ':''}${formatMoneyVND(Number(t.totalAmount))}</td><td style="text-align:left;">${escapeHtml(t.note||'—')}</td><td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td></tr>`;
-                }).join('') || '<tr><td colspan="7">📭 Chưa có giao dịch</td></tr>'}</tbody></table></div>
+                }).join('') || '<tr><td colspan="8">📭 Chưa có giao dịch</td></tr>'}</tbody></table></div>
+                ${renderProjectHistoryPager(projectId, historyPage)}
             </div>
             <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end;">
                 <button class="sm" onclick="closeModal();window.exportProjectDetail('${projectId}')">📎 Xuất Excel</button>
+                
             </div>
         </div>
         <div class="modal-ft">
@@ -405,6 +498,8 @@ export function exportAllProjectsReport() {
 }
 
 export function renderProjects() {
+    const allHistoryRows = getAllProjectHistoryRows();
+    const allHistoryPage = getProjectHistoryPage('all', allHistoryRows);
     const html = renderProjectSearchBar() + `<div class="card">
         <div class="resizable-container" id="projects-resizable-container">
             <div class="resizable-panel" id="projects-list-panel">
@@ -417,15 +512,18 @@ export function renderProjects() {
                             <button class="view-toggle-btn ${projectViewMode==='large'?'active':''}" onclick="window.setProjectView('large')" title="Ô vuông lớn">⊟</button>
                         </div>
                     </div>
-                    <span class="resize-icon">⤥ Kéo</span>
                 </div>
                 <div class="panel-content" id="project-list-container" style="max-height:400px;overflow-y:auto;"></div>
                 <div class="panel-resize-handle" data-target="projects-list-panel"></div>
             </div>
             <div class="resizable-panel" id="projects-history-panel">
                 <div class="panel-header">
-                    <div class="sec-title">📜 LỊCH SỬ NHẬN/TRẢ</div>
-                    <span class="resize-icon">⤥ Kéo</span>
+                    <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+    <span>📜 LỊCH SỬ NHẬN / TRẢ</span>
+    ${renderProjectHistoryPageSize('all', allHistoryPage)}
+</div>
+
+
                 </div>
                 <div class="panel-content" style="max-height:300px;overflow-y:auto;">
                     <div class="tbl-wrap">
@@ -441,12 +539,14 @@ export function renderProjects() {
                                     <th style="text-align:center;">Loại</th><th style="text-align:center;">File</th>
                                 </tr>
                             </thead>
-                            <tbody id="project-history-tbody">${renderProjectHistory()}</tbody>
+                            <tbody id="project-history-tbody">${renderProjectHistory(allHistoryPage.rows)}</tbody>
                         </table>
                     </div>
                 </div>
                 <div class="panel-resize-handle" data-target="projects-history-panel"></div>
             </div>
+            ${renderProjectHistoryPager('all', allHistoryPage)}
+
         </div>
     </div>`;
     

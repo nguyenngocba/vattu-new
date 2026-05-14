@@ -4,6 +4,87 @@ import { debounce, formatMoneyVND, setupNumberInput } from './utils.js?v=1777963
 let supplierFilters = { keyword: '', phone: '', minPurchase: '', maxPurchase: '' };
 let supplierListContainer = null;
 let supplierViewMode = 'large'; // 'small' | 'large' | 'list'
+const SUPPLIER_HISTORY_PAGE_SIZES = [10, 50, 100, 200];
+
+window.supplierHistoryPaging = window.supplierHistoryPaging || {};
+
+function getSupplierHistoryPaging(key) {
+    if (!window.supplierHistoryPaging[key]) {
+        window.supplierHistoryPaging[key] = { page: 1, size: 10 };
+    }
+    return window.supplierHistoryPaging[key];
+}
+
+function getSupplierHistoryPage(key, rows) {
+    const paging = getSupplierHistoryPaging(key);
+    const size = Number(paging.size) || 10;
+    const totalItems = rows.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / size));
+    const page = Math.min(Math.max(1, Number(paging.page) || 1), totalPages);
+    paging.page = page;
+
+    const start = (page - 1) * size;
+    return {
+        rows: rows.slice(start, start + size),
+        page,
+        size,
+        totalItems,
+        totalPages
+    };
+}
+
+function renderSupplierHistoryPageSize(key, pageData) {
+    return `
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+            <span class="metric-sub">Hiển thị:</span>
+            <select onchange="window.setSupplierHistoryPageSize('${key}', this.value)" style="width:80px;">
+                ${SUPPLIER_HISTORY_PAGE_SIZES.map(size => `<option value="${size}" ${pageData.size === size ? 'selected' : ''}>${size}</option>`).join('')}
+            </select>
+        </div>
+    `;
+}
+
+function renderSupplierHistoryPager(key, pageData) {
+    return `
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-top:12px;padding:8px 0;">
+            <div style="text-align:left;">
+                <button class="sm" onclick="window.setSupplierHistoryPage('${key}', ${pageData.page - 1})" ${pageData.page <= 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>◀ Trang trước</button>
+            </div>
+            <span class="metric-sub" style="text-align:center;">Trang ${pageData.page} / ${pageData.totalPages} (${pageData.totalItems} giao dịch)</span>
+            <div style="text-align:right;">
+                <button class="sm" onclick="window.setSupplierHistoryPage('${key}', ${pageData.page + 1})" ${pageData.page >= pageData.totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>Trang sau ▶</button>
+            </div>
+        </div>
+    `;
+}
+
+
+window.setSupplierHistoryPageSize = function(key, size) {
+    const paging = getSupplierHistoryPaging(key);
+    paging.size = Number(size) || 10;
+    paging.page = 1;
+
+    if (key === 'all') {
+        if (window.render) window.render();
+    } else if (key.startsWith('detail_')) {
+        window.showSupplierDetail(key.replace('detail_', ''));
+    } else if (key.startsWith('history_')) {
+        window.viewSupplierHistory(key.replace('history_', ''));
+    }
+};
+
+window.setSupplierHistoryPage = function(key, page) {
+    const paging = getSupplierHistoryPaging(key);
+    paging.page = Number(page) || 1;
+
+    if (key === 'all') {
+        if (window.render) window.render();
+    } else if (key.startsWith('detail_')) {
+        window.showSupplierDetail(key.replace('detail_', ''));
+    } else if (key.startsWith('history_')) {
+        window.viewSupplierHistory(key.replace('history_', ''));
+    }
+};
 
 // Load view mode từ localStorage
 const savedView = localStorage.getItem('steeltrack_supplier_view');
@@ -46,11 +127,14 @@ function getFilteredSuppliers() {
 }
 
 // ========== LỊCH SỬ NHẬP HÀNG (FIX CỘT THỐNG NHẤT) ==========
-function renderSupplierHistory() {
-    const transactions = state.data.transactions
+function getAllSupplierHistoryRows() {
+    return state.data.transactions
         .filter(t => t.type === 'purchase' && t.supplierId)
-        .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date))
-        .slice(0, 50);
+        .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
+}
+
+function renderSupplierHistory(rows = null) {
+    const transactions = rows || getSupplierHistoryPage('all', getAllSupplierHistoryRows()).rows;
     
     if (transactions.length === 0) {
         return '<tr><td colspan="8" style="text-align: center;">📭 Chưa có dữ liệu nhập hàng nào</td></tr>';
@@ -60,7 +144,6 @@ function renderSupplierHistory() {
         const mat = state.data.materials.find(m => m.id === t.mid);
         const supplier = supplierById(t.supplierId);
         const displayDateTime = t.datetime ? formatDateTime(t.datetime) : t.date;
-        const invoiceHtml = t.invoiceImage ? `<a href="${t.invoiceImage}" target="_blank" style="color: var(--accent);">📄 Xem</a>` : '—';
         const displayQty = typeof t.qty === 'number' ? t.qty.toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3}) : parseFloat(t.qty || 0).toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3});
         
         return `<tr>
@@ -75,6 +158,7 @@ function renderSupplierHistory() {
         </tr>`;
     }).join('');
 }
+
 
 // ========== UPDATE DISPLAY ==========
 function updateSupplierList() {
@@ -149,10 +233,12 @@ function updateSupplierList() {
 
 function updateSupplierHistoryDisplay() {
     const historyContainer = document.getElementById('supplier-history-tbody');
-    if (historyContainer) {
-        historyContainer.innerHTML = renderSupplierHistory();
-    }
+    if (!historyContainer) return;
+    const rows = getAllSupplierHistoryRows();
+    const pageData = getSupplierHistoryPage('all', rows);
+    historyContainer.innerHTML = renderSupplierHistory(pageData.rows);
 }
+
 
 // ========== SEARCH BAR ==========
 function renderSupplierSearchBar() {
@@ -271,7 +357,10 @@ export function showSupplierDetail(supplierId) {
         .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
     
     const totalSpent = transactions.reduce((sum, t) => sum + (parseFloat(t.totalAmount)||0), 0);
-    
+    const detailKey = 'detail_' + supplierId;
+    const detailPage = getSupplierHistoryPage(detailKey, transactions);
+    const displayTransactions = detailPage.rows;
+
     const materialStats = {};
     transactions.forEach(t => {
         const mat = state.data.materials.find(m => m.id === t.mid);
@@ -342,7 +431,11 @@ export function showSupplierDetail(supplierId) {
                 }).join('')}</tbody></table></div>
             ` : '<div class="metric-card"><div class="metric-sub">📭 Chưa có giao dịch nhập hàng nào</div></div>'}
             
-            <div class="sec-title" style="margin-top: 20px;">📜 LỊCH SỬ NHẬP HÀNG CHI TIẾT</div>
+            <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;">
+    <span>📜 LỊCH SỬ NHẬP HÀNG CHI TIẾT</span>
+    ${renderSupplierHistoryPageSize(detailKey, detailPage)}
+</div>
+
             <div class="tbl-wrap">
                 <table class="history-table" style="min-width: 900px; width: 100%;">
                     <thead>
@@ -358,7 +451,8 @@ export function showSupplierDetail(supplierId) {
                         </tr>
                     </thead>
                     <tbody>
-                        ${transactions.map(t => {
+                        ${displayTransactions.map(t => {
+
                             const mat = state.data.materials.find(m => m.id === t.mid);
                             const displayDateTime = t.datetime ? formatDateTime(t.datetime) : t.date;
                             const invoiceHtml = t.invoiceImage ? `<a href="${t.invoiceImage}" target="_blank" style="color: var(--accent);">📄 Xem</a>` : '—';
@@ -374,10 +468,11 @@ export function showSupplierDetail(supplierId) {
                                 <td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td>
                             </tr>`;
                         }).join('')}
+                        
                     </tbody>
                 </table>
             </div>
-            
+            ${renderSupplierHistoryPager(detailKey, detailPage)}
             <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
                 <button class="sm" onclick="closeModal(); window.exportSupplierDetail('${supplierId}')">📎 Xuất báo cáo Excel</button>
             </div>
@@ -476,6 +571,8 @@ export function exportAllSuppliersReport() {
 
 // ========== RENDER ==========
 export function renderSuppliers() {
+    const allHistoryRows = getAllSupplierHistoryRows();
+    const allHistoryPage = getSupplierHistoryPage('all', allHistoryRows);
     const result = renderSupplierSearchBar() + `
     <div class="card">
         <div class="resizable-container" id="suppliers-resizable-container">
@@ -489,15 +586,17 @@ export function renderSuppliers() {
                             <button class="view-toggle-btn ${supplierViewMode==='large'?'active':''}" onclick="window.setSupplierView('large')" title="Ô vuông lớn">⊟</button>
                         </div>
                     </div>
-                    <span class="resize-icon">⤥ Kéo để điều chỉnh</span>
                 </div>
                 <div class="panel-content" id="supplier-list-container" style="max-height: 400px; overflow-y: auto;"></div>
                 <div class="panel-resize-handle" data-target="suppliers-list-panel"></div>
             </div>
             <div class="resizable-panel" id="suppliers-history-panel">
                 <div class="panel-header">
-                    <div class="sec-title">📜 LỊCH SỬ NHẬP HÀNG CHI TIẾT</div>
-                    <span class="resize-icon">⤥ Kéo để điều chỉnh</span>
+                    <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+    <span>📜 LỊCH SỬ NHẬP HÀNG CHI TIẾT</span>
+${renderSupplierHistoryPageSize('all', allHistoryPage)}
+</div>
+
                 </div>
                 <div class="panel-content" style="max-height: 300px; overflow-y: auto;">
                     <div class="tbl-wrap">
@@ -515,13 +614,14 @@ export function renderSuppliers() {
                                 </tr>
                             </thead>
                             <tbody id="supplier-history-tbody">
-                                ${renderSupplierHistory()}
+                                ${renderSupplierHistory(allHistoryPage.rows)}
                             </tbody>
                         </table>
                     </div>
                 </div>
                 <div class="panel-resize-handle" data-target="suppliers-history-panel"></div>
             </div>
+            ${renderSupplierHistoryPager('all', allHistoryPage)}
         </div>
     </div>`;
     
@@ -600,11 +700,24 @@ export function viewSupplierHistory(sid) {
     const supplier = supplierById(sid);
     const purchaseTxns = state.data.transactions.filter(t => t.type === 'purchase' && t.supplierId === sid).sort((a,b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
     const totalSpent = purchaseTxns.reduce((sum, t) => sum + (parseFloat(t.totalAmount)||0), 0);
+    const historyKey = 'history_' + sid;
+    const historyPage = getSupplierHistoryPage(historyKey, purchaseTxns);
+    const displayTxns = historyPage.rows;
+
+    showModal(`
+    <div class="modal-hd">
+        <span class="modal-title">📜 Lịch sử nhập hàng - ${escapeHtml(supplier?.name || '')}</span>
+        <button class="xbtn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-bd">
+        <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>📜 LỊCH SỬ NHẬP HÀNG</span>
+            ${renderSupplierHistoryPageSize(historyKey, historyPage)}
+        </div>
     
-    showModal(`<div class="modal-hd"><span class="modal-title">📜 Lịch sử nhập hàng - ${escapeHtml(supplier?.name)}</span><button class="xbtn" onclick="closeModal()">✕</button></div>
-    <div class="modal-bd"><div class="metric-card" style="margin-bottom:16px"><div class="metric-label">Tổng chi</div><div class="metric-val" style="font-size:20px">${formatMoneyVND(totalSpent)}</div></div>
+    <div class="metric-card" style="margin-bottom:16px"><div class="metric-label">Tổng chi</div><div class="metric-val" style="font-size:20px">${formatMoneyVND(totalSpent)}</div></div>
     <div class="tbl-wrap"><table class="history-table" style="min-width:900px;width:100%;"><thead><tr><th style="text-align:left;">Thời gian</th><th style="text-align:left;">Vật tư</th><th style="text-align:right;">SL</th><th style="text-align:right;">Đơn giá</th><th style="text-align:center;">VAT</th><th style="text-align:right;">Thành tiền</th><th style="text-align:left;">Ghi chú</th><th style="text-align:center;">File</th></tr></thead>
-    <tbody>${purchaseTxns.map(t => {
+    <tbody>${displayTxns.map(t => {
         const mat = state.data.materials.find(m => m.id === t.mid);
         const invoiceHtml = t.invoiceImage ? `<a href="${t.invoiceImage}" target="_blank">📄 Xem</a>` : '—';
         return `<tr>
@@ -617,9 +730,12 @@ export function viewSupplierHistory(sid) {
           <td style="text-align:left;">${escapeHtml(t.note || '—')}</td>
           <td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td>
         </tr>`;
-    }).join('') || '<tr><td colspan="8">Chưa có giao dịch nào</td></tr>'}</tbody></table></div>
+       }).join('') || '<tr><td colspan="8">Chưa có giao dịch nào</td></tr>'}</tbody></table></div>
+    ${renderSupplierHistoryPager(historyKey, historyPage)}
     </div><div class="modal-ft"><button onclick="closeModal()">Đóng</button></div>`);
+
 }
+
 
 export function filterSuppliers() {}
 export function clearSupplierSearch() {}

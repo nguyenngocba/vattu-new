@@ -7,6 +7,129 @@ import {
 
 let materialFilters = { keyword: '', category: '', minStock: '', maxStock: '', showFavoritesOnly: false };
 let materialListContainer = null;
+const MATERIAL_PAGE_SIZES = [10, 50, 100, 200];
+
+window.materialPaging = window.materialPaging || { page: 1, size: 10 };
+
+function getMaterialPage(rows) {
+    const paging = window.materialPaging;
+    const size = Number(paging.size) || 10;
+    const totalItems = rows.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / size));
+    const page = Math.min(Math.max(1, Number(paging.page) || 1), totalPages);
+    paging.page = page;
+
+    const start = (page - 1) * size;
+    return {
+        rows: rows.slice(start, start + size),
+        page,
+        size,
+        totalItems,
+        totalPages
+    };
+}
+
+function renderMaterialPageSize(pageData) {
+    return `
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+            <span class="metric-sub">Hiển thị:</span>
+            <select onchange="window.setMaterialPageSize(this.value)" style="width:80px;">
+                ${MATERIAL_PAGE_SIZES.map(size => `<option value="${size}" ${pageData.size === size ? 'selected' : ''}>${size}</option>`).join('')}
+            </select>
+        </div>
+    `;
+}
+
+function renderMaterialPager(pageData) {
+    return `
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-top:12px;padding:8px 0;">
+            <div style="text-align:left;">
+                <button class="sm" onclick="window.setMaterialPage(${pageData.page - 1})" ${pageData.page <= 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>◀ Trang trước</button>
+            </div>
+            <span class="metric-sub" style="text-align:center;">Trang ${pageData.page} / ${pageData.totalPages} (${pageData.totalItems} vật tư)</span>
+            <div style="text-align:right;">
+                <button class="sm" onclick="window.setMaterialPage(${pageData.page + 1})" ${pageData.page >= pageData.totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>Trang sau ▶</button>
+            </div>
+        </div>
+    `;
+}
+
+window.setMaterialPageSize = function(size) {
+    window.materialPaging.size = Number(size) || 10;
+    window.materialPaging.page = 1;
+    updateMaterialList();
+};
+const MATERIAL_DETAIL_PAGE_SIZES = [10, 50, 100, 200];
+
+window.materialDetailPaging = window.materialDetailPaging || {};
+
+function getMaterialDetailPaging(key) {
+    if (!window.materialDetailPaging[key]) {
+        window.materialDetailPaging[key] = { page: 1, size: 10 };
+    }
+    return window.materialDetailPaging[key];
+}
+
+function getMaterialDetailPage(key, rows) {
+    const paging = getMaterialDetailPaging(key);
+    const size = Number(paging.size) || 10;
+    const totalItems = rows.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / size));
+    const page = Math.min(Math.max(1, Number(paging.page) || 1), totalPages);
+    paging.page = page;
+
+    const start = (page - 1) * size;
+    return {
+        rows: rows.slice(start, start + size),
+        page,
+        size,
+        totalItems,
+        totalPages
+    };
+}
+
+function renderMaterialDetailPageSize(key, pageData, mid) {
+    return `
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+            <span class="metric-sub">Hiển thị:</span>
+            <select onchange="window.setMaterialDetailPageSize('${key}', '${mid}', this.value)" style="width:80px;">
+                ${MATERIAL_DETAIL_PAGE_SIZES.map(size => `<option value="${size}" ${pageData.size === size ? 'selected' : ''}>${size}</option>`).join('')}
+            </select>
+        </div>
+    `;
+}
+
+function renderMaterialDetailPager(key, pageData, mid, label) {
+    return `
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-top:12px;padding:8px 0;">
+            <div style="text-align:left;">
+                <button class="sm" onclick="window.setMaterialDetailPage('${key}', '${mid}', ${pageData.page - 1})" ${pageData.page <= 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>◀ Trang trước</button>
+            </div>
+            <span class="metric-sub" style="text-align:center;">Trang ${pageData.page} / ${pageData.totalPages} (${pageData.totalItems} ${label})</span>
+            <div style="text-align:right;">
+                <button class="sm" onclick="window.setMaterialDetailPage('${key}', '${mid}', ${pageData.page + 1})" ${pageData.page >= pageData.totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>Trang sau ▶</button>
+            </div>
+        </div>
+    `;
+}
+
+window.setMaterialDetailPageSize = function(key, mid, size) {
+    const paging = getMaterialDetailPaging(key);
+    paging.size = Number(size) || 10;
+    paging.page = 1;
+    window.showMaterialDetail(mid);
+};
+
+window.setMaterialDetailPage = function(key, mid, page) {
+    const paging = getMaterialDetailPaging(key);
+    paging.page = Number(page) || 1;
+    window.showMaterialDetail(mid);
+};
+window.setMaterialPage = function(page) {
+    window.materialPaging.page = Number(page) || 1;
+    updateMaterialList();
+};
+
 
 function formatDateTime(dateTimeStr) {
     if (!dateTimeStr) return '';
@@ -44,12 +167,13 @@ function updateMaterialList() {
     if (!materialListContainer) return;
     const filtered = getFilteredMaterials();
     const config = getColumnConfig();
-const allSorted = getSortedData(filtered, config.sortColumn, config.sortDirection);
-const displayLimit = materialListContainer.dataset.limit ? parseInt(materialListContainer.dataset.limit) : 200;
-const sorted = allSorted.slice(0, displayLimit);
+    const allSorted = getSortedData(filtered, config.sortColumn, config.sortDirection);
+    const pageData = getMaterialPage(allSorted);
+    const sorted = pageData.rows;
+    const pageSizeHolder = document.getElementById('material-page-size-holder');
+    if (pageSizeHolder) pageSizeHolder.innerHTML = renderMaterialPageSize(pageData);
     const favorites = getFavorites();
-    
-    if (sorted.length === 0) {
+        if (sorted.length === 0) {
         materialListContainer.innerHTML = '<div class="metric-sub">📭 Không tìm thấy vật tư phù hợp</div>';
         return;
     }
@@ -91,7 +215,7 @@ const sorted = allSorted.slice(0, displayLimit);
                                        </td>`;
                                 }
                                 if (col.key === 'stt') {
-                                    const sttIndex = sorted.findIndex(function(x){return x.id===m.id;}) + 1;
+                                    const sttIndex = ((pageData.page - 1) * pageData.size) + sorted.findIndex(function(x){return x.id===m.id;}) + 1;
                                     return `<td style="width: ${col.width}px; text-align:center; font-weight:bold;">${sttIndex}</td>`;
                                 }
                                 if (col.key === 'id') {
@@ -129,11 +253,9 @@ const sorted = allSorted.slice(0, displayLimit);
                 </tbody>
             </table>
         </div>
+        ${renderMaterialPager(pageData)}
     `;
     
-if (allSorted.length > displayLimit) {
-    materialListContainer.innerHTML += `<div class="metric-sub" style="text-align:center;padding:8px;"><button class="sm primary" onclick="window.loadMoreMaterials()">📥 Tải thêm (đang hiển thị ${displayLimit} / ${allSorted.length})</button></div>`;
-}    
     attachResizeEvents();
     attachSortEvents();
 }
@@ -201,6 +323,7 @@ function renderMaterialSearchBar() {
                         <span class="star-icon ${materialFilters.showFavoritesOnly ? 'active' : ''}" onclick="toggleFavoriteFilter()">★</span>
                         <span style="font-size: 12px;">Yêu thích (${favoritesCount})</span>
                     </div>
+                    <button class="sm" onclick="resetColumnConfig()" style="font-size: 11px;">🔄 Đặt lại cột</button>
                     <div class="column-toggle-panel">
                         <button class="column-toggle-btn" onclick="toggleColumnPanel()">📋 Ẩn/hiện cột</button>
                         <div id="column-toggle-dropdown" class="column-toggle-dropdown">
@@ -234,12 +357,12 @@ function bindMaterialSearchEvents() {
     const minInput = document.getElementById('mat-search-min');
     const maxInput = document.getElementById('mat-search-max');
     const clearBtn = document.getElementById('mat-clear-filters');
-    
     const updateFilters = () => {
         materialFilters.keyword = keywordInput?.value || '';
         materialFilters.category = categorySelect?.value || '';
         materialFilters.minStock = minInput?.value.replace(/[^0-9]/g, '') || '';
         materialFilters.maxStock = maxInput?.value.replace(/[^0-9]/g, '') || '';
+        window.materialPaging.page = 1;
         updateMaterialList();
     };
     
@@ -253,6 +376,7 @@ function bindMaterialSearchEvents() {
         if (categorySelect) categorySelect.value = 'all';
         if (minInput) minInput.value = '';
         if (maxInput) maxInput.value = '';
+        window.materialPaging.page = 1;
         updateMaterialList();
         const starIcon = document.querySelector('.favorite-filter .star-icon');
         if (starIcon) starIcon.classList.remove('active');
@@ -280,16 +404,19 @@ window.toggleFavoriteFilter = function() {
     materialFilters.showFavoritesOnly = !materialFilters.showFavoritesOnly;
     const starIcon = document.querySelector('.favorite-filter .star-icon');
     if (starIcon) starIcon.classList.toggle('active', materialFilters.showFavoritesOnly);
+    window.materialPaging.page = 1;
     updateMaterialList();
 };
 
 // ========== RENDER ==========
 export function renderMaterials() {
     const result = renderMaterialSearchBar() + `<div class="card">
-    <div class="sec-title" style="display: flex; justify-content: space-between; align-items: center;">
-        <span>📋 DANH SÁCH VẬT TƯ TỒN KHO</span>
-        <button class="sm" onclick="resetColumnConfig()" style="font-size: 11px;">🔄 Đặt lại cột</button>
-    </div>
+    <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+    <span>📋 DANH SÁCH VẬT TƯ TỒN KHO</span>
+    <div id="material-page-size-holder" style="margin-left:auto;"></div>
+</div>
+
+
     <div id="material-list-container"></div>
   </div>`;
   
@@ -422,10 +549,9 @@ window.showMaterialDetail = function(mid, page = 1, limit = 20) {
         .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
     
     const totalPurchase = purchaseTxns.length;
-    const purchasePages = Math.ceil(totalPurchase / limit);
-    const purchaseStart = (page - 1) * limit;
-    const purchaseEnd = purchaseStart + limit;
-    const paginatedPurchase = purchaseTxns.slice(purchaseStart, purchaseEnd);
+const importKey = 'material_import_' + mid;
+const importPage = getMaterialDetailPage(importKey, purchaseTxns);
+const paginatedPurchase = importPage.rows;
 
     // Lấy giao dịch xuất và trả
     let exportTxns = state.data.transactions
@@ -433,10 +559,10 @@ window.showMaterialDetail = function(mid, page = 1, limit = 20) {
         .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
     
     const totalExport = exportTxns.length;
-    const exportPages = Math.ceil(totalExport / limit);
-    const exportStart = (page - 1) * limit;
-    const exportEnd = exportStart + limit;
-    const paginatedExport = exportTxns.slice(exportStart, exportEnd);
+const exportKey = 'material_export_' + mid;
+const exportPage = getMaterialDetailPage(exportKey, exportTxns);
+const paginatedExport = exportPage.rows;
+
 
     // Tính tổng
     const totalImport = purchaseTxns.reduce((s, t) => s + Number(Number(t.totalAmount || 0)), 0);
@@ -490,20 +616,7 @@ window.showMaterialDetail = function(mid, page = 1, limit = 20) {
     }
 
     // Tạo phân trang HTML
-    const maxPages = Math.max(purchasePages, exportPages);
-    const paginationHtml = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 12px; background: var(--surface2); border-radius: 8px;">
-            <button class="sm" onclick="window.showMaterialDetail('${mid}', ${page-1}, ${limit})" ${page <= 1 ? 'disabled' : ''}>◀ Trang trước</button>
-            <span>Trang ${page} / ${maxPages}</span>
-            <button class="sm" onclick="window.showMaterialDetail('${mid}', ${page+1}, ${limit})" ${page >= maxPages ? 'disabled' : ''}>Trang sau ▶</button>
-            <select id="pagination-limit" onchange="window.showMaterialDetail('${mid}', 1, parseInt(this.value))" style="width: 80px;">
-                <option value="20" ${limit === 20 ? 'selected' : ''}>20</option>
-                <option value="50" ${limit === 50 ? 'selected' : ''}>50</option>
-                <option value="100" ${limit === 100 ? 'selected' : ''}>100</option>
-                <option value="500" ${limit === 500 ? 'selected' : ''}>500</option>
-            </select>
-        </div>
-    `;
+    
 
     const html = `
         <div class="modal-hd" style="background: var(--accent-bg);">
@@ -518,13 +631,22 @@ window.showMaterialDetail = function(mid, page = 1, limit = 20) {
                 <div class="metric-card"><div class="metric-label">📤 TỔNG XUẤT</div><div class="metric-val" style="color: var(--warn-text);">${formatMoneyVND(totalExportSum - totalReturn)}</div></div>
             </div>
 
-            <div class="sec-title">📥 LỊCH SỬ NHẬP KHO (${totalPurchase} giao dịch)</div>
-            <div class="tbl-wrap"><table style="min-width: 750px;"><thead><tr><th>Thời gian</th><th>Nhà cung cấp</th><th style="text-align:right;">SL</th><th style="text-align:right;">Đơn giá</th><th style="text-align:center;">VAT</th><th style="text-align:right;">Thành tiền</th><th>Ghi chú</th><th>File</th></tr></thead><tbody>${purchaseHtml}</tbody></table></div>
+            <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between;">
+    <span>📥 LỊCH SỬ NHẬP KHO (${totalPurchase} giao dịch)</span>
+    ${renderMaterialDetailPageSize(importKey, importPage, mid)}
+</div>
+<div class="tbl-wrap"><table style="min-width: 750px;"><thead><tr><th>Thời gian</th><th>Nhà cung cấp</th><th style="text-align:right;">SL</th><th style="text-align:right;">Đơn giá</th><th style="text-align:center;">VAT</th><th style="text-align:right;">Thành tiền</th><th>Ghi chú</th><th>File</th></tr></thead><tbody>${purchaseHtml}</tbody></table></div>
+${renderMaterialDetailPager(importKey, importPage, mid, 'giao dịch nhập')}
 
-            <div class="sec-title">📤 LỊCH SỬ XUẤT KHO (${totalExport} giao dịch)</div>
-            <div class="tbl-wrap"><table style="min-width: 750px;"><thead><tr><th>Thời gian</th><th style="text-align:center;">Loại</th><th>Công trình</th><th style="text-align:right;">SL</th><th style="text-align:right;">Đơn giá</th><th style="text-align:right;">Thành tiền</th><th>Ghi chú</th><th>File</th></tr></thead><tbody>${exportHtml}</tbody></table></div>
+
+            <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between;">
+    <span>📤 LỊCH SỬ XUẤT KHO (${totalExport} giao dịch)</span>
+    ${renderMaterialDetailPageSize(exportKey, exportPage, mid)}
+</div>
+<div class="tbl-wrap"><table style="min-width: 750px;"><thead><tr><th>Thời gian</th><th style="text-align:center;">Loại</th><th>Công trình</th><th style="text-align:right;">SL</th><th style="text-align:right;">Đơn giá</th><th style="text-align:right;">Thành tiền</th><th>Ghi chú</th><th>File</th></tr></thead><tbody>${exportHtml}</tbody></table></div>
+${renderMaterialDetailPager(exportKey, exportPage, mid, 'giao dịch xuất')}
+
             
-            ${paginationHtml}
         </div>
         <div class="modal-ft">
             <button onclick="closeModal()">Đóng</button>
@@ -587,22 +709,27 @@ export const addMaterial = (data) => {
     return newMat;
 };
 
-window.loadMoreMaterials = function() {
-    if (!materialListContainer) return;
-    const currentLimit = parseInt(materialListContainer.dataset.limit) || 200;
-    materialListContainer.dataset.limit = currentLimit + 200;
-    updateMaterialList();
-};
 export const getMaterials = () => state.data.materials;
 
 window.openTransferToSW = function() {
     const matOpts = state.data.materials.filter(m => parseFloat(m.qty) > 0).map(m => 
         `<option value="${m.id}" data-unit="${m.unit}" data-cost="${m.cost}">${escapeHtml(m.name)} (Tồn: ${Number(m.qty).toLocaleString('vi-VN')} ${m.unit})</option>`
     ).join('');
+    const now = new Date();
+const dt = now.getFullYear() + '-' +
+  String(now.getMonth() + 1).padStart(2, '0') + '-' +
+  String(now.getDate()).padStart(2, '0') + 'T' +
+  String(now.getHours()).padStart(2, '0') + ':' +
+  String(now.getMinutes()).padStart(2, '0');
+
     
     showModal(`
         <div class="modal-hd"><span class="modal-title">📦 Chuyển vật tư sang KHO CẤU KIỆN</span><button class="xbtn" onclick="closeModal()">✕</button></div>
         <div class="modal-bd">
+            <div class="form-group">
+                <label class="form-label">📅 Thời gian nhập kho CK</label>
+                <input type="datetime-local" id="sw-datetime" value="${dt}">
+            </div>
             <div id="sw-items">
                 <div class="sw-row" style="display:flex;gap:8px;margin-bottom:8px;">
                     <select class="sw-mat" style="flex:2;">${matOpts}</select>
@@ -613,9 +740,16 @@ window.openTransferToSW = function() {
             <button class="sm" onclick="window.addSWRow()">+ Thêm vật tư</button>
             <div class="form-group" style="margin-top:12px;"><label class="form-label">📎 File đính kèm</label><input type="file" id="sw-files" multiple onchange="window.upFiles(this,'transfer_sw')"><div id="transfer_sw-file-list" style="margin-top:4px;font-size:11px;"></div></div>
             <div class="form-group"><label class="form-label">Ghi chú</label><input id="sw-note" placeholder="Ghi chú..."></div>
+            
+
         </div>
         <div class="modal-ft"><button onclick="closeModal()">Hủy</button><button class="primary" onclick="window.confirmTransferSW()">Xác nhận chuyển</button></div>
     `);
+    setTimeout(function() {
+    document.querySelectorAll('.sw-qty').forEach(function(input) {
+        setupNumberInput(input, { isInteger: false, decimals: null });
+    });
+}, 100);
 };
 
 window.addSWRow = function() {
@@ -627,33 +761,56 @@ window.addSWRow = function() {
     div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;';
     div.innerHTML = `<select class="sw-mat" style="flex:2;">${matOpts}</select><input type="text" class="sw-qty" value="1" style="width:100px;" dir="ltr"><button class="sm danger-btn" onclick="this.parentElement.remove()">✕</button>`;
     document.getElementById('sw-items').appendChild(div);
+    const qtyInput = div.querySelector('.sw-qty');
+if (qtyInput) setupNumberInput(qtyInput, { isInteger: false, decimals: null });
+
 };
 
 window.confirmTransferSW = async function() {
     const items = [];
+    const datetime = document.getElementById('sw-datetime')?.value || new Date().toISOString();
+
+
     document.querySelectorAll('.sw-row').forEach(row => {
         const sel = row.querySelector('.sw-mat');
-        const qty = parseFloat(row.querySelector('.sw-qty')?.value?.replace(/\./g,'').replace(',','.')) || 0;
+        const qty = getNumberFromInput(row.querySelector('.sw-qty'));
+
         if (sel?.value && qty > 0) {
-            items.push({ mid: sel.value, name: sel.selectedOptions[0]?.text||'', unit: sel.selectedOptions[0]?.dataset?.unit||'', qty, cost: parseFloat(sel.selectedOptions[0]?.dataset?.cost||0) || parseFloat(state.data.materials.find(m=>m.id===sel.value)?.cost||0) });
+            const mat = state.data.materials.find(m => m.id === sel.value);
+
+            items.push({
+                mid: sel.value,
+                name: mat?.name || '',
+                unit: sel.selectedOptions[0]?.dataset?.unit || mat?.unit || '',
+                qty,
+                cost: parseFloat(sel.selectedOptions[0]?.dataset?.cost || 0) || parseFloat(mat?.cost || 0)
+            });
         }
     });
+
     if (items.length === 0) return alert('Chưa có vật tư nào!');
+
     const note = document.getElementById('sw-note')?.value || '';
-    
-    var finalPaths = window.moveUploadedFiles ? await window.moveUploadedFiles('transfer_sw') : [];
+    const finalPaths = window.moveUploadedFiles ? await window.moveUploadedFiles('transfer_sw') : [];
     const attachment = JSON.stringify(finalPaths);
-    
+
     addLog("Chuyển kho CK", items.map(i => `${i.name}: ${i.qty} ${i.unit}`).join(", "));
-    fetch('/api/transfer-to-structure-warehouse', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({items, note, attachment}) })
+
+    fetch('/api/transfer-to-structure-warehouse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, note, datetime, attachment })
+
+    })
         .then(r => r.json())
         .then(d => {
-            if (d.success) { 
+            if (d.success) {
                 window._upPaths = {};
-                alert('✅ Đã chuyển sang kho cấu kiện!'); 
-                closeModal(); 
-                window.loadState().then(()=>window.render()); 
+                alert('✅ Đã chuyển sang kho cấu kiện!');
+                closeModal();
+                window.loadState().then(() => window.render());
+            } else {
+                alert('❌ ' + d.error);
             }
-            else alert('❌ ' + d.error);
         });
 };

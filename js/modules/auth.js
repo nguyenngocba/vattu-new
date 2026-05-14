@@ -30,26 +30,30 @@ export function renderLogin() {
     <button class="primary" onclick="window.doLogin()" style="width:100%;padding:12px;font-size:14px;font-weight:600;">🚪 ĐĂNG NHẬP</button>
   </div></div>`;
 }
-window.doLogin = function() {
-    const username = document.getElementById('login-username')?.value.trim().toLowerCase();
-    const password = document.getElementById('login-password')?.value;
-    const errorEl = document.getElementById('login-error');
-    
-    // Lưu chế độ giao diện
-    const selectedMode = document.querySelector('input[name="ui_mode"]:checked')?.value;
-    if (selectedMode) {
-        localStorage.setItem('steeltrack_ui_mode', selectedMode);
-    }
-    
-    if (!username || !password) { if (errorEl) { errorEl.textContent = '⚠️ Vui lòng nhập đầy đủ!'; errorEl.style.display = 'block'; } return; }
-    const user = state.data.users.find(u => u.username.toLowerCase() === username && u.password === password);
-    if (user) { 
-        if (errorEl) errorEl.style.display = 'none'; 
-        localStorage.setItem('steeltrack_current_user', JSON.stringify(user));
-        login(user.id); 
-    }
-    else { if (errorEl) { errorEl.textContent = '❌ Sai tài khoản hoặc mật khẩu!'; errorEl.style.display = 'block'; } }
+window.doLogin = async function() {
+  const username = document.getElementById('login-username')?.value?.trim();
+  const password = document.getElementById('login-password')?.value || '';
+  const selectedMode = document.querySelector('input[name="ui_mode"]:checked')?.value || 'desktop';
+
+  localStorage.setItem('steeltrack_ui_mode', selectedMode);
+
+  const res = await fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    alert(data.error || 'Sai tài khoản hoặc mật khẩu');
+    return;
+  }
+
+  window.login(data.user.id, data.user);
 };
+
+
 
 document.addEventListener('keydown', function(e) { if (e.key === 'Enter' && document.getElementById('login-username')) window.doLogin(); });
 

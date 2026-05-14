@@ -63,7 +63,7 @@ if (res.data.transactions?.length) state.data.transactions = res.data.transactio
     qty: Number(t.qty || 0),
     invoiceImage: t.invoice_image || '' 
 }));
-  console.log("First transaction attachment:", res.data.transactions[0]?.attachment);
+  //console.log("First transaction attachment:", res.data.transactions[0]?.attachment);
       if (res.data.projects?.length) state.data.projects = res.data.projects;
       if (res.data.suppliers?.length) state.data.suppliers = res.data.suppliers;
       if (res.data.users?.length) state.data.users = res.data.users;
