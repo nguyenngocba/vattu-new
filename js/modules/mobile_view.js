@@ -9,6 +9,69 @@ export function isMobileDevice() {
 let sidebarOpen = false;
 let txnPage = 1;
 let txnLimit = 10;
+function formatCompactVND(value) {
+    const n = Number(value || 0);
+    const abs = Math.abs(n);
+
+    if (abs >= 1000000000000) {
+        return (n / 1000000000000).toLocaleString('vi-VN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' nghìn tỷ';
+    }
+
+    if (abs >= 1000000000) {
+        return (n / 1000000000).toLocaleString('vi-VN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' tỷ';
+    }
+
+    if (abs >= 1000000) {
+        return (n / 1000000).toLocaleString('vi-VN', {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1
+        }) + ' triệu';
+    }
+
+    return formatMoneyVND(n);
+}
+
+function renderMobileTabBar(active = 'home') {
+    return `
+        <div class="m-bottom-safe"></div>
+        <div class="m-bottom-tab">
+            <button class="m-tab-btn ${active === 'home' ? 'active' : ''}" onclick="renderMobileViewOnly()">
+                <span>⌂</span><small>Trang chủ</small>
+            </button>
+            <button class="m-tab-btn ${active === 'stock' ? 'active' : ''}" onclick="showMobileStock()">
+                <span>▣</span><small>Kho</small>
+            </button>
+            <button class="m-tab-fab" onclick="showMobileActions()">+</button>
+            <button class="m-tab-btn ${active === 'projects' ? 'active' : ''}" onclick="showMobileProjects()">
+                <span>⌘</span><small>Công trình</small>
+            </button>
+            <button class="m-tab-btn ${active === 'dashboard' ? 'active' : ''}" onclick="showMobileDashboard()">
+                <span>◌</span><small>Thống kê</small>
+            </button>
+        </div>
+    `;
+}
+
+function renderMobileActionSheet() {
+    return `
+        <div id="m-action-sheet" class="m-action-sheet" style="display:none;" onclick="hideMobileActions()">
+            <div class="m-action-panel" onclick="event.stopPropagation()">
+                <div class="m-action-grabber"></div>
+                <button onclick="hideMobileActions();showMobileImport()">Nhập kho</button>
+                <button onclick="hideMobileActions();showMobileExport()">Xuất kho</button>
+                <button onclick="hideMobileActions();showMobileReturn()">Trả hàng</button>
+                <button class="danger" onclick="hideMobileActions()">Đóng</button>
+            </div>
+        </div>
+    `;
+}
+
 // ========== RENDER ==========
 function renderRecentTxns(transactions, page, limit) {
     const materials = state.data.materials || [];
@@ -63,12 +126,6 @@ export function renderMobileView() {
     const transactions = state.data.transactions || [];
     const lowStockCount = materials.filter(m => m.qty <= m.low).length;
     const currentUser = state.currentUser || {};
-    
-    // 5 giao dịch gần nhất
-    const recentTxns = [...transactions]
-        .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date))
-        .slice(0, 5);
-    
     return `
 <div class="mobile-app ios-liquid" id="mobile-app-container">
             <!-- SIDEBAR TRƯỢT TRÁI -->
@@ -156,18 +213,23 @@ export function renderMobileView() {
                 </div>
             </div>
             
-            <!-- GIAO DỊCH GẦN ĐÂY -->
+                        <!-- GIAO DỊCH GẦN ĐÂY -->
             <div class="m-section">
                 <div class="m-section-title">📋 GIAO DỊCH GẦN ĐÂY</div>
-				<div id="m-txn-list">
-				${renderRecentTxns(transactions, txnPage, txnLimit)}
-				 </div>
-				</div>
+                <div id="m-txn-list">
+                    ${renderRecentTxns(transactions, txnPage, txnLimit)}
+                </div>
             </div>
+
             <!-- MENU POPUP -->
             <div id="m-menu" class="m-menu" style="display:none;" onclick="event.stopPropagation()">
                 <div class="m-menu-item" onclick="logout()">🚪 Đăng xuất</div>
-            </div>            
+            </div>
+
+            ${renderMobileActionSheet()}
+            ${renderMobileTabBar('home')}
+
+            <div id="modal-area"></div>
         </div>
     `;
 }
@@ -181,7 +243,16 @@ window.toggleMSidebar = function() {
     if (sidebar) sidebar.classList.toggle('open', sidebarOpen);
 };
 
-// ========== MODAL NHẬP KHO ==========
+window.showMobileActions = function() {
+    const sheet = document.getElementById('m-action-sheet');
+    if (sheet) sheet.style.display = 'flex';
+};
+
+window.hideMobileActions = function() {
+    const sheet = document.getElementById('m-action-sheet');
+    if (sheet) sheet.style.display = 'none';
+};
+
 // ========== MODAL NHẬP KHO ==========
 window.showMobileImport = function() {
     const materials = state.data.materials || [];
@@ -350,7 +421,7 @@ window.showMobileStock = function() {
         `;
     });
     
-    html += `</div></div>`;
+    html += `</div>${renderMobileActionSheet()}${renderMobileTabBar('stock')}</div>`;
     document.getElementById('root').innerHTML = html;
     fixAllModalHeight();
 };
@@ -388,7 +459,7 @@ window.showMobileLowStock = function() {
         });
     }
     
-    html += `</div></div>`;
+    html += `</div>${renderMobileActionSheet()}${renderMobileTabBar('stock')}</div>`;
     document.getElementById('root').innerHTML = html;
     fixAllModalHeight();
 };
@@ -428,7 +499,7 @@ window.showMobileProjects = function() {
         });
     }
     
-    html += `</div></div>`;
+    html += `</div>${renderMobileActionSheet()}${renderMobileTabBar('projects')}</div>`;
     document.getElementById('root').innerHTML = html;
     fixAllModalHeight();
 };
@@ -731,6 +802,64 @@ window.handleMobileFiles = function(input, type) {
             });
     }
 };
+function renderMobileDashboardHero() {
+    const materials = state.data.materials || [];
+    const transactions = state.data.transactions || [];
+    const projects = state.data.projects || [];
+
+    const totalInventory = materials.reduce((s, m) => s + (Number(m.qty || 0) * Number(m.cost || 0)), 0);
+    const lowStockCount = materials.filter(m => Number(m.qty || 0) <= Number(m.low || 0)).length;
+    const activeProjects = projects.length;
+
+    const now = new Date();
+    const month = now.getMonth();
+    const year = now.getFullYear();
+    const monthTxns = transactions.filter(t => {
+        const d = new Date(t.datetime || t.date);
+        return d.getMonth() === month && d.getFullYear() === year;
+    });
+
+    const monthImport = monthTxns
+        .filter(t => t.type === 'purchase')
+        .reduce((s, t) => s + Number(t.totalAmount || 0), 0);
+
+    const monthExport = monthTxns
+        .filter(t => t.type === 'usage')
+        .reduce((s, t) => s + Number(t.totalAmount || 0), 0);
+
+    return `
+        <div class="m-pro-hero">
+            <div>
+                <div class="m-pro-eyebrow">Tổng quan tháng này</div>
+                <div class="m-pro-value">${formatCompactVND(totalInventory)}</div>
+                <div class="m-pro-sub">Giá trị tồn kho hiện tại</div>
+            </div>
+            <div class="m-pro-ring">
+                <span>${lowStockCount}</span>
+                <small>Cảnh báo</small>
+            </div>
+        </div>
+
+        <div class="m-pro-grid">
+            <div class="m-pro-mini blue">
+                <small>Nhập tháng</small>
+                <strong>${formatCompactVND(monthImport)}</strong>
+            </div>
+            <div class="m-pro-mini red">
+                <small>Xuất tháng</small>
+                <strong>${formatCompactVND(monthExport)}</strong>
+            </div>
+            <div class="m-pro-mini green">
+                <small>Vật tư</small>
+                <strong>${materials.length}</strong>
+            </div>
+            <div class="m-pro-mini purple">
+                <small>Công trình</small>
+                <strong>${activeProjects}</strong>
+            </div>
+        </div>
+    `;
+}
 
 // ========== MODAL THỐNG KÊ (CEO DASHBOARD) ==========
 window.showMobileDashboard = function() {
@@ -756,8 +885,11 @@ window.showMobileDashboard = function() {
             </div>
             
             <div id="m-dash-content" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;">
+                ${renderMobileDashboardHero()}
                 ${renderMDashOverview()}
             </div>
+            ${renderMobileActionSheet()}
+            ${renderMobileTabBar('dashboard')}
         </div>
     `;
     document.getElementById('root').innerHTML = html;
@@ -767,12 +899,28 @@ window.showMobileDashboard = function() {
 window.switchMDashTab = function(tab) {
     document.querySelectorAll('.m-tab').forEach(function(t) { t.classList.remove('active'); });
     document.getElementById('mtab-' + tab).classList.add('active');
+
     var content = document.getElementById('m-dash-content');
-    if (tab === 'overview') content.innerHTML = renderMDashOverview();
-    if (tab === 'projects') { content.innerHTML = renderMDashProjects(); setTimeout(drawDonutChart, 200); }
-    if (tab === 'forecast') { content.innerHTML = '<div class="m-empty">Đang tải...</div>'; renderMDashForecast().then(function(h) { content.innerHTML = h; }); }
-    if (tab === 'structures') content.innerHTML = renderMDashStructures();
+
+    if (tab === 'overview') {
+        content.innerHTML = renderMobileDashboardHero() + renderMDashOverview();
+    }
+
+    if (tab === 'projects') {
+        content.innerHTML = renderMDashProjects();
+        setTimeout(drawDonutChart, 200);
+    }
+
+    if (tab === 'forecast') {
+        content.innerHTML = '<div class="m-empty">Đang tải...</div>';
+        renderMDashForecast().then(function(h) { content.innerHTML = h; });
+    }
+
+    if (tab === 'structures') {
+        content.innerHTML = renderMDashStructures();
+    }
 };
+
 // ========== TAB TỔNG QUAN ==========
 function renderMDashOverview() {
     var materials = state.data.materials || [];
@@ -801,9 +949,9 @@ function renderMDashOverview() {
     var maxSupplierTotal = Math.max.apply(null, supplierStats.map(function(s) { return s.total; }).concat([1]));
     
     var html = '<div class="m-kpi-grid">' +
-        '<div class="m-kpi-card" style="border-left:3px solid #378ADD;"><div class="m-kpi-label">📥 TỔNG NHẬP</div><div class="m-kpi-value">' + formatMoneyVND(totalImport) + '</div></div>' +
-        '<div class="m-kpi-card" style="border-left:3px solid #dc2626;"><div class="m-kpi-label">📤 TỔNG XUẤT</div><div class="m-kpi-value">' + formatMoneyVND(totalExport) + '</div></div>' +
-        '<div class="m-kpi-card" style="border-left:3px solid #16a34a;"><div class="m-kpi-label">📦 TỒN KHO</div><div class="m-kpi-value">' + formatMoneyVND(totalInventory) + '</div></div>' +
+        '<div class="m-kpi-card" style="border-left:3px solid #378ADD;"><div class="m-kpi-label">📥 TỔNG NHẬP</div><div class="m-kpi-value">' + formatCompactVND(totalImport) + '</div></div>' +
+        '<div class="m-kpi-card" style="border-left:3px solid #dc2626;"><div class="m-kpi-label">📤 TỔNG XUẤT</div><div class="m-kpi-value">' + formatCompactVND(totalExport) + '</div></div>' +
+        '<div class="m-kpi-card" style="border-left:3px solid #16a34a;"><div class="m-kpi-label">📦 TỒN KHO</div><div class="m-kpi-value">' + formatCompactVND(totalInventory) + '</div></div>' +
         '<div class="m-kpi-card" style="border-left:3px solid ' + (lowStockCount > 0 ? '#ea580c' : '#16a34a') + ';"><div class="m-kpi-label">⚠️ SẮP HẾT</div><div class="m-kpi-value" style="color:' + (lowStockCount > 0 ? '#dc2626' : '#16a34a') + ';">' + lowStockCount + '</div></div>' +
         '</div>';
     
