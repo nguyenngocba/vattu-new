@@ -71,6 +71,21 @@ function renderMobileActionSheet() {
         </div>
     `;
 }
+function setMobileSubmitLoading(isLoading, text = 'Đang lưu...') {
+    const btn = document.querySelector('.m-submit');
+    if (!btn) return;
+
+    if (isLoading) {
+        btn.dataset.originalText = btn.innerHTML;
+        btn.innerHTML = text;
+        btn.disabled = true;
+        btn.classList.add('loading');
+    } else {
+        btn.innerHTML = btn.dataset.originalText || btn.innerHTML;
+        btn.disabled = false;
+        btn.classList.remove('loading');
+    }
+}
 
 // ========== RENDER ==========
 function renderRecentTxns(transactions, page, limit) {
@@ -267,7 +282,7 @@ window.showMobileImport = function() {
     const html = `
         <div class="m-modal ios-liquid" id="m-import-modal">
             <div class="m-modal-hd">
-                <button class="m-back" onclick="renderMobileViewOnly()">←</button>
+                <button class="m-back" onclick="cancelMobileForm('purchase')">←</button>
                 <span>📥 NHẬP KHO</span>
                 <div></div>
             </div>
@@ -327,12 +342,18 @@ window.showMobileImport = function() {
     document.getElementById('root').innerHTML = html;
     fixAllModalHeight();
     setTimeout(() => {
-        const sel = document.getElementById('mi-material');
-        if (sel) { const opt = sel.options[sel.selectedIndex]; document.getElementById('mi-price').value = Number(opt?.dataset?.cost || 0).toLocaleString('vi-VN'); }
-        updateMobileTotal();
-    }, 100);
+    const sel = document.getElementById('mi-material');
+    if (sel) {
+        const opt = sel.options[sel.selectedIndex];
+        document.getElementById('mi-price').value = Number(opt?.dataset?.cost || 0).toLocaleString('vi-VN');
+    }
+    bindMobileNumberInput('mi-qty', updateMobileTotal);
+    bindMobileNumberInput('mi-price', updateMobileTotal);
+    bindMobileNumberInput('mi-vat', updateMobileTotal);
+    updateMobileTotal();
+}, 100);
+
 };
-// ========== MODAL XUẤT KHO ==========
 // ========== MODAL XUẤT KHO ==========
 window.showMobileExport = function() {
     const materials = state.data.materials || [];
@@ -347,7 +368,7 @@ window.showMobileExport = function() {
     const html = `
         <div class="m-modal ios-liquid" id="m-export-modal">
             <div class="m-modal-hd">
-                <button class="m-back" onclick="renderMobileViewOnly()">←</button>
+                <button class="m-back" onclick="cancelMobileForm('usage')">←</button>
                 <span>📤 XUẤT KHO</span>
                 <div></div>
             </div>
@@ -386,7 +407,10 @@ window.showMobileExport = function() {
         </div>
     `;
     document.getElementById('root').innerHTML = html;
-    fixAllModalHeight();
+        fixAllModalHeight();
+        setTimeout(() => {
+        bindMobileNumberInput('me-qty');
+    }, 100);
 };
 // ========== MODAL TỒN KHO ==========
 window.showMobileStock = function() {
@@ -515,7 +539,7 @@ window.showMobileReturn = function() {
     const html = `
         <div class="m-modal ios-liquid" id="m-return-modal">
             <div class="m-modal-hd">
-                <button class="m-back" onclick="renderMobileViewOnly()">←</button>
+                <button class="m-back" onclick="cancelMobileForm('return')">←</button>
                 <span>🔄 TRẢ HÀNG</span>
                 <div></div>
             </div>
@@ -559,26 +583,104 @@ window.showMobileReturn = function() {
     `;
     document.getElementById('root').innerHTML = html;
     fixAllModalHeight();
-    setTimeout(() => loadReturnMaterials(), 100);
+    setTimeout(() => {
+    loadReturnMaterials();
+    bindMobileNumberInput('mr-qty');
+}, 100);
 };
 // ========== CÁC HÀM XỬ LÝ ==========
 window.changeMQty = function(delta) {
     const input = document.getElementById('mi-qty') || document.getElementById('me-qty') || document.getElementById('mr-qty');
     if (input) {
-        let val = parseFloat(input.value.replace(',', '.')) || 0;
+        let val = parseMobileNumber(input.value);
         val = Math.max(0, val + delta);
-        input.value = val;
+        input.value = formatMobileNumber(val);
         updateMobileTotal();
     }
 };
 
 window.setMQty = function(val) {
     const input = document.getElementById('mi-qty') || document.getElementById('me-qty') || document.getElementById('mr-qty');
-    if (input) { input.value = val; updateMobileTotal(); }
+    if (input) {
+        input.value = formatMobileNumber(val);
+        updateMobileTotal();
+    }
+};
+window.updateMPrice = function() { const sel = document.getElementById('mi-material'); const priceInput = document.getElementById('mi-price'); if (sel && priceInput) { priceInput.value = Number(sel.options[sel.selectedIndex]?.dataset?.cost || 0).toLocaleString('vi-VN'); } updateMobileTotal(); };
+function parseMobileNumber(value) {
+    const normalized = String(value || '')
+        .replace(/\./g, '')
+        .replace(',', '.')
+        .replace(/[^\d.]/g, '');
+
+    return Number(normalized) || 0;
+}
+
+function formatMobileNumber(value) {
+    const n = Number(value || 0);
+    return n ? n.toLocaleString('vi-VN', { maximumFractionDigits: 3 }) : '';
+}
+
+function bindMobileNumberInput(id, onChange = null) {
+    const input = document.getElementById(id);
+    if (!input) return;
+
+    input.addEventListener('input', function() {
+        let raw = this.value
+            .replace(/\./g, '')
+            .replace(/[^\d,]/g, '');
+
+        const parts = raw.split(',');
+        if (parts.length > 2) raw = parts[0] + ',' + parts.slice(1).join('');
+
+        const [intPart, decimalPart] = raw.split(',');
+        const formattedInt = intPart ? Number(intPart).toLocaleString('vi-VN') : '';
+
+        this.value = decimalPart !== undefined
+            ? formattedInt + ',' + decimalPart.slice(0, 3)
+            : formattedInt;
+
+        if (onChange) onChange();
+    });
+
+    input.addEventListener('blur', function() {
+        const n = parseMobileNumber(this.value);
+        this.value = formatMobileNumber(n);
+        if (onChange) onChange();
+    });
+}
+async function cleanupMobileTempFiles(type = null) {
+    const uploads = window._upPaths || {};
+    const types = type ? [type] : Object.keys(uploads);
+
+    for (const t of types) {
+        const paths = uploads[t] || [];
+
+        await Promise.all(paths.map(function(path) {
+            return fetch('/api/upload/temp', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path })
+            }).catch(function() {});
+        }));
+
+        uploads[t] = [];
+    }
+
+    window._upPaths = uploads;
+}
+
+window.cancelMobileForm = async function(type) {
+    await cleanupMobileTempFiles(type);
+    renderMobileViewOnly();
 };
 
-window.updateMPrice = function() { const sel = document.getElementById('mi-material'); const priceInput = document.getElementById('mi-price'); if (sel && priceInput) { priceInput.value = Number(sel.options[sel.selectedIndex]?.dataset?.cost || 0).toLocaleString('vi-VN'); } updateMobileTotal(); };
-
+async function finalizeMobileFiles(type) {
+    if (window.moveUploadedFiles) {
+        return await window.moveUploadedFiles(type);
+    }
+    return (window._upPaths && window._upPaths[type]) || [];
+}
 function updateMobileTotal() {
     const qtyInput = document.getElementById('mi-qty') || document.getElementById('me-qty') || document.getElementById('mr-qty');
     const priceInput = document.getElementById('mi-price') || document.getElementById('mr-price');
@@ -589,9 +691,9 @@ function updateMobileTotal() {
     const totalEl = document.getElementById('mi-total');
     
     if (qtyInput && priceInput) {
-        const qty = parseFloat(qtyInput.value.replace(',', '.')) || 0;
-        const price = parseFloat(priceInput.value.replace(/\./g, '').replace(',', '.')) || 0;
-        const vat = vatInput ? (parseFloat(vatInput.value.replace(',', '.')) || 0) : 0;
+        const qty = parseMobileNumber(qtyInput.value);
+        const price = parseMobileNumber(priceInput.value);
+        const vat = vatInput ? parseMobileNumber(vatInput.value) : 0;
         const subtotal = qty * price;
         const vatAmount = subtotal * vat / 100;
         const total = subtotal + vatAmount;
@@ -603,80 +705,140 @@ function updateMobileTotal() {
     }
 }
 window.doMobileImport = async function() {
-    const supplierId = document.getElementById('mi-supplier')?.value;
-    const mid = document.getElementById('mi-material')?.value;
-    const dt = document.getElementById('mi-datetime')?.value || new Date().toISOString();
-    const qty = parseFloat(document.getElementById('mi-qty')?.value?.replace(',', '.')) || 0;
-    const price = parseFloat(document.getElementById('mi-price')?.value?.replace(/\./g, '').replace(',', '.')) || 0;
-    const vat = parseFloat(document.getElementById('mi-vat')?.value?.replace(',', '.')) || 0;
-    const note = document.getElementById('mi-note')?.value || '';
-    
-    if (!supplierId || !mid || !qty || !price) { alert('Vui lòng nhập đầy đủ!'); return; }
-    
-    const subtotal = qty * price;
-    const vatAmount = subtotal * vat / 100;
-    const total = subtotal + vatAmount;
-    const attachment = JSON.stringify((window._upPaths && window._upPaths.purchase) || []);
-    
-    const res = await fetch('/api/transactions', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            id: 'm_' + Date.now(), mid, supplierId, type: 'purchase',
-            qty, unitPrice: price, vatRate: vat,
-            subtotal, vatAmount, totalAmount: total,
-            note: note || 'Nhập từ mobile',
-            date: dt.split('T')[0], datetime: dt,
-            attachment: attachment
-        })
-    });
-    const data = await res.json();
-    if (data.success) {
-        if (navigator.vibrate) navigator.vibrate(50);
-        window._upPaths = {};
-        var matLog = state.data.materials.find(function(m) { return m.id === mid; });
-        addLog('Nhập kho (Mobile)', (matLog?.name||'N/A') + ' - SL: ' + qty.toLocaleString('vi-VN') + ' - VAT: ' + vat + '%');
-        window.loadState().then(function() { renderMobileViewOnly(); });    
-    } else {
-        alert('❌ ' + (data.error || 'Lỗi'));
+    try {
+        const supplierId = document.getElementById('mi-supplier')?.value;
+        const mid = document.getElementById('mi-material')?.value;
+        const dt = document.getElementById('mi-datetime')?.value || new Date().toISOString();
+        const qty = parseMobileNumber(document.getElementById('mi-qty')?.value);
+        const price = parseMobileNumber(document.getElementById('mi-price')?.value);
+        const vat = parseMobileNumber(document.getElementById('mi-vat')?.value);
+        const note = document.getElementById('mi-note')?.value || '';
+
+        if (!supplierId || !mid || !qty || !price) {
+            alert('Vui lòng nhập đầy đủ!');
+            return;
+        }
+
+        setMobileSubmitLoading(true, 'Đang nhập kho...');
+
+        const subtotal = qty * price;
+        const vatAmount = subtotal * vat / 100;
+        const total = subtotal + vatAmount;
+        const finalPaths = await finalizeMobileFiles('purchase');
+        const attachment = JSON.stringify(finalPaths);
+
+        const res = await fetch('/api/transactions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: 'm_' + Date.now(),
+                mid,
+                supplierId,
+                type: 'purchase',
+                qty,
+                unitPrice: price,
+                vatRate: vat,
+                subtotal,
+                vatAmount,
+                totalAmount: total,
+                note: note || 'Nhập từ mobile',
+                date: dt.split('T')[0],
+                datetime: dt,
+                attachment
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            if (navigator.vibrate) navigator.vibrate(50);
+            window._upPaths = {};
+
+            const matLog = state.data.materials.find(function(m) { return m.id === mid; });
+            addLog('Nhập kho (Mobile)', (matLog?.name || 'N/A') + ' - SL: ' + qty.toLocaleString('vi-VN') + ' - VAT: ' + vat + '%');
+
+            window.loadState().then(function() {
+                renderMobileViewOnly();
+            });
+        } else {
+            setMobileSubmitLoading(false);
+            alert('❌ ' + (data.error || 'Lỗi nhập kho'));
+        }
+    } catch (err) {
+        console.error('Mobile import error:', err);
+        setMobileSubmitLoading(false);
+        alert('❌ Lỗi kết nối hoặc upload file. Vui lòng thử lại.');
     }
 };
+
 window.doMobileExport = async function() {
-    const projectId = document.getElementById('me-project')?.value;
-    const mid = document.getElementById('me-material')?.value;
-    const dt = document.getElementById('me-datetime')?.value || new Date().toISOString();
-    const qty = parseFloat(document.getElementById('me-qty')?.value?.replace(',', '.')) || 0;
-    const note = document.getElementById('me-note')?.value;
-    
-    if (!projectId || !mid || !qty) { alert('Vui lòng nhập đầy đủ!'); return; }
-    
-    const mat = state.data.materials.find(m => m.id === mid);
-    if (mat && mat.qty < qty) { alert(`Không đủ tồn! Còn ${mat.qty} ${mat.unit}`); return; }
-    
-    const total = qty * (mat?.cost || 0);
-    const attachment = JSON.stringify((window._upPaths && window._upPaths.usage) || []);
-    
-    const res = await fetch('/api/transactions', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            id: 'm_' + Date.now(), mid, projectId, type: 'usage',
-            qty, unitPrice: mat?.cost || 0, totalAmount: total,
-            note: note || 'Xuất từ mobile',
-            date: dt.split('T')[0], datetime: dt,
-            attachment: attachment
-        })
-    });
-    const data = await res.json();
-    if (data.success) {
-        if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-        window._upPaths = {};
-        var matLog2 = state.data.materials.find(function(m) { return m.id === mid; });
-        var projLog = state.data.projects.find(function(p) { return p.id === projectId; });
-        addLog('Xuất kho (Mobile)', (matLog2?.name||'N/A') + ' - SL: ' + qty.toLocaleString('vi-VN') + ' - CT: ' + (projLog?.name||'N/A'));
-        window.loadState().then(function() { renderMobileViewOnly(); });    
-    } else {
-        alert('❌ ' + (data.error || 'Lỗi'));
+    try {
+        const projectId = document.getElementById('me-project')?.value;
+        const mid = document.getElementById('me-material')?.value;
+        const dt = document.getElementById('me-datetime')?.value || new Date().toISOString();
+        const qty = parseMobileNumber(document.getElementById('me-qty')?.value);
+        const note = document.getElementById('me-note')?.value || '';
+
+        if (!projectId || !mid || !qty) {
+            alert('Vui lòng nhập đầy đủ!');
+            return;
+        }
+
+        const mat = state.data.materials.find(m => m.id === mid);
+
+        if (mat && Number(mat.qty || 0) < qty) {
+            alert(`Không đủ tồn! Còn ${Number(mat.qty || 0).toLocaleString('vi-VN')} ${mat.unit}`);
+            return;
+        }
+
+        setMobileSubmitLoading(true, 'Đang xuất kho...');
+
+        const total = qty * Number(mat?.cost || 0);
+        const finalPaths = await finalizeMobileFiles('usage');
+        const attachment = JSON.stringify(finalPaths);
+
+        const res = await fetch('/api/transactions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: 'm_' + Date.now(),
+                mid,
+                projectId,
+                type: 'usage',
+                qty,
+                unitPrice: Number(mat?.cost || 0),
+                totalAmount: total,
+                note: note || 'Xuất từ mobile',
+                date: dt.split('T')[0],
+                datetime: dt,
+                attachment
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+            window._upPaths = {};
+
+            const matLog = state.data.materials.find(function(m) { return m.id === mid; });
+            const projLog = state.data.projects.find(function(p) { return p.id === projectId; });
+            addLog('Xuất kho (Mobile)', (matLog?.name || 'N/A') + ' - SL: ' + qty.toLocaleString('vi-VN') + ' - CT: ' + (projLog?.name || 'N/A'));
+
+            window.loadState().then(function() {
+                renderMobileViewOnly();
+            });
+        } else {
+            setMobileSubmitLoading(false);
+            alert('❌ ' + (data.error || 'Lỗi xuất kho'));
+        }
+    } catch (err) {
+        console.error('Mobile export error:', err);
+        setMobileSubmitLoading(false);
+        alert('❌ Lỗi kết nối hoặc upload file. Vui lòng thử lại.');
     }
 };
+
 window.loadReturnMaterials = function() {
     const pid = document.getElementById('mr-project')?.value;
     const sel = document.getElementById('mr-material');
@@ -695,51 +857,87 @@ window.loadReturnMaterials = function() {
 window.updateRPrice = function() { const sel = document.getElementById('mr-material'); const p = document.getElementById('mr-price'); if (sel && p) { p.value = Number(sel.options[sel.selectedIndex]?.dataset?.price || 0).toLocaleString('vi-VN'); } };
 
 window.doMobileReturn = async function() {
-    var pid = document.getElementById('mr-project')?.value;
-    var mid = document.getElementById('mr-material')?.value;
-    var dt = document.getElementById('mr-datetime')?.value || new Date().toISOString();
-    var qty = parseFloat(document.getElementById('mr-qty')?.value?.replace(',', '.')) || 0;
-    var price = parseFloat(document.getElementById('mr-price')?.value?.replace(/\./g, '').replace(',', '.')) || 0;
-    var note = document.getElementById('mr-note')?.value || '';
-    
-    if (!pid || !mid || !qty) { alert('Vui lòng nhập đầy đủ!'); return; }
-    
-    // Kiểm tra số lượng có thể trả
-    var uT = state.data.transactions.filter(function(t) { return t.projectId === pid && t.mid === mid && t.type === 'usage'; });
-    var rT = state.data.transactions.filter(function(t) { return t.projectId === pid && t.mid === mid && t.type === 'return'; });
-    var totalReceived = uT.reduce(function(s, t) { return s + Number(t.qty||0); }, 0);
-    var totalReturned = rT.reduce(function(s, t) { return s + Number(t.qty||0); }, 0);
-    var avail = totalReceived - totalReturned;
-    
-    if (qty > avail) {
-        alert('Không thể trả quá số lượng đã nhận!\nĐã nhận: ' + Number(totalReceived).toLocaleString('vi-VN') + '\nĐã trả: ' + Number(totalReturned).toLocaleString('vi-VN') + '\nCó thể trả tối đa: ' + Number(avail).toLocaleString('vi-VN'));
-        return;
-    }
-    
-    var total = qty * price;
-    var attachment = JSON.stringify((window._upPaths && window._upPaths.return) || []);
-    
-    var res = await fetch('/api/transactions', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            id: 'm_' + Date.now(), mid: mid, projectId: pid, type: 'return',
-            qty: qty, unitPrice: price, totalAmount: total,
-            note: note || 'Trả từ mobile',
-            date: dt.split('T')[0], datetime: dt,
-            attachment: attachment
-        })
-    });
-    var data = await res.json();
-    if (data.success) {
-        window._upPaths = {};
-        var matLog3 = state.data.materials.find(function(m) { return m.id === mid; });
-        var projLog2 = state.data.projects.find(function(p) { return p.id === pid; });
-        addLog('Trả hàng (Mobile)', (matLog3?.name||'N/A') + ' - SL: ' + qty.toLocaleString('vi-VN') + ' - CT: ' + (projLog2?.name||'N/A'));
-        window.loadState().then(function() { renderMobileViewOnly(); });
-    } else {
-        alert('❌ ' + (data.error || 'Lỗi'));
+    try {
+        const pid = document.getElementById('mr-project')?.value;
+        const mid = document.getElementById('mr-material')?.value;
+        const dt = document.getElementById('mr-datetime')?.value || new Date().toISOString();
+        const qty = parseMobileNumber(document.getElementById('mr-qty')?.value);
+        const price = parseMobileNumber(document.getElementById('mr-price')?.value);
+        const note = document.getElementById('mr-note')?.value || '';
+
+        if (!pid || !mid || !qty) {
+            alert('Vui lòng nhập đầy đủ!');
+            return;
+        }
+
+        const uT = state.data.transactions.filter(function(t) {
+            return t.projectId === pid && t.mid === mid && t.type === 'usage';
+        });
+        const rT = state.data.transactions.filter(function(t) {
+            return t.projectId === pid && t.mid === mid && t.type === 'return';
+        });
+
+        const totalReceived = uT.reduce(function(s, t) { return s + Number(t.qty || 0); }, 0);
+        const totalReturned = rT.reduce(function(s, t) { return s + Number(t.qty || 0); }, 0);
+        const avail = totalReceived - totalReturned;
+
+        if (qty > avail) {
+            alert(
+                'Không thể trả quá số lượng đã nhận!\n' +
+                'Đã nhận: ' + Number(totalReceived).toLocaleString('vi-VN') + '\n' +
+                'Đã trả: ' + Number(totalReturned).toLocaleString('vi-VN') + '\n' +
+                'Có thể trả tối đa: ' + Number(avail).toLocaleString('vi-VN')
+            );
+            return;
+        }
+
+        setMobileSubmitLoading(true, 'Đang trả hàng...');
+
+        const total = qty * price;
+        const finalPaths = await finalizeMobileFiles('return');
+        const attachment = JSON.stringify(finalPaths);
+
+        const res = await fetch('/api/transactions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: 'm_' + Date.now(),
+                mid,
+                projectId: pid,
+                type: 'return',
+                qty,
+                unitPrice: price,
+                totalAmount: total,
+                note: note || 'Trả từ mobile',
+                date: dt.split('T')[0],
+                datetime: dt,
+                attachment
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            window._upPaths = {};
+
+            const matLog = state.data.materials.find(function(m) { return m.id === mid; });
+            const projLog = state.data.projects.find(function(p) { return p.id === pid; });
+            addLog('Trả hàng (Mobile)', (matLog?.name || 'N/A') + ' - SL: ' + qty.toLocaleString('vi-VN') + ' - CT: ' + (projLog?.name || 'N/A'));
+
+            window.loadState().then(function() {
+                renderMobileViewOnly();
+            });
+        } else {
+            setMobileSubmitLoading(false);
+            alert('❌ ' + (data.error || 'Lỗi trả hàng'));
+        }
+    } catch (err) {
+        console.error('Mobile return error:', err);
+        setMobileSubmitLoading(false);
+        alert('❌ Lỗi kết nối hoặc upload file. Vui lòng thử lại.');
     }
 };
+
 window.filterMStock = function() { const kw = document.getElementById('ms-search')?.value?.toLowerCase() || ''; document.querySelectorAll('#ms-list .m-stock-item').forEach(el => { el.style.display = (el.dataset.name || '').includes(kw) ? '' : 'none'; }); };
 
 window.showMobileMenu = function() { const menu = document.getElementById('m-menu'); if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; };
@@ -796,9 +994,58 @@ window.handleMobileFiles = function(input, type) {
             .then(r => r.json())
             .then(d => {
                 if (d.success) {
-                    window._upPaths[type].push(d.path);
-                    if (list) list.innerHTML += '<a href="' + d.path + '" target="_blank" style="color:#378ADD;margin-right:6px;display:inline-block;">📎 ' + d.filename + '</a> ';
-                }
+    window._upPaths[type].push(d.path);
+
+    if (list) {
+        const wrap = document.createElement('span');
+        wrap.style.display = 'inline-flex';
+        wrap.style.alignItems = 'center';
+        wrap.style.gap = '6px';
+        wrap.style.marginRight = '8px';
+        wrap.style.marginTop = '6px';
+
+        const link = document.createElement('a');
+        link.href = d.path;
+        link.target = '_blank';
+        link.style.color = '#378ADD';
+        link.style.textDecoration = 'none';
+        link.textContent = '📎 ' + f.name;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.textContent = '×';
+        removeBtn.title = 'Bỏ file';
+        removeBtn.style.width = '20px';
+        removeBtn.style.height = '20px';
+        removeBtn.style.padding = '0';
+        removeBtn.style.border = 'none';
+        removeBtn.style.borderRadius = '50%';
+        removeBtn.style.background = '#dc2626';
+        removeBtn.style.color = '#fff';
+        removeBtn.style.fontWeight = '800';
+        removeBtn.style.lineHeight = '20px';
+        removeBtn.style.cursor = 'pointer';
+
+        removeBtn.onclick = async function() {
+            await fetch('/api/upload/temp', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: d.path })
+            }).catch(function() {});
+
+            window._upPaths[type] = (window._upPaths[type] || []).filter(function(p) {
+                return p !== d.path;
+            });
+
+            wrap.remove();
+        };
+
+        wrap.appendChild(link);
+        wrap.appendChild(removeBtn);
+        list.appendChild(wrap);
+    }
+}
+
             });
     }
 };

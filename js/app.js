@@ -70,6 +70,14 @@ window.toggleSidebar = function() {
     }
     render();
 };
+window.closeModalAndCleanupUploads = async function(type = null) {
+    if (window.cleanupUploadedFiles) {
+        await window.cleanupUploadedFiles(type);
+    }
+
+    const modalArea = document.getElementById('modal-area');
+    if (modalArea) modalArea.innerHTML = '';
+};
 
 loadState().then(() => {
     checkAutoBackup();

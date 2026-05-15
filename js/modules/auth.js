@@ -137,20 +137,14 @@ export function getPaneTitle() {
 
 let currentModalCallback = null;
 export function showModal(html, callback) { currentModalCallback = callback; const modalArea = document.getElementById('modal-area'); if (modalArea) modalArea.innerHTML = `<div class="modal-overlay"><div class="modal">${html}</div></div>`; }
-export function closeModal() { 
-    // Xóa file tạm nếu không dùng
-    if (window._upPaths) {
-        Object.values(window._upPaths).forEach(function(paths) {
-            if (Array.isArray(paths)) {
-                paths.forEach(function(p) {
-                    fetch('/api/delete-temp', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({path: p}) });
-                });
-            }
-        });
+export async function closeModal() {
+    if (window.cleanupUploadedFiles) {
+        await window.cleanupUploadedFiles();
     }
-    window._upPaths = {};
-    const modalArea = document.getElementById('modal-area'); 
-    if (modalArea) modalArea.innerHTML = ''; 
-    if (currentModalCallback) currentModalCallback(); 
-    currentModalCallback = null; 
+
+    const modalArea = document.getElementById('modal-area');
+    if (modalArea) modalArea.innerHTML = '';
+
+    if (currentModalCallback) currentModalCallback();
+    currentModalCallback = null;
 }
