@@ -70,7 +70,7 @@ export function renderMobileView() {
         .slice(0, 5);
     
     return `
- <div class="mobile-app dark" id="mobile-app-container">        
+<div class="mobile-app ios-liquid" id="mobile-app-container">
             <!-- SIDEBAR TRƯỢT TRÁI -->
             <div class="m-sidebar-overlay ${sidebarOpen ? 'show' : ''}" onclick="toggleMSidebar()"></div>
             <div class="m-sidebar ${sidebarOpen ? 'open' : ''}">
@@ -156,22 +156,19 @@ export function renderMobileView() {
                 </div>
             </div>
             
-                       <!-- GIAO DỊCH GẦN ĐÂY -->
+            <!-- GIAO DỊCH GẦN ĐÂY -->
             <div class="m-section">
                 <div class="m-section-title">📋 GIAO DỊCH GẦN ĐÂY</div>
-                <div id="m-txn-list">
-                    ${renderRecentTxns(transactions, txnPage, txnLimit)}
-                </div>
+				<div id="m-txn-list">
+				${renderRecentTxns(transactions, txnPage, txnLimit)}
+				 </div>
+				</div>
             </div>
-
             <!-- MENU POPUP -->
             <div id="m-menu" class="m-menu" style="display:none;" onclick="event.stopPropagation()">
                 <div class="m-menu-item" onclick="logout()">🚪 Đăng xuất</div>
-            </div>
-
-            <div id="modal-area"></div>
+            </div>            
         </div>
-
     `;
 }
 
@@ -197,7 +194,7 @@ window.showMobileImport = function() {
     const dt = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}T${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     
     const html = `
-        <div class="m-modal" id="m-import-modal">
+        <div class="m-modal ios-liquid" id="m-import-modal">
             <div class="m-modal-hd">
                 <button class="m-back" onclick="renderMobileViewOnly()">←</button>
                 <span>📥 NHẬP KHO</span>
@@ -277,7 +274,7 @@ window.showMobileExport = function() {
     const dt = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}T${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     
     const html = `
-        <div class="m-modal" id="m-export-modal">
+        <div class="m-modal ios-liquid" id="m-export-modal">
             <div class="m-modal-hd">
                 <button class="m-back" onclick="renderMobileViewOnly()">←</button>
                 <span>📤 XUẤT KHO</span>
@@ -325,7 +322,7 @@ window.showMobileStock = function() {
     const materials = state.data.materials || [];
     
     let html = `
-        <div class="m-modal" id="m-stock-modal">
+        <div class="m-modal ios-liquid" id="m-stock-modal">
             <div class="m-modal-hd">
                 <button class="m-back" onclick="renderMobileViewOnly()">←</button>
                 <span>📦 TỒN KHO (${materials.length})</span>
@@ -363,7 +360,7 @@ window.showMobileLowStock = function() {
     const materials = state.data.materials.filter(m => m.qty <= m.low);
     
     let html = `
-        <div class="m-modal" id="m-low-modal">
+        <div class="m-modal ios-liquid" id="m-low-modal">
             <div class="m-modal-hd">
                 <button class="m-back" onclick="renderMobileViewOnly()">←</button>
                 <span>⚠️ SẮP HẾT HÀNG (${materials.length})</span>
@@ -400,7 +397,7 @@ window.showMobileProjects = function() {
     const projects = state.data.projects || [];
     
     let html = `
-        <div class="m-modal" id="m-project-modal">
+        <div class="m-modal ios-liquid" id="m-project-modal">
             <div class="m-modal-hd">
                 <button class="m-back" onclick="renderMobileViewOnly()">←</button>
                 <span>🏗️ CÔNG TRÌNH (${projects.length})</span>
@@ -445,7 +442,7 @@ window.showMobileReturn = function() {
     const dt = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}T${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     
     const html = `
-        <div class="m-modal" id="m-return-modal">
+        <div class="m-modal ios-liquid" id="m-return-modal">
             <div class="m-modal-hd">
                 <button class="m-back" onclick="renderMobileViewOnly()">←</button>
                 <span>🔄 TRẢ HÀNG</span>
@@ -743,7 +740,7 @@ window.showMobileDashboard = function() {
     const suppliers = state.data.suppliers || [];
     
     const html = `
-        <div class="m-modal" id="m-dashboard-modal">
+        <div class="m-modal ios-liquid" id="m-dashboard-modal">
             <div class="m-modal-hd">
                 <button class="m-back" onclick="renderMobileViewOnly()">←</button>
                 <span>📊 THỐNG KÊ</span>
