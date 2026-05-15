@@ -185,3 +185,26 @@ export function getFavorites() { try { return JSON.parse(localStorage.getItem(FA
 export function toggleFavorite(itemId) { let f = getFavorites(); if (f.includes(itemId)) f = f.filter(id => id !== itemId); else f.push(itemId); localStorage.setItem(FAVORITES_KEY, JSON.stringify(f)); return f; }
 export function isFavorite(itemId) { return getFavorites().includes(itemId); }
 export function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func(...args), wait); }; }
+export function renderAttachmentLinks(attachment, escapeHtmlFn = null) {
+    if (!attachment || attachment === '[]' || attachment === 'null' || attachment === '') return '—';
+
+    try {
+        const files = typeof attachment === 'string' ? JSON.parse(attachment) : attachment;
+        if (!Array.isArray(files) || files.length === 0) return '—';
+
+        return files.map(function(file) {
+            const filePath = typeof file === 'string' ? file : file.path;
+            const rawName = typeof file === 'string'
+                ? String(filePath || '').split('/').pop()
+                : (file.name || String(file.path || '').split('/').pop());
+
+            if (!filePath) return '';
+
+            const fileName = escapeHtmlFn ? escapeHtmlFn(rawName) : rawName;
+
+            return `<a href="${filePath}" target="_blank" title="${fileName}" style="display:block;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none;color:var(--accent);">📎 ${fileName}</a>`;
+        }).filter(Boolean).join('<br>');
+    } catch (e) {
+        return '—';
+    }
+}

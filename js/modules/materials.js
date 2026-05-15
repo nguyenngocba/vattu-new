@@ -2,9 +2,9 @@ import { state, saveState, addLog, formatMoney, escapeHtml, showModal, closeModa
 import { 
     handleIntegerInput, getNumberFromInput, formatMoneyVND, setupNumberInput,
     getColumnConfig, saveColumnConfig, updateColumnWidth, toggleColumnVisibility, setSortConfig,
-    getSortedData, DEFAULT_COLUMNS, getFavorites, toggleFavorite, isFavorite
+    getSortedData, DEFAULT_COLUMNS, getFavorites, toggleFavorite, isFavorite,
+    renderAttachmentLinks
 } from './utils.js?v=1777963068';
-
 let materialFilters = { keyword: '', category: '', minStock: '', maxStock: '', showFavoritesOnly: false };
 let materialListContainer = null;
 const MATERIAL_PAGE_SIZES = [10, 50, 100, 200];
@@ -549,9 +549,9 @@ window.showMaterialDetail = function(mid, page = 1, limit = 20) {
         .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
     
     const totalPurchase = purchaseTxns.length;
-const importKey = 'material_import_' + mid;
-const importPage = getMaterialDetailPage(importKey, purchaseTxns);
-const paginatedPurchase = importPage.rows;
+    const importKey = 'material_import_' + mid;
+    const importPage = getMaterialDetailPage(importKey, purchaseTxns);
+    const paginatedPurchase = importPage.rows;
 
     // Lấy giao dịch xuất và trả
     let exportTxns = state.data.transactions
@@ -559,9 +559,9 @@ const paginatedPurchase = importPage.rows;
         .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
     
     const totalExport = exportTxns.length;
-const exportKey = 'material_export_' + mid;
-const exportPage = getMaterialDetailPage(exportKey, exportTxns);
-const paginatedExport = exportPage.rows;
+    const exportKey = 'material_export_' + mid;
+    const exportPage = getMaterialDetailPage(exportKey, exportTxns);
+    const paginatedExport = exportPage.rows;
 
 
     // Tính tổng
@@ -582,7 +582,7 @@ const paginatedExport = exportPage.rows;
                 <td style="text-align:center;">${parseFloat(t.vatRate||0)}%</td>
                 <td style="text-align:right;color:var(--success-text);font-weight:bold;">${formatMoneyVND(t.totalAmount)}</td>
                 <td style="text-align:left;">${escapeHtml(t.note || '—')}</td>
-                <td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td>
+                <td style="text-align:left;">${renderAttachmentLinks(t.attachment, escapeHtml)}</td>
             </tr>`;
         }).join('');
     } else {
@@ -608,7 +608,7 @@ const paginatedExport = exportPage.rows;
                 <td style="text-align:right;">${formatMoneyVND(parseFloat(t.unitPrice))}</td>
                 <td style="text-align:right;font-weight:bold;color:${isReturn?'var(--success-text)':'var(--warn-text)'};">${isReturn?'- ':''}${formatMoneyVND(t.totalAmount)}</td>
                 <td>${escapeHtml(t.note || '—')}</td>
-                <td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td>
+                <td style="text-align:left;">${renderAttachmentLinks(t.attachment, escapeHtml)}</td>
             </tr>`;
         }).join('');
     } else {

@@ -1,20 +1,16 @@
 import { state, saveState, addLog, formatMoney, escapeHtml, showModal, closeModal, genSid, supplierById, hasPermission } from './state.js';
-import { debounce, formatMoneyVND, setupNumberInput } from './utils.js?v=1777963068';
-
+import { debounce, formatMoneyVND, setupNumberInput, renderAttachmentLinks } from './utils.js?v=1777963068';
 let supplierFilters = { keyword: '', phone: '', minPurchase: '', maxPurchase: '' };
 let supplierListContainer = null;
 let supplierViewMode = 'large'; // 'small' | 'large' | 'list'
 const SUPPLIER_HISTORY_PAGE_SIZES = [10, 50, 100, 200];
-
 window.supplierHistoryPaging = window.supplierHistoryPaging || {};
-
 function getSupplierHistoryPaging(key) {
     if (!window.supplierHistoryPaging[key]) {
         window.supplierHistoryPaging[key] = { page: 1, size: 10 };
     }
     return window.supplierHistoryPaging[key];
 }
-
 function getSupplierHistoryPage(key, rows) {
     const paging = getSupplierHistoryPaging(key);
     const size = Number(paging.size) || 10;
@@ -32,7 +28,6 @@ function getSupplierHistoryPage(key, rows) {
         totalPages
     };
 }
-
 function renderSupplierHistoryPageSize(key, pageData) {
     return `
         <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
@@ -43,7 +38,6 @@ function renderSupplierHistoryPageSize(key, pageData) {
         </div>
     `;
 }
-
 function renderSupplierHistoryPager(key, pageData) {
     return `
         <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-top:12px;padding:8px 0;">
@@ -57,8 +51,6 @@ function renderSupplierHistoryPager(key, pageData) {
         </div>
     `;
 }
-
-
 window.setSupplierHistoryPageSize = function(key, size) {
     const paging = getSupplierHistoryPaging(key);
     paging.size = Number(size) || 10;
@@ -72,7 +64,6 @@ window.setSupplierHistoryPageSize = function(key, size) {
         window.viewSupplierHistory(key.replace('history_', ''));
     }
 };
-
 window.setSupplierHistoryPage = function(key, page) {
     const paging = getSupplierHistoryPaging(key);
     paging.page = Number(page) || 1;
@@ -154,7 +145,7 @@ function renderSupplierHistory(rows = null) {
             <td style="text-align: right;">${formatMoneyVND(t.unitPrice)}</td>
             <td style="text-align:right;white-space:nowrap;">${t.vatRate || 0}%</td>
             <td class="amount text-warning">${formatMoneyVND(t.totalAmount)}</td>
-            <td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td>
+            <td style="text-align:left;">${renderAttachmentLinks(t.attachment, escapeHtml)}</td>
         </tr>`;
     }).join('');
 }
@@ -447,7 +438,7 @@ export function showSupplierDetail(supplierId) {
                             <th style="text-align:right;">Đơn giá</th>
                             <th style="text-align:center;">VAT</th>
                             <th style="text-align:right;">Thành tiền</th>
-                            <th style="text-align:center;">File</th>
+                            <th style="text-align:left;">File</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -465,7 +456,7 @@ export function showSupplierDetail(supplierId) {
                                 <td style="text-align: right;">${formatMoneyVND(t.unitPrice)}</td>
                                 <td style="text-align:right;white-space:nowrap;">${t.vatRate || 0}%</td>
                                 <td class="amount text-warning">${formatMoneyVND(t.totalAmount)}</td>
-                                <td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td>
+                                <td style="text-align:left;">${renderAttachmentLinks(t.attachment, escapeHtml)}</td>
                             </tr>`;
                         }).join('')}
                         
@@ -610,7 +601,7 @@ ${renderSupplierHistoryPageSize('all', allHistoryPage)}
                                     <th style="text-align:right;">Đơn giá</th>
                                     <th style="text-align:center;">VAT</th>
                                     <th style="text-align:right;">Thành tiền</th>
-                                    <th style="text-align:center;">File</th>
+                                    <th style="text-align:left;">File</th>
                                 </tr>
                             </thead>
                             <tbody id="supplier-history-tbody">
@@ -693,9 +684,7 @@ export function deleteSupplier(sid) {
   saveState();
     saveState(); if(window.render) window.render();
 }
-
 window.deleteSupplierHandler = (sid) => { deleteSupplier(sid); };
-
 export function viewSupplierHistory(sid) {
     const supplier = supplierById(sid);
     const purchaseTxns = state.data.transactions.filter(t => t.type === 'purchase' && t.supplierId === sid).sort((a,b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
@@ -703,7 +692,6 @@ export function viewSupplierHistory(sid) {
     const historyKey = 'history_' + sid;
     const historyPage = getSupplierHistoryPage(historyKey, purchaseTxns);
     const displayTxns = historyPage.rows;
-
     showModal(`
     <div class="modal-hd">
         <span class="modal-title">📜 Lịch sử nhập hàng - ${escapeHtml(supplier?.name || '')}</span>
@@ -714,9 +702,8 @@ export function viewSupplierHistory(sid) {
             <span>📜 LỊCH SỬ NHẬP HÀNG</span>
             ${renderSupplierHistoryPageSize(historyKey, historyPage)}
         </div>
-    
     <div class="metric-card" style="margin-bottom:16px"><div class="metric-label">Tổng chi</div><div class="metric-val" style="font-size:20px">${formatMoneyVND(totalSpent)}</div></div>
-    <div class="tbl-wrap"><table class="history-table" style="min-width:900px;width:100%;"><thead><tr><th style="text-align:left;">Thời gian</th><th style="text-align:left;">Vật tư</th><th style="text-align:right;">SL</th><th style="text-align:right;">Đơn giá</th><th style="text-align:center;">VAT</th><th style="text-align:right;">Thành tiền</th><th style="text-align:left;">Ghi chú</th><th style="text-align:center;">File</th></tr></thead>
+    <div class="tbl-wrap"><table class="history-table" style="min-width:900px;width:100%;"><thead><tr><th style="text-align:left;">Thời gian</th><th style="text-align:left;">Vật tư</th><th style="text-align:right;">SL</th><th style="text-align:right;">Đơn giá</th><th style="text-align:center;">VAT</th><th style="text-align:right;">Thành tiền</th><th style="text-align:left;">Ghi chú</th><th style="text-align:left;">File</th></tr></thead>
     <tbody>${displayTxns.map(t => {
         const mat = state.data.materials.find(m => m.id === t.mid);
         const invoiceHtml = t.invoiceImage ? `<a href="${t.invoiceImage}" target="_blank">📄 Xem</a>` : '—';
@@ -728,18 +715,14 @@ export function viewSupplierHistory(sid) {
           <td style="text-align:center;">${t.vatRate || 0}%</td>
           <td class="amount text-warning">${formatMoneyVND(t.totalAmount)}</td>
           <td style="text-align:left;">${escapeHtml(t.note || '—')}</td>
-          <td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td>
+          <td style="text-align:left;">${renderAttachmentLinks(t.attachment, escapeHtml)}</td>
         </tr>`;
        }).join('') || '<tr><td colspan="8">Chưa có giao dịch nào</td></tr>'}</tbody></table></div>
     ${renderSupplierHistoryPager(historyKey, historyPage)}
     </div><div class="modal-ft"><button onclick="closeModal()">Đóng</button></div>`);
-
 }
-
-
 export function filterSuppliers() {}
 export function clearSupplierSearch() {}
-
 export const addSupplier = (data) => { 
     const newId = genSid(); 
     const newSupplier = { id: newId, name: data.name, phone: data.phone || '', email: data.email || '', address: data.address || '' }; 
@@ -751,5 +734,4 @@ export const addSupplier = (data) => {
     saveState(); if(window.render) window.render(); 
     return newSupplier; 
 };
-
 export const getSuppliers = () => state.data.suppliers;window.updateSupplierList = updateSupplierList;

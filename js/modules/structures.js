@@ -1,21 +1,17 @@
 import { state, saveState, addLog, escapeHtml, showModal, closeModal } from './state.js';
-import { formatMoneyVND, setupNumberInput, getNumberFromInput } from './utils.js';
-
+import { formatMoneyVND, setupNumberInput, getNumberFromInput, renderAttachmentLinks } from './utils.js';
 let structureListContainer = null;
 const STRUCTURE_PAGE_SIZES = [10, 50, 100, 200];
-
 window.structurePaging = window.structurePaging || {
     structures: { page: 1, size: 10 },
     sw: { page: 1, size: 10 }
 };
-
 function getStructurePaging(key) {
     if (!window.structurePaging[key]) {
         window.structurePaging[key] = { page: 1, size: 10 };
     }
     return window.structurePaging[key];
 }
-
 function getStructurePage(key, rows) {
     const paging = getStructurePaging(key);
     const size = Number(paging.size) || 10;
@@ -33,7 +29,6 @@ function getStructurePage(key, rows) {
         totalPages
     };
 }
-
 function renderStructurePageSize(key, pageData) {
     return `
         <div style="display:flex;align-items:center;gap:8px;">
@@ -44,8 +39,6 @@ function renderStructurePageSize(key, pageData) {
         </div>
     `;
 }
-
-
 function renderStructurePager(key, pageData, label) {
     return `
         <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-top:12px;padding:8px 0;">
@@ -59,7 +52,6 @@ function renderStructurePager(key, pageData, label) {
         </div>
     `;
 }
-
 window.setStructurePageSize = function(key, size) {
     const paging = getStructurePaging(key);
     paging.size = Number(size) || 10;
@@ -73,7 +65,6 @@ window.setStructurePageSize = function(key, size) {
         window.render();
     }
 };
-
 window.setStructurePage = function(key, page) {
     const paging = getStructurePaging(key);
     paging.page = Number(page) || 1;
@@ -324,7 +315,7 @@ window.produceStructure = function(sid) {
         '<div class="form-group"><label class="form-label">Cấu kiện</label><input value="' + escapeHtml(s.name) + ' (Tồn: ' + Number(s.qty).toLocaleString('vi-VN') + ' ' + s.unit + ')" disabled></div>' +
         '<div class="form-group"><label class="form-label">🔢 Số lượng sản xuất</label><input type="text" id="prod-qty" value="1" dir="ltr"></div>' +
         '<div class="form-group"><label class="form-label">📝 Ghi chú</label><input type="text" id="prod-note" placeholder="Ghi chú..."></div>' +
-        '<div class="form-group"><label class="form-label">📎 File đính kèm</label><input type="file" id="prod-files" multiple onchange="window.handleMobileFiles(this,\'produce\')"><div id="prod-file-list" style="margin-top:6px;font-size:11px;color:#7a8099;"></div></div>' +
+        '<div class="form-group"><label class="form-label">📎 File đính kèm</label><input type="file" id="prod-files" multiple onchange="window.upFiles(this,\'produce\')"><div id="produce-file-list" style="margin-top:6px;font-size:11px;color:#7a8099;"></div></div>' +
         '</div>' +
         '<div class="modal-ft"><button onclick="closeModal()">Hủy</button><button class="primary" onclick="window.confirmProduceStructure(\'' + sid + '\')">🏭 Xác nhận sản xuất</button></div>';
     
@@ -385,12 +376,7 @@ window.showSWDetail = function(mid) {
 
         displayRows.forEach(function(l){
             var dt = new Date(l.created_at).toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'});
-            var files = '';
-            try {
-                var att = JSON.parse(l.attachment || '[]');
-                att.forEach(function(f){ files += '<a href="'+f+'" target="_blank">📎</a> '; });
-            } catch(e){}
-
+            var files = renderAttachmentLinks(l.attachment, escapeHtml);
             var typeIcon = l.type === 'return_to_main' ? '🔄 Trả lại kho chính' : '📦 Chuyển sang kho CK';
             var typeColor = l.type === 'return_to_main' ? 'color: var(--success-text);' : 'color: var(--accent);';
             var absQty = Math.abs(Number(l.qty));
@@ -405,7 +391,7 @@ window.showSWDetail = function(mid) {
                 '<td>'+escapeHtml(l.unit || '')+'</td>' +
                 '<td style="text-align:right;">'+Number(l.cost||0).toLocaleString('vi-VN')+' ₫</td>' +
                 '<td>'+escapeHtml(l.note || '—')+'</td>' +
-                '<td style="text-align:center;">'+(files||'—')+'</td>' +
+                '<td style="text-align:left;">'+(files||'—')+'</td>' +
                 '</tr>';
         });
 
@@ -511,7 +497,6 @@ window.showStructureDetail = function(sid) {
     const totalExported = exportTxns.reduce((sum, t) => sum + Number(t.qty||0), 0);
     const totalReturned = returnTxns.reduce((sum, t) => sum + Number(t.qty||0), 0);
     const currentStock = Number(s.qty || 0);
-    
     const allHistory = [
         ...produceTxns.map(t => ({ ...t, historyType: 'produce' })), 
         ...exportTxns.map(t => ({ ...t, historyType: 'export' })),
@@ -520,14 +505,11 @@ window.showStructureDetail = function(sid) {
     const detailKey = 'structure_detail_' + sid;
     const historyPage = getStructurePage(detailKey, allHistory);
     const displayHistory = historyPage.rows;
-
-    
     let historyHtml = '';
     if (displayHistory.length > 0) {
         historyHtml = displayHistory.map(t => {
             const isProduce = t.historyType === 'produce';
             const isReturn = t.historyType === 'return';
-
             var dt = t.date || '';
             if (t.datetime) {
                 var d = new Date(t.datetime);
@@ -540,17 +522,8 @@ window.showStructureDetail = function(sid) {
                     year:'numeric'
                 });
             }
-
             const projectName = !isProduce ? (state.data.projects.find(p => p.id === t.projectId)?.name || 'N/A') : '';
-
-            let files = '—';
-            try {
-                const att = JSON.parse(t.attachment || '[]');
-                if (Array.isArray(att) && att.length > 0) {
-                    files = att.map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ');
-                }
-            } catch (e) {}
-
+            let files = renderAttachmentLinks(t.attachment, escapeHtml);
             return `<tr>
                 <td style="white-space:nowrap;">${dt}</td>
                 <td style="text-align:center; ${isProduce ? 'color:var(--accent);' : isReturn ? 'color:var(--success-text);' : 'color:var(--warn-text);'} font-weight:bold;">
@@ -559,13 +532,12 @@ window.showStructureDetail = function(sid) {
                 <td style="text-align:center;">${!isProduce ? escapeHtml(projectName) : '—'}</td>
                 <td style="text-align:right;">${Number(t.qty||0).toLocaleString('vi-VN')} ${s.unit}</td>
                 <td style="text-align:left;">${escapeHtml(t.note || '—')}</td>
-                <td style="text-align:center;">${files}</td>
+                <td style="text-align:left;">${files}</td>
             </tr>`;
         }).join('');
     } else {
         historyHtml = '<tr><td colspan="6" style="text-align:center;">📭 Chưa có lịch sử</td></tr>';
     }
-    
     let html = `<div class="modal-hd" style="background:var(--accent-bg);">
         <span class="modal-title" style="font-size:20px;">🏗️ Cấu kiện: ${escapeHtml(s.name)} (${s.id})</span>
         <button class="xbtn" onclick="closeModal()">✕</button>
@@ -636,7 +608,7 @@ window.exportStructure = function(sid) {
             <div class="form-group"><label class="form-label">Công trình</label><select id="exp-proj">${projOpts}</select></div>
             <div class="form-group"><label class="form-label">Số lượng</label><input type="text" id="exp-qty" value="1" dir="ltr"></div>
             <div class="form-group"><label class="form-label">Ghi chú</label><input id="exp-note" placeholder="Ghi chú..."></div>
-            <div class="form-group"><label class="form-label">📎 File đính kèm</label><input type="file" id="exp-files" multiple onchange="window.handleMobileFiles(this,'structure_export')"><div id="exp-file-list" style="margin-top:6px;font-size:11px;color:#7a8099;"></div></div>
+            <div class="form-group"><label class="form-label">📎 File đính kèm</label><input type="file" id="exp-files" multiple onchange="window.upFiles(this,'structure_export')"><div id="structure_export-file-list" style="margin-top:6px;font-size:11px;color:#7a8099;"></div></div>
         </div>
         <div class="modal-ft"><button onclick="closeModal()">Hủy</button><button class="primary" onclick="window.confirmExportStructure('${sid}')">Xác nhận xuất</button></div>
     `);
@@ -644,8 +616,6 @@ window.exportStructure = function(sid) {
         var qtyInput = document.getElementById('exp-qty');
         if (qtyInput) setupNumberInput(qtyInput, { isInteger: false, decimals: null });
         }, 100);
-
-
 };
 window.confirmExportStructure = async function(sid) {
     var pid = document.getElementById('exp-proj')?.value;
@@ -713,25 +683,22 @@ window.returnStructureToWarehouse = function(projectId) {
             exportedStructures.push({ id: sid, name: s.name, unit: s.unit, cost: s.cost, avail: avail });
         }
     });
-    
     if (exportedStructures.length === 0) {
         alert('Không có cấu kiện nào đã xuất cho công trình này!');
         return;
     }
-    
     var opts = exportedStructures.map(function(s) {
         return '<option value="' + s.id + '" data-cost="' + s.cost + '">' + s.name + ' (Có thể trả: ' + Number(s.avail).toLocaleString('vi-VN') + ' ' + s.unit + ')</option>';
     }).join('');
         var now = new Date();
     var dt = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + 'T' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-    
         var html = '<div class="modal-hd" style="background:#0891b2;"><span class="modal-title">🏗️ Trả cấu kiện về kho</span><button class="xbtn" onclick="closeModal()">✕</button></div>' +
         '<div class="modal-bd">' +
         '<div class="form-group"><label class="form-label">📅 Thời gian trả</label><input type="datetime-local" id="return-structure-datetime" value="' + dt + '"></div>' +
         '<div class="form-group"><label class="form-label">Cấu kiện</label><select id="return-structure-id">' + opts + '</select></div>' +
         '<div class="form-group"><label class="form-label">Số lượng</label><input type="text" id="return-structure-qty" value="1" dir="ltr"></div>' +
         '<div class="form-group"><label class="form-label">Ghi chú</label><input type="text" id="return-structure-note" placeholder="Lý do trả..."></div>' +
-        '<div class="form-group"><label class="form-label">📎 File đính kèm</label><input type="file" id="return-structure-files" multiple onchange="window.handleMobileFiles(this,\'structure_return\')"><div id="return-structure-file-list" style="margin-top:6px;font-size:11px;color:#7a8099;"></div></div>' +
+        '<div class="form-group"><label class="form-label">📎 File đính kèm</label><input type="file" id="return-structure-files" multiple onchange="window.upFiles(this,\'structure_return\')"><div id="structure_return-file-list" style="margin-top:6px;font-size:11px;color:#7a8099;"></div></div>' +
         '</div>' +
         '<div class="modal-ft"><button onclick="closeModal()">Hủy</button><button class="primary" style="background:#0891b2;" onclick="window.confirmReturnStructure(\'' + projectId + '\')">Xác nhận trả</button></div>';
     showModal(html);
@@ -740,19 +707,15 @@ window.returnStructureToWarehouse = function(projectId) {
         if (qtyInput) setupNumberInput(qtyInput, { isInteger: false, decimals: null });
     }, 100);
 };
-
 window.confirmReturnStructure = async function(projectId) {
     var sid = document.getElementById('return-structure-id')?.value;
     var dt = document.getElementById('return-structure-datetime')?.value || new Date().toISOString();
     var qty = getNumberFromInput(document.getElementById('return-structure-qty'));
     var note = document.getElementById('return-structure-note')?.value || '';
-    
     if (!sid || qty <= 0) { alert('Vui lòng nhập đầy đủ!'); return; }
-    
     var s = (state.data.structures || []).find(function(x) { return x.id === sid; });
     var finalPaths = window.moveUploadedFiles ? await window.moveUploadedFiles('structure_return') : [];
     var attachment = JSON.stringify(finalPaths);
-    
     fetch('/api/return-structure', { 
         method: 'POST', headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify({ structureId: sid, projectId: projectId, qty: qty, note: note, datetime: dt, attachment: attachment }) 

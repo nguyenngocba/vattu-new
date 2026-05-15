@@ -57,11 +57,176 @@ function renderMobileTabBar(active = 'home') {
         </div>
     `;
 }
+function parseAttachmentFiles(attachment) {
+    if (!attachment || attachment === '[]' || attachment === 'null' || attachment === '') return [];
 
+    try {
+        const files = typeof attachment === 'string' ? JSON.parse(attachment) : attachment;
+        return Array.isArray(files) ? files.filter(Boolean) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function getAttachmentFilePath(file) {
+    return typeof file === 'string' ? file : file?.path;
+}
+
+function getAttachmentFileName(file) {
+    const filePath = getAttachmentFilePath(file);
+    return typeof file === 'string'
+        ? String(filePath || '').split('/').pop()
+        : (file?.name || String(filePath || '').split('/').pop() || 'file');
+}
+
+function getMobileFileAction(fileName) {
+    const ext = String(fileName || '').split('.').pop().toLowerCase();
+
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return '🖼️ Xem ảnh';
+    if (ext === 'pdf') return '📄 Mở PDF';
+    if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊 Mở Excel';
+    if (['doc', 'docx'].includes(ext)) return '📝 Mở Word';
+
+    return '📎 Mở file';
+}
+
+window.showMobileAttachmentSheet = function(encodedAttachment) {
+    let files = [];
+
+    try {
+        files = parseAttachmentFiles(decodeURIComponent(encodedAttachment));
+    } catch (e) {}
+
+    if (!files.length) return;
+
+    const html = `
+        <div id="m-file-sheet" class="m-action-sheet" style="display:flex;" onclick="this.remove()">
+            <div class="m-action-panel" onclick="event.stopPropagation()">
+                <div class="m-action-grabber"></div>
+                ${files.map(function(file) {
+                    const filePath = getAttachmentFilePath(file);
+                    const fileName = getAttachmentFileName(file);
+                    const action = getMobileFileAction(fileName);
+                    const ext = String(fileName || '').split('.').pop().toLowerCase();
+                    const shouldDownload = ['xls', 'xlsx', 'csv', 'doc', 'docx'].includes(ext);
+
+return `
+    <a href="${filePath}" target="_blank" ${shouldDownload ? 'download' : ''} class="m-txn-file-item">
+        <span>${action}</span>
+        <small>${escapeHtml(fileName)}</small>
+    </a>
+`;                }).join('')}
+                <button class="danger" onclick="document.getElementById('m-file-sheet')?.remove()">Đóng</button>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+};
+window.showMobileTxnDetail = function(txnKey) {
+    const t = window._mobileTxnDetailMap?.[txnKey]
+        || (state.data.transactions || []).find(x => String(x.id) === String(txnKey));
+
+    if (!t) {
+        console.warn('Không tìm thấy giao dịch mobile:', txnKey, window._mobileTxnDetailMap);
+        return;
+    }
+
+    const mat = (state.data.materials || []).find(m => m.id === t.mid);
+    const supplier = (state.data.suppliers || []).find(s => s.id === t.supplierId);
+    const project = (state.data.projects || []).find(p => p.id === t.projectId);
+    const files = parseAttachmentFiles(t.attachment);
+
+    const isImport = t.type === 'purchase';
+    const isReturn = t.type === 'return';
+    const typeText = isImport ? 'Nhập kho' : isReturn ? 'Trả hàng' : 'Xuất kho';
+    const typeIcon = isImport ? '📥' : isReturn ? '🔄' : '📤';
+    const toneClass = isImport ? 'success' : isReturn ? 'info' : 'danger';
+
+    const time = new Date(t.datetime || t.date).toLocaleString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+
+    const fileHtml = files.length
+        ? files.map(function(file) {
+            const filePath = getAttachmentFilePath(file);
+            const fileName = getAttachmentFileName(file);
+            const action = getMobileFileAction(fileName);
+            const ext = String(fileName || '').split('.').pop().toLowerCase();
+            const shouldDownload = ['xls', 'xlsx', 'csv', 'doc', 'docx'].includes(ext);
+
+            return `
+                <a href="${filePath}" target="_blank" ${shouldDownload ? 'download' : ''} class="m-txn-file-item">
+                    <span>${action}</span>
+                    <small>${escapeHtml(fileName)}</small>
+                </a>
+            `;
+        }).join('')
+        : '<div class="m-txn-file-empty">Không có file đính kèm</div>';
+
+    const detailRow = function(label, value, isTotal = false) {
+        return `
+            <div class="m-txn-detail-row ${isTotal ? 'total' : ''}">
+                <span>${label}</span>
+                <strong>${value}</strong>
+            </div>
+        `;
+    };
+
+    const html = `
+        <div id="m-txn-detail-sheet" class="m-txn-detail-overlay" onclick="this.remove()">
+            <div class="m-txn-detail-panel" onclick="event.stopPropagation()">
+                <div class="m-action-grabber"></div>
+
+                <div class="m-txn-detail-head">
+                    <div class="m-txn-detail-title-wrap">
+                        <div class="m-txn-detail-icon ${toneClass}">${typeIcon}</div>
+                        <div>
+                            <div class="m-txn-detail-type">${typeText}</div>
+                            <div class="m-txn-detail-time">${time}</div>
+                        </div>
+                    </div>
+                    <button type="button" class="m-txn-detail-close" onclick="document.getElementById('m-txn-detail-sheet')?.remove()">
+                        <span>×</span>
+                    </button>
+                    </div>
+
+                    <div class="m-txn-detail-card ${toneClass}">
+
+                    ${detailRow('Vật tư', escapeHtml(mat?.name || 'N/A'))}
+                    ${isImport ? detailRow('Nhà cung cấp', escapeHtml(supplier?.name || 'N/A')) : ''}
+                    ${t.projectId ? detailRow('Công trình', escapeHtml(project?.name || 'N/A')) : ''}
+                    ${detailRow('Số lượng', `${Number(t.qty || 0).toLocaleString('vi-VN')} ${mat?.unit || ''}`)}
+                    ${detailRow('Đơn giá', formatMoneyVND(t.unitPrice || 0))}
+                    ${t.vatRate !== undefined ? detailRow('VAT', `${t.vatRate || 0}%`) : ''}
+                    ${detailRow('Thành tiền', formatMoneyVND(t.totalAmount || 0), true)}
+                </div>
+
+                <div class="m-txn-detail-note">${escapeHtml(t.note || 'Không có ghi chú')}</div>
+
+                <div class="m-txn-file-title">File đính kèm</div>
+                <div class="m-txn-file-list">${fileHtml}</div>
+            </div>
+        </div>
+    `;
+
+    (document.getElementById('root') || document.body).insertAdjacentHTML('beforeend', html);
+};
+
+window.showMobileAttachmentSheetByTxn = function(txnId) {
+    const attachment = window._mobileTxnAttachments?.[txnId];
+    if (!attachment) return;
+    window.showMobileAttachmentSheet(encodeURIComponent(attachment));
+};
 function renderMobileActionSheet() {
     return `
         <div id="m-action-sheet" class="m-action-sheet" style="display:none;" onclick="hideMobileActions()">
-            <div class="m-action-panel" onclick="event.stopPropagation()">
+            <div class="m-action-panel" style="max-height:82vh;overflow-y:auto;width:100%;" onclick="event.stopPropagation()">
                 <div class="m-action-grabber"></div>
                 <button onclick="hideMobileActions();showMobileImport()">Nhập kho</button>
                 <button onclick="hideMobileActions();showMobileExport()">Xuất kho</button>
@@ -74,7 +239,6 @@ function renderMobileActionSheet() {
 function setMobileSubmitLoading(isLoading, text = 'Đang lưu...') {
     const btn = document.querySelector('.m-submit');
     if (!btn) return;
-
     if (isLoading) {
         btn.dataset.originalText = btn.innerHTML;
         btn.innerHTML = text;
@@ -86,7 +250,6 @@ function setMobileSubmitLoading(isLoading, text = 'Đang lưu...') {
         btn.classList.remove('loading');
     }
 }
-
 // ========== RENDER ==========
 function renderRecentTxns(transactions, page, limit) {
     const materials = state.data.materials || [];
@@ -95,29 +258,40 @@ function renderRecentTxns(transactions, page, limit) {
     const totalPages = Math.ceil(totalItems / limit) || 1;
     if (page > totalPages) page = totalPages;
     if (page < 1) page = 1;
-    
     const start = (page - 1) * limit;
     const paginated = txns.slice(start, start + limit);
-    
     if (paginated.length === 0) return '<div class="m-empty">Chưa có giao dịch</div>';
-    
-    let html = '';
-    paginated.forEach(t => {
-        const mat = materials.find(m => m.id === t.mid);
-        const isImport = t.type === 'purchase';
-        const time = new Date(t.datetime || t.date).toLocaleTimeString('vi-VN', {hour:'2-digit',minute:'2-digit'});
-        html += `
-            <div class="m-txn-item">
-                <div class="m-txn-icon">${isImport ? '📥' : t.type === 'return' ? '🔄' : '📤'}</div>
-                <div class="m-txn-info">
-                    <div class="m-txn-name">${escapeHtml(mat?.name || 'N/A')}</div>
-                    <div class="m-txn-meta">${time} · ${isImport ? 'Nhập' : t.type === 'return' ? 'Trả' : 'Xuất'} · ${Number(t.qty||0).toLocaleString('vi-VN')} ${mat?.unit||''}</div>
-                </div>
-                <div class="m-txn-amount" style="color:${isImport ? '#16a34a' : '#dc2626'}">${isImport ? '+' : '-'}${formatMoneyVND(t.totalAmount)}</div>
+ let html = '';
+window._mobileTxnDetailMap = {};
+txns.forEach((t, index) => {
+    const key = t.id ? String(t.id) : 'txn_all_' + index;
+    window._mobileTxnDetailMap[key] = t;
+});
+paginated.forEach((t, index) => {
+    const txnKey = t.id ? String(t.id) : 'txn_all_' + (start + index);
+    const mat = materials.find(m => m.id === t.mid);
+    const isImport = t.type === 'purchase';
+    const isReturn = t.type === 'return';
+    const txnTone = isImport ? 'success' : isReturn ? 'info' : 'danger';
+    const txnIcon = isImport ? '📥' : isReturn ? '🔄' : '📤';
+    const time = new Date(t.datetime || t.date).toLocaleTimeString('vi-VN', {hour:'2-digit',minute:'2-digit'});
+    const files = parseAttachmentFiles(t.attachment);
+    if (!window._mobileTxnAttachments) window._mobileTxnAttachments = {};
+    if (t.id && files.length) window._mobileTxnAttachments[t.id] = t.attachment;
+    html += `
+        <div class="m-txn-item" data-txn-id="${escapeHtml(txnKey)}">
+            ${files.length ? `<span class="m-file-badge">${files.length}</span>` : ''}
+            <div class="m-txn-icon ${txnTone}">${txnIcon}</div>
+            <div class="m-txn-info">
+                <div class="m-txn-name">${escapeHtml(mat?.name || 'N/A')}</div>
+                <div class="m-txn-meta">${time} · ${isImport ? 'Nhập' : t.type === 'return' ? 'Trả' : 'Xuất'} · ${Number(t.qty||0).toLocaleString('vi-VN')} ${mat?.unit||''}</div>
             </div>
-        `;
-    });
-    
+            <div class="m-txn-amount ${txnTone}">
+            ${isImport || isReturn ? '+' : '-'}${formatMoneyVND(t.totalAmount)}
+            </div>
+        </div>
+    `;
+});
     // Phân trang
     html += '<div class="m-pagination">';
     html += `<select class="m-page-limit" onchange="changeTxnLimit(this.value)">`;
@@ -130,7 +304,6 @@ function renderRecentTxns(transactions, page, limit) {
     html += `<span class="m-page-info">${page}/${totalPages} (${totalItems})</span>`;
     html += `<button class="m-page-btn" onclick="changeTxnPage(${page+1})" ${page>=totalPages?'disabled':''}>▶</button>`;
     html += '</div></div>';
-    
     return html;
 }
 // ========== RENDER CHÍNH ==========
@@ -656,13 +829,16 @@ async function cleanupMobileTempFiles(type = null) {
     for (const t of types) {
         const paths = uploads[t] || [];
 
-        await Promise.all(paths.map(function(path) {
-            return fetch('/api/upload/temp', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path })
-            }).catch(function() {});
+        await Promise.all(paths.map(function(item) {
+        const filePath = typeof item === 'string' ? item : item?.path;
+
+        return fetch('/api/upload/temp', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: filePath })
+        }).catch(function() {});
         }));
+                                                                        
 
         uploads[t] = [];
     }
@@ -942,7 +1118,14 @@ window.filterMStock = function() { const kw = document.getElementById('ms-search
 
 window.showMobileMenu = function() { const menu = document.getElementById('m-menu'); if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; };
 
-window.renderMobileViewOnly = function() { window.loadState().then(() => { document.getElementById('root').innerHTML = renderMobileView(); sidebarOpen = false; }); };
+window.renderMobileViewOnly = function() {
+    window.loadState().then(() => {
+        document.getElementById('root').innerHTML = renderMobileView();
+        sidebarOpen = false;
+        setTimeout(bindRecentTxnClicks, 50);
+    });
+};
+
 
 window.switchMobileMode = function(mode) { if (mode === 'desktop') { localStorage.setItem('steeltrack_ui_mode', 'desktop'); window.location.reload(); } };
 
@@ -954,8 +1137,9 @@ window.changeTxnPage = function(page) {
     txnPage = page;
     const listEl = document.getElementById('m-txn-list');
     if (listEl) {
-        listEl.innerHTML = renderRecentTxns(state.data.transactions || [], txnPage, txnLimit);
-    }
+    listEl.innerHTML = renderRecentTxns(state.data.transactions || [], txnPage, txnLimit);
+    setTimeout(bindRecentTxnClicks, 20);
+}
 };
 
 window.changeTxnLimit = function(limit) {
@@ -963,8 +1147,9 @@ window.changeTxnLimit = function(limit) {
     txnPage = 1;
     const listEl = document.getElementById('m-txn-list');
     if (listEl) {
-        listEl.innerHTML = renderRecentTxns(state.data.transactions || [], txnPage, txnLimit);
-    }
+    listEl.innerHTML = renderRecentTxns(state.data.transactions || [], txnPage, txnLimit);
+    setTimeout(bindRecentTxnClicks, 20);
+}
 };
 function fixAllModalHeight() {
     setTimeout(function() {
@@ -994,7 +1179,10 @@ window.handleMobileFiles = function(input, type) {
             .then(r => r.json())
             .then(d => {
                 if (d.success) {
-    window._upPaths[type].push(d.path);
+    window._upPaths[type].push({
+    path: d.path,
+    name: f.name
+    });
 
     if (list) {
         const wrap = document.createElement('span');
@@ -1033,8 +1221,8 @@ window.handleMobileFiles = function(input, type) {
                 body: JSON.stringify({ path: d.path })
             }).catch(function() {});
 
-            window._upPaths[type] = (window._upPaths[type] || []).filter(function(p) {
-                return p !== d.path;
+            window._upPaths[type] = (window._upPaths[type] || []).filter(function(item) {
+            return (typeof item === 'string' ? item : item.path) !== d.path;
             });
 
             wrap.remove();
@@ -1393,5 +1581,18 @@ export function initMobileEvents() {
 document.addEventListener('click', function(e) {
         const menu = document.getElementById('m-menu');
         if (menu && !e.target.closest('.m-header-right')) { menu.style.display = 'none'; }
+    });
+setTimeout(bindRecentTxnClicks, 50);
+}
+
+function bindRecentTxnClicks() {
+    document.querySelectorAll('.m-txn-item[data-txn-id]').forEach(function(item) {
+        item.onclick = function(e) {
+            e.preventDefault();
+            const txnKey = item.dataset.txnId;
+            if (txnKey && window.showMobileTxnDetail) {
+                window.showMobileTxnDetail(txnKey);
+            }
+        };
     });
 }

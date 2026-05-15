@@ -1,5 +1,5 @@
 import { state, saveState, addLog, formatMoney, escapeHtml, showModal, closeModal, genPid, projectById, hasPermission } from './state.js';
-import { handleIntegerInput, formatMoneyVND, setupNumberInput, parseNumber } from './utils.js';
+import { handleIntegerInput, formatMoneyVND, setupNumberInput, parseNumber, renderAttachmentLinks } from './utils.js';
 import { getProjectSchedule, renderScheduleView, updateScheduleInfo, saveScheduleInfo, addTask, updateTask, deleteTask, assignMaterialToTask, removeMaterialFromTask, openTaskDetailModal } from './schedule.js';
 const PROJECT_HISTORY_PAGE_SIZES = [10, 50, 100, 200];
 
@@ -196,7 +196,7 @@ function renderProjectHistory(rows = null) {
             <td style="text-align:right;white-space:nowrap;">${formatMoneyVND(t.unitPrice)}</td>
             <td class="amount" style="text-align:right;white-space:nowrap;">${isReturn?'- ':''}${formatMoneyVND(Number(t.totalAmount))}</td>
             <td style="text-align:center;color:${isReturn?'var(--success-text)':'var(--accent)'}">${isStructureExport?'🏗️ Cấu kiện':isStructureReturn?'🔄 Trả CK':isReturn?'🔄 Trả kho':'📥 Nhận từ kho'}</td>
-            <td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td>
+            <td style="text-align:left;">${renderAttachmentLinks(t.attachment, escapeHtml)}</td>
         </tr>`;
     }).join('');
 }
@@ -436,7 +436,7 @@ export function showProjectDetail(projectId) {
                     const isRet = t.type === "return" || t.type === "structure_return"; 
                     const isStructureExport = t.type === "structure_export";
                     const isStructureReturn = t.type === "structure_return";
-                    return `<tr><td style="text-align:left;white-space:nowrap;">${formatDateTime(t.datetime||t.date)}</td><td style="text-align:center;color:${isStructureExport?'var(--warn-text)':isRet?'var(--success-text)':'var(--accent)'};font-weight:bold;">${isStructureExport?'🏗️ CK':isStructureReturn?'🔄 Trả CK':isRet?'🔄 Trả':'📥 Nhận'}</td><td style="text-align:left;">${escapeHtml(mat?.name||'N/A')}</td><td style="text-align:right;">${Number(t.qty||0).toLocaleString('vi-VN')} ${mat?.unit||''}</td><td style="text-align:right;white-space:nowrap;">${formatMoneyVND(t.unitPrice)}</td><td class="amount" style="text-align:right;white-space:nowrap;" ${isRet?'text-success':'text-warning'}">${isRet?'- ':''}${formatMoneyVND(Number(t.totalAmount))}</td><td style="text-align:left;">${escapeHtml(t.note||'—')}</td><td style="text-align:center;">${t.attachment && t.attachment !== '[]' && t.attachment !== 'null' && t.attachment !== '' ? JSON.parse(t.attachment).map(f => `<a href="${f}" target="_blank">📎</a>`).join(' ') : '—'}</td></tr>`;
+                    return `<tr><td style="text-align:left;white-space:nowrap;">${formatDateTime(t.datetime||t.date)}</td><td style="text-align:center;color:${isStructureExport?'var(--warn-text)':isRet?'var(--success-text)':'var(--accent)'};font-weight:bold;">${isStructureExport?'🏗️ CK':isStructureReturn?'🔄 Trả CK':isRet?'🔄 Trả':'📥 Nhận'}</td><td style="text-align:left;">${escapeHtml(mat?.name||'N/A')}</td><td style="text-align:right;">${Number(t.qty||0).toLocaleString('vi-VN')} ${mat?.unit||''}</td><td style="text-align:right;white-space:nowrap;">${formatMoneyVND(t.unitPrice)}</td><td class="amount ${isRet ? 'text-success' : 'text-warning'}" style="text-align:right;white-space:nowrap;">${isRet?'- ':''}${formatMoneyVND(Number(t.totalAmount))}</td><td style="text-align:left;">${escapeHtml(t.note||'—')}</td><td style="text-align:left;">${renderAttachmentLinks(t.attachment, escapeHtml)}</td></tr>`;
                 }).join('') || '<tr><td colspan="8">📭 Chưa có giao dịch</td></tr>'}</tbody></table></div>
                 ${renderProjectHistoryPager(projectId, historyPage)}
             </div>

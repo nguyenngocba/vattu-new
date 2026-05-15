@@ -33,9 +33,10 @@ function appendUploadedLink(list, path, filename, type) {
     removeBtn.style.cursor = 'pointer';
 
     removeBtn.onclick = async function() {
-        await cleanupUploadedFile(path, type);
-        wrap.remove();
-    };
+    await cleanupUploadedFile({ path, name: filename }, type);
+    wrap.remove();
+};
+
 
     wrap.appendChild(link);
     wrap.appendChild(removeBtn);
@@ -60,37 +61,45 @@ export function upFiles(input, type) {
             .then((data) => {
                 if (!data.success) return;
 
-                window._upPaths[type].push(data.path);
+                window._upPaths[type].push({
+                    path: data.path,
+                    name: file.name
+                });
 
-                // Hiển thị tên file gốc, không hiển thị tên mã hóa trên server.
                 appendUploadedLink(list, data.path, file.name, type);
-            })
-            .catch((error) => console.error('Upload error:', error));
-    }
+                })
+                   .catch((error) => console.error('Upload error:', error));
+                }
 }
 
-export async function cleanupUploadedFile(path, type = null) {
-    if (!path) return;
+export async function cleanupUploadedFile(fileItem, type = null) {
+    const filePath = typeof fileItem === 'string' ? fileItem : fileItem?.path;
+    if (!filePath) return;
 
     await fetch('/api/upload/temp', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path })
+        body: JSON.stringify({ path: filePath })
     }).catch(function() {});
 
+    const sameFile = function(item) {
+        return (typeof item === 'string' ? item : item?.path) === filePath;
+    };
+
     if (type && window._upPaths?.[type]) {
-        window._upPaths[type] = window._upPaths[type].filter(function(p) {
-            return p !== path;
+        window._upPaths[type] = window._upPaths[type].filter(function(item) {
+            return !sameFile(item);
         });
         return;
     }
 
     Object.keys(window._upPaths || {}).forEach(function(t) {
-        window._upPaths[t] = window._upPaths[t].filter(function(p) {
-            return p !== path;
+        window._upPaths[t] = window._upPaths[t].filter(function(item) {
+            return !sameFile(item);
         });
     });
 }
+
 
 export async function cleanupUploadedFiles(type = null) {
     const uploads = window._upPaths || {};
@@ -108,28 +117,43 @@ export async function cleanupUploadedFiles(type = null) {
 
     window._upPaths = uploads;
 }
+function pathBasename(filePath) {
+    return String(filePath || '').split('/').pop() || 'file';
+}
 
 export async function moveUploadedFiles(type) {
     if (!window._upPaths || !window._upPaths[type]) return [];
 
-    const finalPaths = [];
+    const finalFiles = [];
 
     for (let i = 0; i < window._upPaths[type].length; i++) {
+        const item = window._upPaths[type][i];
+        const tempPath = typeof item === 'string' ? item : item.path;
+        const originalName = typeof item === 'string' ? pathBasename(item) : item.name;
+
         try {
             const response = await fetch('/api/move-file', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: window._upPaths[type][i], type })
+                body: JSON.stringify({ path: tempPath, type })
             });
+
             const data = await response.json();
-            if (data.success) finalPaths.push(data.path);
+
+            if (data.success) {
+                finalFiles.push({
+                    path: data.path,
+                    name: originalName || pathBasename(data.path)
+                });
+            }
         } catch (error) {
             console.error('Move file error:', error);
         }
     }
 
-    return finalPaths;
+    return finalFiles;
 }
+
 
 window.upFiles = upFiles;
 window.moveUploadedFiles = moveUploadedFiles;
