@@ -9,6 +9,10 @@ export function isMobileDevice() {
 let sidebarOpen = false;
 let txnPage = 1;
 let txnLimit = 10;
+let txnSearch = '';
+let txnTypeFilter = 'all';
+let stockStatusFilter = 'all';
+
 function formatCompactVND(value) {
     const n = Number(value || 0);
     const abs = Math.abs(n);
@@ -89,6 +93,50 @@ function getMobileFileAction(fileName) {
 
     return '📎 Mở file';
 }
+function isMobileImageFile(fileName) {
+    const ext = String(fileName || '').split('.').pop().toLowerCase();
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+}
+function isMobilePdfFile(fileName) {
+    const ext = String(fileName || '').split('.').pop().toLowerCase();
+    return ext === 'pdf';
+}
+
+window.showMobilePdfPreview = function(filePath, fileName) {
+    filePath = decodeURIComponent(filePath || '');
+    fileName = decodeURIComponent(fileName || '');
+
+    const html = `
+        <div id="m-pdf-preview" class="m-doc-preview" onclick="this.remove()">
+            <div class="m-doc-preview-head" onclick="event.stopPropagation()">
+                <span>${escapeHtml(fileName || 'PDF đính kèm')}</span>
+                <div>
+                    <a href="${filePath}" target="_blank" onclick="event.stopPropagation()">Mở ngoài</a>
+                    <button type="button" onclick="document.getElementById('m-pdf-preview')?.remove()">×</button>
+                </div>
+            </div>
+            <iframe src="${filePath}" onclick="event.stopPropagation()"></iframe>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+};
+
+window.showMobileImagePreview = function(filePath, fileName) {
+    filePath = decodeURIComponent(filePath || '');
+    fileName = decodeURIComponent(fileName || '');
+    const html = `
+        <div id="m-image-preview" class="m-image-preview" onclick="this.remove()">
+            <div class="m-image-preview-head" onclick="event.stopPropagation()">
+                <span>${escapeHtml(fileName || 'Ảnh đính kèm')}</span>
+                <button type="button" onclick="document.getElementById('m-image-preview')?.remove()">×</button>
+            </div>
+            <img src="${filePath}" alt="${escapeHtml(fileName || 'Ảnh đính kèm')}" onclick="event.stopPropagation()">
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+};
 
 window.showMobileAttachmentSheet = function(encodedAttachment) {
     let files = [];
@@ -110,12 +158,35 @@ window.showMobileAttachmentSheet = function(encodedAttachment) {
                     const ext = String(fileName || '').split('.').pop().toLowerCase();
                     const shouldDownload = ['xls', 'xlsx', 'csv', 'doc', 'docx'].includes(ext);
 
+if (isMobilePdfFile(fileName)) {
+    return `
+        <a href="javascript:void(0)"
+           onclick="event.preventDefault();event.stopPropagation();window.showMobilePdfPreview('${encodeURIComponent(filePath)}', '${encodeURIComponent(fileName)}')"
+           class="m-txn-file-item">
+            <span>${action}</span>
+            <small>${escapeHtml(fileName)}</small>
+        </a>
+    `;
+}
+
+if (isMobileImageFile(fileName)) {
+    return `
+        <a href="javascript:void(0)"
+           onclick="event.preventDefault();event.stopPropagation();window.showMobileImagePreview('${encodeURIComponent(filePath)}', '${encodeURIComponent(fileName)}')"
+           class="m-txn-file-item">
+            <span>${action}</span>
+            <small>${escapeHtml(fileName)}</small>
+        </a>
+    `;
+}
+
 return `
     <a href="${filePath}" target="_blank" ${shouldDownload ? 'download' : ''} class="m-txn-file-item">
         <span>${action}</span>
         <small>${escapeHtml(fileName)}</small>
     </a>
-`;                }).join('')}
+`;
+                }).join('')}
                 <button class="danger" onclick="document.getElementById('m-file-sheet')?.remove()">Đóng</button>
             </div>
         </div>
@@ -159,13 +230,34 @@ window.showMobileTxnDetail = function(txnKey) {
             const action = getMobileFileAction(fileName);
             const ext = String(fileName || '').split('.').pop().toLowerCase();
             const shouldDownload = ['xls', 'xlsx', 'csv', 'doc', 'docx'].includes(ext);
+if (isMobilePdfFile(fileName)) {
+    return `
+        <a href="javascript:void(0)"
+           onclick="event.preventDefault();event.stopPropagation();window.showMobilePdfPreview('${encodeURIComponent(filePath)}', '${encodeURIComponent(fileName)}')"
+           class="m-txn-file-item">
+            <span>${action}</span>
+            <small>${escapeHtml(fileName)}</small>
+        </a>
+    `;
+}
+            if (isMobileImageFile(fileName)) {
+    return `
+        <a href="javascript:void(0)"
+           onclick="event.preventDefault();event.stopPropagation();window.showMobileImagePreview('${encodeURIComponent(filePath)}', '${encodeURIComponent(fileName)}')"
+           class="m-txn-file-item">
+            <span>${action}</span>
+            <small>${escapeHtml(fileName)}</small>
+        </a>
+    `;
+}
 
-            return `
-                <a href="${filePath}" target="_blank" ${shouldDownload ? 'download' : ''} class="m-txn-file-item">
-                    <span>${action}</span>
-                    <small>${escapeHtml(fileName)}</small>
-                </a>
-            `;
+return `
+    <a href="${filePath}" target="_blank" ${shouldDownload ? 'download' : ''} class="m-txn-file-item">
+        <span>${action}</span>
+        <small>${escapeHtml(fileName)}</small>
+    </a>
+`;
+
         }).join('')
         : '<div class="m-txn-file-empty">Không có file đính kèm</div>';
 
@@ -253,7 +345,31 @@ function setMobileSubmitLoading(isLoading, text = 'Đang lưu...') {
 // ========== RENDER ==========
 function renderRecentTxns(transactions, page, limit) {
     const materials = state.data.materials || [];
-    const txns = [...transactions].sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
+    const projects = state.data.projects || [];
+const suppliers = state.data.suppliers || [];
+const kw = String(txnSearch || '').trim().toLowerCase();
+
+const txns = [...transactions].filter(t => {
+    if (txnTypeFilter !== 'all' && t.type !== txnTypeFilter) return false;
+    if (!kw) return true;
+
+    const mat = materials.find(m => m.id === t.mid);
+    const project = projects.find(p => p.id === t.projectId);
+    const supplier = suppliers.find(s => s.id === t.supplierId);
+    const typeText = t.type === 'purchase' ? 'nhập kho nhập' : t.type === 'return' ? 'trả hàng trả' : 'xuất kho xuất';
+
+    return [
+        mat?.name,
+        mat?.cat,
+        project?.name,
+        supplier?.name,
+        typeText,
+        t.note,
+        t.date,
+        t.datetime
+    ].some(v => String(v || '').toLowerCase().includes(kw));
+}).sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
+
     const totalItems = txns.length;
     const totalPages = Math.ceil(totalItems / limit) || 1;
     if (page > totalPages) page = totalPages;
@@ -286,9 +402,10 @@ paginated.forEach((t, index) => {
                 <div class="m-txn-name">${escapeHtml(mat?.name || 'N/A')}</div>
                 <div class="m-txn-meta">${time} · ${isImport ? 'Nhập' : t.type === 'return' ? 'Trả' : 'Xuất'} · ${Number(t.qty||0).toLocaleString('vi-VN')} ${mat?.unit||''}</div>
             </div>
-            <div class="m-txn-amount ${txnTone}">
-            ${isImport || isReturn ? '+' : '-'}${formatMoneyVND(t.totalAmount)}
-            </div>
+<div class="m-txn-amount ${txnTone}">
+    ${isImport || isReturn ? '+' : '-'}${formatMoneyVND(t.totalAmount)}
+</div>
+
         </div>
     `;
 });
@@ -403,11 +520,22 @@ export function renderMobileView() {
             
                         <!-- GIAO DỊCH GẦN ĐÂY -->
             <div class="m-section">
-                <div class="m-section-title">📋 GIAO DỊCH GẦN ĐÂY</div>
-                <div id="m-txn-list">
-                    ${renderRecentTxns(transactions, txnPage, txnLimit)}
-                </div>
-            </div>
+    <div class="m-section-title">📋 GIAO DỊCH GẦN ĐÂY</div>
+
+    <input type="text" class="m-search" placeholder="🔍 Tìm giao dịch..." value="${escapeHtml(txnSearch)}" oninput="filterMobileTxns(this.value)" style="margin-bottom:10px;">
+
+    <div class="m-txn-filter">
+        <button class="${txnTypeFilter === 'all' ? 'active' : ''}" onclick="filterMobileTxnType('all')">Tất cả</button>
+        <button class="${txnTypeFilter === 'purchase' ? 'active' : ''}" onclick="filterMobileTxnType('purchase')">Nhập</button>
+        <button class="${txnTypeFilter === 'usage' ? 'active' : ''}" onclick="filterMobileTxnType('usage')">Xuất</button>
+        <button class="${txnTypeFilter === 'return' ? 'active' : ''}" onclick="filterMobileTxnType('return')">Trả</button>
+    </div>
+
+    <div id="m-txn-list">
+        ${renderRecentTxns(transactions, txnPage, txnLimit)}
+    </div>
+</div>
+
 
             <!-- MENU POPUP -->
             <div id="m-menu" class="m-menu" style="display:none;" onclick="event.stopPropagation()">
@@ -442,7 +570,7 @@ window.hideMobileActions = function() {
 };
 
 // ========== MODAL NHẬP KHO ==========
-window.showMobileImport = function() {
+window.showMobileImport = function(defaultMaterialId = null) {
     const materials = state.data.materials || [];
     const suppliers = state.data.suppliers || [];
     
@@ -470,7 +598,16 @@ window.showMobileImport = function() {
                 </div>
                 <div class="m-field">
                     <label>📦 Vật tư</label>
-                    <select id="mi-material" onchange="updateMPrice()">${materials.map(m => `<option value="${m.id}" data-cost="${m.cost}" data-unit="${m.unit}">${escapeHtml(m.name)} (${Number(m.qty).toLocaleString('vi-VN')} ${m.unit})</option>`).join('')}</select>
+<select id="mi-material" onchange="updateMPrice()">
+    ${materials.map(m => `
+        <option value="${m.id}"
+            data-cost="${m.cost}"
+            data-unit="${m.unit}"
+            ${String(m.id) === String(defaultMaterialId) ? 'selected' : ''}>
+            ${escapeHtml(m.name)} (${Number(m.qty).toLocaleString('vi-VN')} ${m.unit})
+        </option>
+    `).join('')}
+</select>
                 </div>
                 <div class="m-field">
                     <label>🔢 Số lượng</label>
@@ -528,7 +665,7 @@ window.showMobileImport = function() {
 
 };
 // ========== MODAL XUẤT KHO ==========
-window.showMobileExport = function() {
+window.showMobileExport = function(defaultProjectId = null, defaultMaterialId = null) {
     const materials = state.data.materials || [];
     const projects = state.data.projects || [];
     
@@ -552,7 +689,18 @@ window.showMobileExport = function() {
                 </div>
                 <div class="m-field">
                     <label>🏗️ Công trình</label>
-                    <select id="me-project">${projects.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}</select>
+<select id="me-material">
+    ${materials.map(m => `
+        <option value="${m.id}"
+            data-cost="${m.cost}"
+            data-unit="${m.unit}"
+            data-qty="${m.qty}"
+            ${String(m.id) === String(defaultMaterialId) ? 'selected' : ''}>
+            ${escapeHtml(m.name)} (Còn: ${Number(m.qty).toLocaleString('vi-VN')} ${m.unit})
+        </option>
+    `).join('')}
+</select>
+               
                 </div>
                 <div class="m-field">
                     <label>📦 Vật tư</label>
@@ -605,7 +753,8 @@ window.showMobileStock = function() {
     materials.forEach(m => {
         const low = m.qty <= m.low;
         html += `
-            <div class="m-stock-item" data-name="${escapeHtml(m.name).toLowerCase()}" onclick="window.showMaterialDetail('${m.id}')">
+<div class="m-stock-item" data-name="${escapeHtml(m.name).toLowerCase()}" data-status="${low ? 'low' : 'ok'}" onclick="window.showMobileMaterialDetail('${m.id}')">
+
                 <div class="m-stock-info">
                     <div class="m-stock-name">${low ? '⚠️ ' : ''}${escapeHtml(m.name)}</div>
                     <div class="m-stock-meta">${m.cat || ''} · ${formatMoneyVND(m.cost)}/${m.unit}</div>
@@ -628,14 +777,15 @@ window.showMobileLowStock = function() {
     const materials = state.data.materials.filter(m => m.qty <= m.low);
     
     let html = `
-        <div class="m-modal ios-liquid" id="m-low-modal">
-            <div class="m-modal-hd">
-                <button class="m-back" onclick="renderMobileViewOnly()">←</button>
-                <span>⚠️ SẮP HẾT HÀNG (${materials.length})</span>
-                <div></div>
-            </div>
-            <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">
-    `;
+    <div class="m-modal ios-liquid" id="m-low-modal">
+        <div class="m-modal-hd">
+            <button class="m-back" onclick="renderMobileViewOnly()">←</button>
+            <span>⚠️ SẮP HẾT HÀNG (${materials.length})</span>
+            <div></div>
+        </div>
+        <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+`;
+
     
     if (materials.length === 0) {
         html += '<div class="m-empty">✅ Tất cả đều ổn, không có hàng sắp hết!</div>';
@@ -671,26 +821,56 @@ window.showMobileProjects = function() {
                 <span>🏗️ CÔNG TRÌNH (${projects.length})</span>
                 <div></div>
             </div>
-            <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+<div class="m-modal-bd" style="padding:12px;">
+    <input type="text" id="ms-search" class="m-search" placeholder="🔍 Tìm vật tư..." oninput="filterMStock()">
+
+    <div class="m-stock-filter">
+        <button class="${stockStatusFilter === 'all' ? 'active' : ''}" onclick="filterMobileStockStatus('all')">Tất cả</button>
+        <button class="${stockStatusFilter === 'low' ? 'active' : ''}" onclick="filterMobileStockStatus('low')">Sắp hết</button>
+        <button class="${stockStatusFilter === 'ok' ? 'active' : ''}" onclick="filterMobileStockStatus('ok')">Còn hàng</button>
+    </div>
+</div>
+<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;" id="ms-list">
+
     `;
     
     if (projects.length === 0) {
         html += '<div class="m-empty">📭 Chưa có công trình</div>';
     } else {
         projects.forEach(p => {
-            const spent = state.data.transactions.filter(t => t.projectId === p.id && t.type === 'usage').reduce((s,t) => s + (Number(t.totalAmount)||0), 0);
-            const ret = state.data.transactions.filter(t => t.projectId === p.id && t.type === 'return').reduce((s,t) => s + (Number(t.totalAmount)||0), 0);
-            const net = spent - ret;
-            const pct = p.budget > 0 ? Math.min(100, (net / p.budget) * 100) : 0;
-            
+            const budget = Number(p.budget || p.totalBudget || p.amount || 0);
+const spent = state.data.transactions
+    .filter(t => t.projectId === p.id && t.type === 'usage')
+    .reduce((s,t) => s + (Number(t.totalAmount)||0), 0);
+const ret = state.data.transactions
+    .filter(t => t.projectId === p.id && t.type === 'return')
+    .reduce((s,t) => s + (Number(t.totalAmount)||0), 0);
+
+const net = spent - ret;
+const rawPct = budget > 0 ? (net / budget) * 100 : 0;
+const pct = Math.min(100, Math.max(0, rawPct));
+const pctText = budget > 0 ? rawPct.toFixed(1) : '0.0';
+const barColor = rawPct > 100
+    ? '#dc2626'
+    : rawPct > 90
+        ? '#ef4444'
+        : rawPct > 70
+            ? '#f59e0b'
+            : '#378ADD';
+
             html += `
-                <div class="m-project-item" onclick="window.showProjectDetail('${p.id}')">
+<div class="m-project-item" data-name="${escapeHtml(p.name).toLowerCase()}" onclick="window.showMobileProjectDetail('${p.id}')">
                     <div class="m-project-info">
                         <div class="m-project-name">${escapeHtml(p.name)}</div>
-                        <div class="m-project-meta">💰 Đã chi: ${formatMoneyVND(net)} / ${formatMoneyVND(p.budget)}</div>
-                        <div class="m-project-bar"><div class="m-project-fill" style="width:${pct}%;background:${pct>90?'var(--red)':pct>70?'var(--orange)':'var(--blue)'};"></div></div>
+                        <div class="m-project-meta">💰 Đã chi: ${formatMoneyVND(net)} / ${budget > 0 ? formatMoneyVND(budget) : 'Chưa đặt NS'}</div>
+<div class="m-project-bar">
+    <div class="m-project-fill" style="width:${pct}%;background:${barColor};"></div>
+</div>
+
                     </div>
-                    <div class="m-project-pct">${pct.toFixed(0)}%</div>
+                    <div class="m-project-pct">${pctText}%</div>
+
+
                 </div>
             `;
         });
@@ -700,8 +880,266 @@ window.showMobileProjects = function() {
     document.getElementById('root').innerHTML = html;
     fixAllModalHeight();
 };
+window.showMobileMaterialDetail = function(materialId) {
+    const material = (state.data.materials || []).find(m => String(m.id) === String(materialId));
+    if (!material) {
+        alert('Không tìm thấy vật tư!');
+        return;
+    }
+
+    const txns = (state.data.transactions || [])
+        .filter(t => String(t.mid) === String(materialId))
+        .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
+
+    const totalImport = txns.filter(t => t.type === 'purchase').reduce((s, t) => s + Number(t.qty || 0), 0);
+    const totalUsage = txns.filter(t => t.type === 'usage').reduce((s, t) => s + Number(t.qty || 0), 0);
+    const totalReturn = txns.filter(t => t.type === 'return').reduce((s, t) => s + Number(t.qty || 0), 0);
+
+    const qty = Number(material.qty || 0);
+    const low = Number(material.low || 0);
+    const isLow = qty <= low;
+    const stockValue = qty * Number(material.cost || 0);
+
+    const txnRows = txns.slice(0, 25).map(t => {
+        const project = (state.data.projects || []).find(p => p.id === t.projectId);
+        const supplier = (state.data.suppliers || []).find(s => s.id === t.supplierId);
+        const isImport = t.type === 'purchase';
+        const isReturn = t.type === 'return';
+
+        const time = new Date(t.datetime || t.date).toLocaleString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            day: '2-digit',
+            month: '2-digit'
+        });
+
+        const place = isImport ? supplier?.name : project?.name;
+
+        return `
+            <div class="m-material-txn">
+
+                <div class="m-txn-icon ${isImport ? 'success' : isReturn ? 'info' : 'danger'}">${isImport ? '📥' : isReturn ? '🔄' : '📤'}</div>
+                <div>
+                    <strong>${isImport ? 'Nhập kho' : isReturn ? 'Trả hàng' : 'Xuất kho'}</strong>
+                    <small>${time} · ${escapeHtml(place || 'N/A')} · ${Number(t.qty || 0).toLocaleString('vi-VN')} ${material.unit || ''}</small>
+                </div>
+                <span class="${isImport || isReturn ? 'success' : 'danger'}">${isImport || isReturn ? '+' : '-'}${formatMoneyVND(t.totalAmount || 0)}</span>
+            </div>
+        `;
+    }).join('') || '<div class="m-empty">Chưa có giao dịch</div>';
+
+    const html = `
+        <div class="m-modal ios-liquid" id="m-material-detail-modal">
+            <div class="m-modal-hd">
+                <button class="m-back" onclick="showMobileStock()">←</button>
+                <span>📦 ${escapeHtml(material.name)}</span>
+                <div></div>
+            </div>
+
+            <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;">
+                <div class="m-material-hero ${isLow ? 'danger' : 'safe'}">
+
+                    <div>
+                        <small>${escapeHtml(material.cat || 'Vật tư')}</small>
+                        <strong>${Number(qty).toLocaleString('vi-VN')} ${material.unit || ''}</strong>
+                        <span>Ngưỡng cảnh báo: ${Number(low).toLocaleString('vi-VN')} ${material.unit || ''}</span>
+                    </div>
+                    <div class="m-material-status">${isLow ? 'Sắp hết' : 'Ổn'}</div>
+
+                </div>
+
+                <div class="m-material-kpis">
+
+                    <div class="usage">
+                        <small>Đã xuất</small>
+                        <strong>${Number(totalUsage).toLocaleString('vi-VN')} ${material.unit || ''}</strong>
+                    </div>
+                    <div class="return">
+                        <small>Đã trả</small>
+                        <strong>${Number(totalReturn).toLocaleString('vi-VN')} ${material.unit || ''}</strong>
+                    </div>
+                    <div class="net">
+                        <small>Giá trị tồn</small>
+                        <strong>${formatMoneyVND(stockValue)}</strong>
+                    </div>
+                </div>
+
+                <div class="m-project-detail-actions">
+                    <button onclick="showMobileImport('${material.id}')">📥 Nhập thêm</button>
+                    <button onclick="showMobileExport(null, '${material.id}')">📤 Xuất kho</button>
+                </div>
+
+                <div class="m-section-title">🧾 GIAO DỊCH VẬT TƯ</div>
+                <div class="m-project-detail-list">${txnRows}</div>
+            </div>
+
+            ${renderMobileActionSheet()}
+            ${renderMobileTabBar('stock')}
+        </div>
+    `;
+
+    document.getElementById('root').innerHTML = html;
+    fixAllModalHeight();
+};
+
+window.showMobileProjectDetail = function(projectId) {
+    const project = (state.data.projects || []).find(p => String(p.id) === String(projectId));
+    if (!project) {
+        alert('Không tìm thấy công trình!');
+        return;
+    }
+
+    const materials = state.data.materials || [];
+    const txns = (state.data.transactions || [])
+        .filter(t => String(t.projectId) === String(projectId))
+        .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
+
+    const usageTxns = txns.filter(t => t.type === 'usage');
+    const returnTxns = txns.filter(t => t.type === 'return');
+
+    const totalUsage = usageTxns.reduce((s, t) => s + Number(t.totalAmount || 0), 0);
+    const totalReturn = returnTxns.reduce((s, t) => s + Number(t.totalAmount || 0), 0);
+    const net = totalUsage - totalReturn;
+const budget = Number(project.budget || project.totalBudget || project.amount || 0);
+    const rawPct = budget > 0 ? (net / budget) * 100 : 0;
+const pct = Math.min(100, Math.max(0, rawPct));
+const pctText = budget > 0 ? rawPct.toFixed(1) : '0.0';
+const barColor = rawPct > 100
+    ? '#dc2626'
+    : rawPct > 90
+        ? '#ef4444'
+        : rawPct > 70
+            ? '#f59e0b'
+            : '#378ADD';
+
+const budgetTone = pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : 'safe';
+
+    const materialMap = new Map();
+
+    usageTxns.forEach(t => {
+        const mat = materials.find(m => m.id === t.mid);
+        if (!materialMap.has(t.mid)) {
+            materialMap.set(t.mid, {
+                name: mat?.name || 'N/A',
+                unit: mat?.unit || '',
+                used: 0,
+                returned: 0,
+                amount: 0
+            });
+        }
+
+        const item = materialMap.get(t.mid);
+        item.used += Number(t.qty || 0);
+        item.amount += Number(t.totalAmount || 0);
+    });
+
+    returnTxns.forEach(t => {
+        if (materialMap.has(t.mid)) {
+            const item = materialMap.get(t.mid);
+            item.returned += Number(t.qty || 0);
+            item.amount -= Number(t.totalAmount || 0);
+        }
+    });
+
+    const materialRows = Array.from(materialMap.values()).map(item => {
+        const remain = item.used - item.returned;
+
+        return `
+            <div class="m-project-detail-material">
+                <div>
+                    <strong>${escapeHtml(item.name)}</strong>
+                    <small>Đã xuất: ${Number(item.used).toLocaleString('vi-VN')} ${item.unit} · Đã trả: ${Number(item.returned).toLocaleString('vi-VN')} ${item.unit}</small>
+                </div>
+                <div>
+                    <span>${Number(remain).toLocaleString('vi-VN')} ${item.unit}</span>
+                    <em>${formatMoneyVND(item.amount)}</em>
+                </div>
+            </div>
+        `;
+    }).join('') || '<div class="m-empty">Chưa có vật tư xuất cho công trình này</div>';
+
+    const txnRows = txns.slice(0, 30).map(t => {
+        const mat = materials.find(m => m.id === t.mid);
+        const isReturn = t.type === 'return';
+        const time = new Date(t.datetime || t.date).toLocaleString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            day: '2-digit',
+            month: '2-digit'
+        });
+
+        return `
+            <div class="m-project-detail-txn">
+                <div class="m-txn-icon ${isReturn ? 'info' : 'danger'}">${isReturn ? '🔄' : '📤'}</div>
+                <div>
+                    <strong>${escapeHtml(mat?.name || 'N/A')}</strong>
+                    <small>${time} · ${isReturn ? 'Trả' : 'Xuất'} · ${Number(t.qty || 0).toLocaleString('vi-VN')} ${mat?.unit || ''}</small>
+                </div>
+                <span class="${isReturn ? 'success' : 'danger'}">${isReturn ? '+' : '-'}${formatMoneyVND(t.totalAmount || 0)}</span>
+            </div>
+        `;
+    }).join('') || '<div class="m-empty">Chưa có giao dịch</div>';
+
+    const html = `
+        <div class="m-modal ios-liquid" id="m-project-detail-modal">
+            <div class="m-modal-hd">
+                <button class="m-back" onclick="showMobileProjects()">←</button>
+                <span>🏗️ ${escapeHtml(project.name)}</span>
+                <div></div>
+            </div>
+
+            <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;">
+                <div class="m-project-detail-hero ${budgetTone}">
+                    <div>
+                        <small>Chi phí ròng</small>
+                        <strong>${formatMoneyVND(net)}</strong>
+                        <span>Ngân sách: ${formatMoneyVND(budget)}</span>
+                    </div>
+<div class="m-project-detail-pct">${pctText}%</div>
+                </div>
+
+                <div class="m-project-detail-bar ${budgetTone}">
+                    <div style="width:${pct}%;"></div>
+                </div>
+                <div class="m-project-detail-kpis">
+    <div class="usage">
+        <small>Đã xuất</small>
+        <strong>${formatMoneyVND(totalUsage)}</strong>
+    </div>
+    <div class="return">
+        <small>Đã trả</small>
+        <strong>${formatMoneyVND(totalReturn)}</strong>
+    </div>
+    <div class="net">
+        <small>Còn lại NS</small>
+        <strong>${formatMoneyVND(budget - net)}</strong>
+    </div>
+</div>
+
+
+                <div class="m-project-detail-actions">
+<button onclick="showMobileExport('${project.id}')">📤 Xuất thêm</button>
+<button onclick="showMobileReturn('${project.id}')">🔄 Trả hàng</button>
+                </div>
+
+                <div class="m-section-title">📦 VẬT TƯ ĐÃ DÙNG</div>
+                <div class="m-project-detail-list">${materialRows}</div>
+
+                <div class="m-section-title">🧾 GIAO DỊCH CÔNG TRÌNH</div>
+                <div class="m-project-detail-list">${txnRows}</div>
+            </div>
+
+            ${renderMobileActionSheet()}
+            ${renderMobileTabBar('projects')}
+        </div>
+    `;
+
+    document.getElementById('root').innerHTML = html;
+    fixAllModalHeight();
+};
+
 // ========== MODAL TRẢ HÀNG ==========
-window.showMobileReturn = function() {
+window.showMobileReturn = function(defaultProjectId = null) {
     const projects = state.data.projects.filter(p => state.data.transactions.some(t => t.projectId === p.id && t.type === 'usage'));
     
     if (projects.length === 0) { alert('Chưa có công trình nào được xuất kho!'); return; }
@@ -723,12 +1161,20 @@ window.showMobileReturn = function() {
                 </div>
                 <div class="m-field">
                     <label>🏗️ Công trình</label>
-                    <select id="mr-project" onchange="loadReturnMaterials()">${projects.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}</select>
+<select id="mr-project" onchange="loadReturnMaterials()">
+    ${projects.map(p => `
+        <option value="${p.id}" ${String(p.id) === String(defaultProjectId) ? 'selected' : ''}>
+            ${escapeHtml(p.name)}
+        </option>
+    `).join('')}
+</select>
                 </div>
                 <div class="m-field">
-                    <label>📦 Vật tư</label>
-                    <select id="mr-material" onchange="updateRPrice()"></select>
-                </div>
+    <label>📦 Vật tư</label>
+    <select id="mr-material" onchange="updateRPrice()"></select>
+    <div id="mr-return-info" style="margin-top:6px;font-size:12px;color:#7a8099;"></div>
+</div>
+
                 <div class="m-field">
                     <label>🔢 Số lượng</label>
                     <div class="m-qty-box">
@@ -759,7 +1205,8 @@ window.showMobileReturn = function() {
     setTimeout(() => {
     loadReturnMaterials();
     bindMobileNumberInput('mr-qty');
-}, 100);
+}, 250);
+
 };
 // ========== CÁC HÀM XỬ LÝ ==========
 window.changeMQty = function(delta) {
@@ -767,6 +1214,11 @@ window.changeMQty = function(delta) {
     if (input) {
         let val = parseMobileNumber(input.value);
         val = Math.max(0, val + delta);
+        const returnSel = document.getElementById('mr-material');
+if (returnSel && document.getElementById('mr-qty') === input) {
+    const maxReturn = Number(returnSel.options[returnSel.selectedIndex]?.dataset?.avail || 0);
+    if (maxReturn > 0) val = Math.min(val, maxReturn);
+}
         input.value = formatMobileNumber(val);
         updateMobileTotal();
     }
@@ -1019,18 +1471,106 @@ window.loadReturnMaterials = function() {
     const pid = document.getElementById('mr-project')?.value;
     const sel = document.getElementById('mr-material');
     if (!pid || !sel) return;
+
     const uT = state.data.transactions.filter(t => t.projectId === pid && t.type === 'usage');
     const rT = state.data.transactions.filter(t => t.projectId === pid && t.type === 'return');
     const map = new Map();
-    uT.forEach(t => { const m = state.data.materials.find(x => x.id === t.mid); if (m) { if (!map.has(t.mid)) map.set(t.mid, { id: t.mid, name: m.name, unit: m.unit, rec: 0, ret: 0, price: t.unitPrice }); map.get(t.mid).rec += t.qty; } });
-    rT.forEach(t => { if (map.has(t.mid)) map.get(t.mid).ret += t.qty; });
-    const list = Array.from(map.values()).map(i => ({ ...i, avail: i.rec - i.ret })).filter(i => i.avail > 0);
-    if (list.length === 0) { sel.innerHTML = '<option value="">✅ Đã trả hết</option>'; return; }
-    sel.innerHTML = list.map(m => `<option value="${m.id}" data-price="${m.price}">${escapeHtml(m.name)} (Có thể trả: ${m.avail} ${m.unit})</option>`).join('');
+
+    uT.forEach(t => {
+        const m = state.data.materials.find(x => x.id === t.mid);
+        if (m) {
+            if (!map.has(t.mid)) {
+                map.set(t.mid, {
+                    id: t.mid,
+                    name: m.name,
+                    unit: m.unit,
+                    rec: 0,
+                    ret: 0,
+                    price: t.unitPrice
+                });
+            }
+            map.get(t.mid).rec += t.qty;
+        }
+    });
+
+    rT.forEach(t => {
+        if (map.has(t.mid)) map.get(t.mid).ret += t.qty;
+    });
+
+    const list = Array.from(map.values())
+        .map(i => ({ ...i, avail: i.rec - i.ret }))
+        .filter(i => i.avail > 0);
+
+    const submitBtn = document.querySelector('#m-return-modal .m-submit');
+
+    if (list.length === 0) {
+        sel.innerHTML = '<option value="">Không có vật tư có thể trả</option>';
+
+        const info = document.getElementById('mr-return-info');
+        if (info) info.textContent = 'Công trình này chưa có vật tư đã xuất hoặc đã trả hết.';
+
+        const priceInput = document.getElementById('mr-price');
+        if (priceInput) priceInput.value = '0';
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'ĐÃ TRẢ HẾT';
+            submitBtn.style.opacity = '.55';
+        }
+
+        return;
+    }
+
+    sel.innerHTML = list.map(m => `
+        <option value="${m.id}"
+            data-price="${m.price}"
+            data-rec="${m.rec}"
+            data-ret="${m.ret}"
+            data-avail="${m.avail}"
+            data-unit="${m.unit}">
+            ${escapeHtml(m.name)} (Còn trả: ${Number(m.avail).toLocaleString('vi-VN')} ${m.unit})
+        </option>
+    `).join('');
+
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '✅ XÁC NHẬN TRẢ HÀNG';
+        submitBtn.style.opacity = '1';
+    }
+
     updateRPrice();
 };
 
-window.updateRPrice = function() { const sel = document.getElementById('mr-material'); const p = document.getElementById('mr-price'); if (sel && p) { p.value = Number(sel.options[sel.selectedIndex]?.dataset?.price || 0).toLocaleString('vi-VN'); } };
+
+window.updateRPrice = function() {
+    const sel = document.getElementById('mr-material');
+    const priceInput = document.getElementById('mr-price');
+    const qtyInput = document.getElementById('mr-qty');
+    const info = document.getElementById('mr-return-info');
+
+    if (!sel || !priceInput) return;
+
+    const opt = sel.options[sel.selectedIndex];
+    const price = Number(opt?.dataset?.price || 0);
+    const rec = Number(opt?.dataset?.rec || 0);
+    const ret = Number(opt?.dataset?.ret || 0);
+    const avail = Number(opt?.dataset?.avail || 0);
+    const unit = opt?.dataset?.unit || '';
+
+    priceInput.value = price.toLocaleString('vi-VN');
+
+    if (info) {
+        info.textContent =
+            'Đã xuất: ' + rec.toLocaleString('vi-VN') + ' ' + unit +
+            ' · Đã trả: ' + ret.toLocaleString('vi-VN') + ' ' + unit +
+            ' · Còn trả: ' + avail.toLocaleString('vi-VN') + ' ' + unit;
+    }
+
+    if (qtyInput && parseMobileNumber(qtyInput.value) > avail) {
+        qtyInput.value = formatMobileNumber(avail);
+    }
+};
+
 
 window.doMobileReturn = async function() {
     try {
@@ -1114,7 +1654,37 @@ window.doMobileReturn = async function() {
     }
 };
 
-window.filterMStock = function() { const kw = document.getElementById('ms-search')?.value?.toLowerCase() || ''; document.querySelectorAll('#ms-list .m-stock-item').forEach(el => { el.style.display = (el.dataset.name || '').includes(kw) ? '' : 'none'; }); };
+window.filterMStock = function() {
+    const kw = document.getElementById('ms-search')?.value?.toLowerCase() || '';
+
+    document.querySelectorAll('#ms-list .m-stock-item').forEach(function(el) {
+        const matchName = (el.dataset.name || '').includes(kw);
+        const matchStatus = stockStatusFilter === 'all' || el.dataset.status === stockStatusFilter;
+        el.style.display = matchName && matchStatus ? '' : 'none';
+    });
+};
+
+window.filterMobileStockStatus = function(status) {
+    stockStatusFilter = status || 'all';
+
+    document.querySelectorAll('.m-stock-filter button').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+
+    const btn = document.querySelector(`.m-stock-filter button[onclick="filterMobileStockStatus('${stockStatusFilter}')"]`);
+    if (btn) btn.classList.add('active');
+
+    filterMStock();
+};
+
+
+window.filterMobileProjects = function() {
+    const kw = document.getElementById('mp-search')?.value?.toLowerCase() || '';
+
+    document.querySelectorAll('#mp-list .m-project-item').forEach(function(el) {
+        el.style.display = (el.dataset.name || '').includes(kw) ? '' : 'none';
+    });
+};
 
 window.showMobileMenu = function() { const menu = document.getElementById('m-menu'); if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; };
 
@@ -1151,6 +1721,27 @@ window.changeTxnLimit = function(limit) {
     setTimeout(bindRecentTxnClicks, 20);
 }
 };
+window.filterMobileTxns = function(value) {
+    txnSearch = value || '';
+    txnPage = 1;
+
+    const listEl = document.getElementById('m-txn-list');
+    if (listEl) {
+        listEl.innerHTML = renderRecentTxns(state.data.transactions || [], txnPage, txnLimit);
+        setTimeout(bindRecentTxnClicks, 20);
+    }
+};
+window.filterMobileTxnType = function(type) {
+    txnTypeFilter = type || 'all';
+    txnPage = 1;
+
+    const root = document.getElementById('root');
+    if (root) {
+        root.innerHTML = renderMobileView();
+        setTimeout(bindRecentTxnClicks, 50);
+    }
+};
+
 function fixAllModalHeight() {
     setTimeout(function() {
         var modals = document.querySelectorAll('.m-modal');
@@ -1193,11 +1784,28 @@ window.handleMobileFiles = function(input, type) {
         wrap.style.marginTop = '6px';
 
         const link = document.createElement('a');
-        link.href = d.path;
-        link.target = '_blank';
-        link.style.color = '#378ADD';
-        link.style.textDecoration = 'none';
-        link.textContent = '📎 ' + f.name;
+link.href = 'javascript:void(0)';
+link.style.color = '#378ADD';
+link.style.textDecoration = 'none';
+link.textContent = '📎 ' + f.name;
+
+link.onclick = function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isMobilePdfFile(f.name)) {
+        window.showMobilePdfPreview(encodeURIComponent(d.path), encodeURIComponent(f.name));
+        return;
+    }
+
+    if (isMobileImageFile(f.name)) {
+        window.showMobileImagePreview(encodeURIComponent(d.path), encodeURIComponent(f.name));
+        return;
+    }
+
+    window.open(d.path, '_blank');
+};
+
 
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
