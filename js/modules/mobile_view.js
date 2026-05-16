@@ -5,14 +5,34 @@ import { formatMoneyVND } from './utils.js';
 export function isMobileDevice() {
     return /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent) || window.innerWidth < 768;
 }
+// ========== CẤU HÌNH THAO TÁC NHANH MOBILE ==========
+const mobileQuickActionDefaults = [
+    { id: 'import', label: 'Nhập kho', icon: 'logo-nhapkho.png', action: 'showMobileImport()' },
+    { id: 'export', label: 'Xuất kho', icon: 'logo-xuatkho.png', action: 'showMobileExport()' },
+    { id: 'return', label: 'Trả hàng', icon: 'logo-trahang.png', action: 'showMobileReturn()' },
+    { id: 'find', label: 'Tìm vật tư', icon: 'logo-timvattu.png', action: 'showMobileStock()' },
+    { id: 'low', label: 'Cảnh báo', icon: 'logo-chuongthongbao.png', action: 'showMobileLowStock()' },
+    { id: 'projects', label: 'Công trình', icon: 'logo-tongcongtrinh.png', action: 'showMobileProjects()' },
+    { id: 'report', label: 'Báo cáo', icon: 'logo-baocao.png', action: 'showMobileDashboard()' },
+    { id: 'stocktake', label: 'Kiểm kê kho', icon: 'logo-kiemkekho.png', action: 'showMobileStock()' },
+    { id: 'barcode', label: 'Quét mã vạch', icon: 'logo-quetmavach.png', action: 'showMobileStock()' },
+    { id: 'more', label: 'Xem thêm', icon: 'logo-xemthem.png', action: 'showMobileActions()' }
+];
 
+let mobileQuickActionVisible = JSON.parse(
+    localStorage.getItem('steeltrack_mobile_quick_actions') ||
+    JSON.stringify(['import', 'export', 'return', 'find', 'low', 'projects', 'report', 'more'])
+);
+
+// ========== BIẾN TRẠNG THÁI MOBILE ==========
 let sidebarOpen = false;
 let txnPage = 1;
 let txnLimit = 10;
 let txnSearch = '';
 let txnTypeFilter = 'all';
 let stockStatusFilter = 'all';
-
+let mobileHomeTheme = localStorage.getItem('steeltrack_mobile_theme') || 'light';
+// ========== FORMAT TIỀN / SỐ ==========
 function formatCompactVND(value) {
     const n = Number(value || 0);
     const abs = Math.abs(n);
@@ -40,27 +60,108 @@ function formatCompactVND(value) {
 
     return formatMoneyVND(n);
 }
-
+// ========== BOTTOM TAB MOBILE ==========
 function renderMobileTabBar(active = 'home') {
     return `
         <div class="m-bottom-safe"></div>
         <div class="m-bottom-tab">
             <button class="m-tab-btn ${active === 'home' ? 'active' : ''}" onclick="renderMobileViewOnly()">
-                <span>⌂</span><small>Trang chủ</small>
+                <img src="/images/mobile-icons/logo-trangchu.png" alt="">
+                <small>Trang chủ</small>
             </button>
+
             <button class="m-tab-btn ${active === 'stock' ? 'active' : ''}" onclick="showMobileStock()">
-                <span>▣</span><small>Kho</small>
+                <img src="/images/mobile-icons/logo-vattu.png" alt="">
+                <small>Kho</small>
             </button>
+
             <button class="m-tab-fab" onclick="showMobileActions()">+</button>
-            <button class="m-tab-btn ${active === 'projects' ? 'active' : ''}" onclick="showMobileProjects()">
-                <span>⌘</span><small>Công trình</small>
-            </button>
+
             <button class="m-tab-btn ${active === 'dashboard' ? 'active' : ''}" onclick="showMobileDashboard()">
-                <span>◌</span><small>Thống kê</small>
+                <img src="/images/mobile-icons/logo-baocao.png" alt="">
+                <small>Thống kê</small>
+            </button>
+
+            <button class="m-tab-btn ${active === 'profile' ? 'active' : ''}" onclick="showMobileProfile()">
+                <img src="/images/mobile-icons/logo-canhan.png" alt="">
+                <small>Cá nhân</small>
             </button>
         </div>
     `;
 }
+// ========== MODAL CÁ NHÂN MOBILE ==========
+window.showMobileProfile = function() {
+    const currentUser = state.currentUser || {};
+
+    const html = `
+        <div class="m-modal ios-liquid" id="m-profile-modal">
+            <div class="m-modal-hd">
+                <button class="m-back" onclick="renderMobileViewOnly()">←</button>
+                <span>👤 CÁ NHÂN</span>
+                <div></div>
+            </div>
+
+            <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;">
+                <div class="m-profile-card">
+                    <div class="m-avatar" style="width:64px;height:64px;font-size:28px;">
+                        ${escapeHtml(currentUser.name?.charAt(0) || 'U')}
+                    </div>
+                    <h3>${escapeHtml(currentUser.name || 'User')}</h3>
+                    <p>${currentUser.role === 'admin' ? 'Admin' : 'Nhân viên'}</p>
+                </div>
+
+                <button class="m-submit danger" onclick="logout()">Đăng xuất</button>
+            </div>
+
+            ${renderMobileTabBar('profile')}
+        </div>
+    `;
+
+    document.getElementById('root').innerHTML = html;
+    fixAllModalHeight();
+};
+// ========== ĐI TỚI CẤU KIỆN MOBILE ==========
+window.showMobileStructures = function() {
+    showMobileDashboard();
+    setTimeout(function() {
+        if (window.switchMDashTab) switchMDashTab('structures');
+    }, 80);
+};
+// ========== MODAL NHÀ CUNG CẤP MOBILE ==========
+window.showMobileSuppliers = function() {
+    const suppliers = state.data.suppliers || [];
+
+    let html = `
+        <div class="m-modal ios-liquid" id="m-supplier-modal">
+            <div class="m-modal-hd">
+                <button class="m-back" onclick="renderMobileViewOnly()">←</button>
+                <span>🏭 NHÀ CUNG CẤP (${suppliers.length})</span>
+                <div></div>
+            </div>
+            <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+    `;
+
+    if (!suppliers.length) {
+        html += '<div class="m-empty">Chưa có nhà cung cấp</div>';
+    } else {
+        suppliers.forEach(function(s) {
+            html += `
+                <div class="m-stock-item">
+                    <div class="m-stock-info">
+                        <div class="m-stock-name">${escapeHtml(s.name)}</div>
+                        <div class="m-stock-meta">${escapeHtml(s.phone || s.email || s.address || '')}</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    html += `</div>${renderMobileTabBar('home')}</div>`;
+    document.getElementById('root').innerHTML = html;
+    fixAllModalHeight();
+};
+
+// ========== FILE ĐÍNH KÈM MOBILE ==========
 function parseAttachmentFiles(attachment) {
     if (!attachment || attachment === '[]' || attachment === 'null' || attachment === '') return [];
 
@@ -102,6 +203,7 @@ function isMobilePdfFile(fileName) {
     return ext === 'pdf';
 }
 
+// ========== PREVIEW FILE MOBILE ==========
 window.showMobilePdfPreview = function(filePath, fileName) {
     filePath = decodeURIComponent(filePath || '');
     fileName = decodeURIComponent(fileName || '');
@@ -194,6 +296,7 @@ return `
 
     document.body.insertAdjacentHTML('beforeend', html);
 };
+// ========== CHI TIẾT GIAO DỊCH MOBILE ==========
 window.showMobileTxnDetail = function(txnKey) {
     const t = window._mobileTxnDetailMap?.[txnKey]
         || (state.data.transactions || []).find(x => String(x.id) === String(txnKey));
@@ -211,7 +314,7 @@ window.showMobileTxnDetail = function(txnKey) {
     const isImport = t.type === 'purchase';
     const isReturn = t.type === 'return';
     const typeText = isImport ? 'Nhập kho' : isReturn ? 'Trả hàng' : 'Xuất kho';
-    const typeIcon = isImport ? '📥' : isReturn ? '🔄' : '📤';
+    const typeIcon = mobileTxnTypeIcon(t.type, typeText);
     const toneClass = isImport ? 'success' : isReturn ? 'info' : 'danger';
 
     const time = new Date(t.datetime || t.date).toLocaleString('vi-VN', {
@@ -310,6 +413,7 @@ return `
     (document.getElementById('root') || document.body).insertAdjacentHTML('beforeend', html);
 };
 
+// ========== ACTION SHEET MOBILE ==========
 window.showMobileAttachmentSheetByTxn = function(txnId) {
     const attachment = window._mobileTxnAttachments?.[txnId];
     if (!attachment) return;
@@ -342,7 +446,7 @@ function setMobileSubmitLoading(isLoading, text = 'Đang lưu...') {
         btn.classList.remove('loading');
     }
 }
-// ========== RENDER ==========
+// ========== DANH SÁCH GIAO DỊCH + PHÂN TRANG ==========
 function renderRecentTxns(transactions, page, limit) {
     const materials = state.data.materials || [];
     const projects = state.data.projects || [];
@@ -389,7 +493,7 @@ paginated.forEach((t, index) => {
     const isImport = t.type === 'purchase';
     const isReturn = t.type === 'return';
     const txnTone = isImport ? 'success' : isReturn ? 'info' : 'danger';
-    const txnIcon = isImport ? '📥' : isReturn ? '🔄' : '📤';
+    const txnIcon = mobileTxnTypeIcon(t.type, isImport ? 'Nhập kho' : isReturn ? 'Trả hàng' : 'Xuất kho');
     const time = new Date(t.datetime || t.date).toLocaleTimeString('vi-VN', {hour:'2-digit',minute:'2-digit'});
     const files = parseAttachmentFiles(t.attachment);
     if (!window._mobileTxnAttachments) window._mobileTxnAttachments = {};
@@ -423,6 +527,202 @@ paginated.forEach((t, index) => {
     html += '</div></div>';
     return html;
 }
+// ========== HOME MOBILE MẪU KHO VẬT TƯ ==========
+window.toggleMobileHomeTheme = function() {
+    mobileHomeTheme = mobileHomeTheme === 'light' ? 'dark' : 'light';
+    localStorage.setItem('steeltrack_mobile_theme', mobileHomeTheme);
+    renderMobileViewOnly();
+};
+
+function renderMobileHomeHero(currentUser) {
+    return `
+        <div class="m-wh-hero">
+            <div class="m-wh-hero-top">
+                <div class="m-wh-brand">
+                    <img src="/images/logo-tv.png" alt="Logo">
+                    <div>
+                        <strong>Kho vật tư</strong>
+                        <span>Nhà thép kết cấu</span>
+                    </div>
+                </div>
+                <div class="m-wh-icons">
+                    <button onclick="toggleMobileHomeTheme()">${mobileHomeTheme === 'light' ? '🌙' : '☀️'}</button>
+                    <button onclick="showMobileMenu()">🔔</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+// ========== KPI HOME MOBILE ==========
+function renderMobileHomeStats(materials, transactions, projects, lowStockCount) {
+    const suppliers = state.data.suppliers || [];
+    const structures = state.data.structures || [];
+
+    return `
+        <div class="m-wh-panel">
+            <div class="m-wh-search-row">
+                <input type="text" class="m-wh-search" placeholder="Tìm kiếm vật tư, mã, quy cách..." onclick="showMobileStock()">
+                <button onclick="showMobileStock()">☷</button>
+            </div>
+    <div class="m-wh-stats compact">
+    <div class="m-wh-stat blue" onclick="showMobileStock()">
+        ${mobileIcon('logo-tongvattu.png', 'Vật tư')}
+        <strong>${materials.length}</strong>
+        <small>Vật tư</small>
+    </div>
+
+    <div class="m-wh-stat green" onclick="showMobileSuppliers()">
+        ${mobileIcon('logo-tongnhacungcap.png', 'Nhà cung cấp')}
+        <strong>${suppliers.length}</strong>
+        <small>Nhà cung cấp</small>
+    </div>
+
+    <div class="m-wh-stat orange" onclick="showMobileStructures()">
+        ${mobileIcon('logo-tongcaukien.png', 'Cấu kiện')}
+        <strong>${structures.length}</strong>
+        <small>Cấu kiện</small>
+    </div>
+
+    <div class="m-wh-stat purple" onclick="showMobileProjects()">
+        ${mobileIcon('logo-tongcongtrinh.png', 'Công trình')}
+        <strong>${projects.length}</strong>
+        <small>Công trình</small>
+    </div>
+</div>
+
+        </div>
+    `;
+}
+
+// ========== ICON MOBILE ==========
+function mobileIcon(name, alt = '') {
+    return `<img class="m-wh-icon-img" src="/images/mobile-icons/${name}" alt="${escapeHtml(alt)}">`;
+}
+function mobileTxnTypeIcon(type, alt = '') {
+    const iconMap = {
+        purchase: 'logo-nhapkho.png',
+        usage: 'logo-xuatkho.png',
+        return: 'logo-trahang.png'
+    };
+
+    const icon = iconMap[type] || 'logo-vattu.png';
+    return `<img class="m-txn-icon-img" src="/images/mobile-icons/${icon}" alt="${escapeHtml(alt)}">`;
+}
+
+// ========== THAO TÁC NHANH MOBILE ==========
+function renderMobileQuickActions() {
+    const visibleActions = mobileQuickActionDefaults.filter(item => {
+        return mobileQuickActionVisible.includes(item.id);
+    });
+
+    return `
+        <div class="m-wh-section">
+            <div class="m-wh-section-head">
+                <strong>Thao tác nhanh</strong>
+                <button type="button" class="m-wh-customize-btn" onclick="event.stopPropagation();showMobileQuickActionCustomize()">Tùy chỉnh ✎</button>
+            </div>
+            <div class="m-wh-actions">
+                ${visibleActions.map(item => `
+                    <button onclick="${item.action}">
+                        ${mobileIcon(item.icon, item.label)}
+                        ${escapeHtml(item.label)}
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// ========== ẢNH ĐẠI DIỆN NHÓM VẬT TƯ ==========
+function slugifyVietnamese(text) {
+    return String(text || 'khac')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'khac';
+}
+
+function getMaterialThumb(material, categoryName) {
+    const img = material?.image || material?.photo || material?.thumbnail || material?.avatar;
+
+    if (img) return img;
+
+    return `/images/material-groups/${slugifyVietnamese(categoryName)}.png`;
+}
+
+// ========== NHÓM VẬT TƯ TRANG CHỦ ==========
+function renderMobileCategoryStock(materials) {
+    const groups = new Map();
+
+    materials.forEach(m => {
+        const key = m.cat || 'Khác';
+        if (!groups.has(key)) {
+            groups.set(key, {
+                name: key,
+                count: 0,
+                qty: 0,
+                value: 0,
+                units: new Set(),
+                sample: null
+            });
+        }
+
+        const g = groups.get(key);
+        const qty = Number(m.qty || 0);
+        g.count += 1;
+        g.qty += qty;
+        g.value += qty * Number(m.cost || 0);
+        if (m.unit) g.units.add(m.unit);
+        if (!g.sample) g.sample = m;
+    });
+
+    const list = Array.from(groups.values())
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5);
+
+    if (!list.length) return '';
+
+    const maxValue = Math.max(...list.map(g => g.value), 1);
+
+    return `
+        <div class="m-wh-section">
+            <div class="m-wh-section-head">
+                <strong>Tồn kho theo nhóm vật tư</strong>
+                <span onclick="showMobileStock()">Xem tất cả ›</span>
+            </div>
+
+            <div class="m-wh-group-list">
+                ${list.map(g => {
+                    const unitText = g.units.size === 1
+                        ? `${Number(g.qty).toLocaleString('vi-VN')} ${Array.from(g.units)[0]}`
+                        : formatCompactVND(g.value);
+
+                    return `
+                        <div class="m-wh-group-item" onclick="showMobileStockByCategory('${encodeURIComponent(g.name)}')">
+                            <div class="m-wh-group-img">
+                                <img src="${getMaterialThumb(g.sample, g.name)}" alt="${escapeHtml(g.name)}" onerror="this.style.display='none';this.parentElement.classList.add('fallback')">
+                            </div>
+                            <div class="m-wh-group-info">
+                                <strong>${escapeHtml(g.name)}</strong>
+                                <small>${g.count} chủng loại</small>
+                                <div><span style="width:${Math.max(8, g.value / maxValue * 100)}%"></span></div>
+                            </div>
+                            <div class="m-wh-group-value">
+                                <strong>${unitText}</strong>
+                                <small>${formatCompactVND(g.value)}</small>
+                            </div>
+                            <em>›</em>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
+
 // ========== RENDER CHÍNH ==========
 export function renderMobileView() {
     const materials = state.data.materials || [];
@@ -432,8 +732,7 @@ export function renderMobileView() {
     const lowStockCount = materials.filter(m => m.qty <= m.low).length;
     const currentUser = state.currentUser || {};
     return `
-<div class="mobile-app ios-liquid" id="mobile-app-container">
-            <!-- SIDEBAR TRƯỢT TRÁI -->
+<div class="mobile-app ios-liquid m-wh-theme-${mobileHomeTheme}" id="mobile-app-container">            <!-- SIDEBAR TRƯỢT TRÁI -->
             <div class="m-sidebar-overlay ${sidebarOpen ? 'show' : ''}" onclick="toggleMSidebar()"></div>
             <div class="m-sidebar ${sidebarOpen ? 'open' : ''}">
                 <div class="m-sidebar-header">
@@ -472,54 +771,18 @@ export function renderMobileView() {
             </div>
             
             <!-- HEADER -->
-            <div class="m-header">
-                <div class="m-header-left">
-                    <button class="m-hamburger" onclick="toggleMSidebar()">☰</button>
-                    <img src="/images/logo-tv.png" style="height:24px;">
-                    <span>TRÍ VIỆT STEEL</span>
-                </div>
-                <div class="m-header-right" onclick="showMobileMenu()">
-                    <span>${escapeHtml(currentUser.name?.charAt(0) || 'U')}</span>
-                </div>
-            </div>
+            
             
             <!-- 6 NÚT CHÍNH -->
-            <div class="m-grid">
-                <div class="m-btn m-btn-blue" onclick="showMobileImport()">
-                    <span class="m-btn-icon">📥</span>
-                    <span class="m-btn-label">NHẬP KHO</span>
-                </div>
-                <div class="m-btn m-btn-red" onclick="showMobileExport()">
-                    <span class="m-btn-icon">📤</span>
-                    <span class="m-btn-label">XUẤT KHO</span>
-                </div>
-                <div class="m-btn m-btn-green" onclick="showMobileStock()">
-                    <span class="m-btn-icon">📦</span>
-                    <span class="m-btn-label">TỒN KHO</span>
-                    <span class="m-btn-sub">${materials.length} món</span>
-                </div>
-                <div class="m-btn m-btn-purple" onclick="showMobileProjects()">
-                    <span class="m-btn-icon">🏗️</span>
-                    <span class="m-btn-label">CÔNG TRÌNH</span>
-                    <span class="m-btn-sub">${projects.length} CT</span>
-                </div>
-                <div class="m-btn m-btn-orange" onclick="showMobileLowStock()">
-                    <span class="m-btn-icon">⚠️</span>
-                    <span class="m-btn-label">SẮP HẾT</span>
-                    ${lowStockCount > 0 ? `<span class="m-badge">${lowStockCount}</span>` : '<span class="m-btn-sub">0 món</span>'}
-                </div>
-                <div class="m-btn m-btn-teal" onclick="showMobileReturn()">
-                    <span class="m-btn-icon">🔄</span>
-                    <span class="m-btn-label">TRẢ HÀNG</span>
-                </div>
-		<div class="m-btn m-btn-cyan" onclick="showMobileDashboard()">
-                    <span class="m-btn-icon">📊</span>
-                    <span class="m-btn-label">THỐNG KÊ</span>
-                </div>
-            </div>
             
-                        <!-- GIAO DỊCH GẦN ĐÂY -->
-            <div class="m-section">
+
+${renderMobileHomeHero(currentUser)}
+${renderMobileHomeStats(materials, transactions, projects, lowStockCount)}
+${renderMobileQuickActions()}
+${renderMobileCategoryStock(materials)}
+
+
+<div class="m-section">
     <div class="m-section-title">📋 GIAO DỊCH GẦN ĐÂY</div>
 
     <input type="text" class="m-search" placeholder="🔍 Tìm giao dịch..." value="${escapeHtml(txnSearch)}" oninput="filterMobileTxns(this.value)" style="margin-bottom:10px;">
@@ -536,21 +799,94 @@ export function renderMobileView() {
     </div>
 </div>
 
-
             <!-- MENU POPUP -->
             <div id="m-menu" class="m-menu" style="display:none;" onclick="event.stopPropagation()">
                 <div class="m-menu-item" onclick="logout()">🚪 Đăng xuất</div>
             </div>
-
             ${renderMobileActionSheet()}
             ${renderMobileTabBar('home')}
-
             <div id="modal-area"></div>
         </div>
     `;
 }
+// ========== TÙY CHỈNH THAO TÁC NHANH ==========
+window.showMobileQuickActionCustomize = function() {
+    const visible = new Set(mobileQuickActionVisible);
 
-// ========== SIDEBAR TOGGLE ==========
+    document.getElementById('m-quick-customize')?.remove();
+
+    const html = `
+        <div id="m-quick-customize" class="m-action-sheet" style="display:flex;" onclick="this.remove()">
+            <div class="m-action-panel m-quick-customize-panel" onclick="event.stopPropagation()">
+                <div class="m-action-grabber"></div>
+                <h3>Tùy chỉnh thao tác nhanh</h3>
+
+                <div class="m-quick-customize-tools">
+                    <button type="button" onclick="selectAllMobileQuickActions()">Hiện tất cả</button>
+                    <button type="button" onclick="resetMobileQuickActions()">Mặc định</button>
+                </div>
+
+                <div class="m-quick-customize-list">
+                    ${mobileQuickActionDefaults.map(item => `
+                        <label class="m-quick-customize-item">
+                            <span>
+                                ${mobileIcon(item.icon, item.label)}
+                                ${escapeHtml(item.label)}
+                            </span>
+                            <input type="checkbox"
+                                data-action-id="${item.id}"
+                                ${visible.has(item.id) ? 'checked' : ''}>
+                        </label>
+                    `).join('')}
+                </div>
+
+                <button type="button" onclick="saveMobileQuickActions()">Lưu tùy chỉnh</button>
+                <button type="button" class="danger" onclick="document.getElementById('m-quick-customize')?.remove()">Đóng</button>
+            </div>
+        </div>
+    `;
+
+    const target = document.getElementById('mobile-app-container')
+        || document.getElementById('root')
+        || document.body;
+
+    target.insertAdjacentHTML('beforeend', html);
+};
+
+window.selectAllMobileQuickActions = function() {
+    document.querySelectorAll('#m-quick-customize input[type="checkbox"]').forEach(input => {
+        input.checked = true;
+    });
+};
+
+window.resetMobileQuickActions = function() {
+    const defaults = new Set(['import', 'export', 'return', 'find', 'low', 'projects', 'report', 'more']);
+
+    document.querySelectorAll('#m-quick-customize input[type="checkbox"]').forEach(input => {
+        input.checked = defaults.has(input.dataset.actionId);
+    });
+};
+
+window.saveMobileQuickActions = function() {
+    const checked = Array.from(document.querySelectorAll('#m-quick-customize input[type="checkbox"]:checked'))
+        .map(input => input.dataset.actionId)
+        .filter(Boolean);
+
+    if (!checked.length) {
+        alert('Vui lòng chọn ít nhất 1 thao tác.');
+        return;
+    }
+
+    mobileQuickActionVisible = checked;
+    localStorage.setItem('steeltrack_mobile_quick_actions', JSON.stringify(mobileQuickActionVisible));
+
+    document.getElementById('m-quick-customize')?.remove();
+    renderMobileViewOnly();
+};
+
+
+
+// ========== SIDEBAR MOBILE ==========
 window.toggleMSidebar = function() {
     sidebarOpen = !sidebarOpen;
     const overlay = document.querySelector('.m-sidebar-overlay');
@@ -688,24 +1024,31 @@ window.showMobileExport = function(defaultProjectId = null, defaultMaterialId = 
                     <input type="datetime-local" id="me-datetime" value="${dt}">
                 </div>
                 <div class="m-field">
-                    <label>🏗️ Công trình</label>
-<select id="me-material">
-    ${materials.map(m => `
-        <option value="${m.id}"
-            data-cost="${m.cost}"
-            data-unit="${m.unit}"
-            data-qty="${m.qty}"
-            ${String(m.id) === String(defaultMaterialId) ? 'selected' : ''}>
-            ${escapeHtml(m.name)} (Còn: ${Number(m.qty).toLocaleString('vi-VN')} ${m.unit})
-        </option>
-    `).join('')}
-</select>
-               
-                </div>
-                <div class="m-field">
-                    <label>📦 Vật tư</label>
-                    <select id="me-material">${materials.map(m => `<option value="${m.id}" data-cost="${m.cost}" data-unit="${m.unit}" data-qty="${m.qty}">${escapeHtml(m.name)} (Còn: ${Number(m.qty).toLocaleString('vi-VN')} ${m.unit})</option>`).join('')}</select>
-                </div>
+    <label>🏗️ Công trình</label>
+    <select id="me-project">
+        ${projects.map(p => `
+            <option value="${p.id}" ${String(p.id) === String(defaultProjectId) ? 'selected' : ''}>
+                ${escapeHtml(p.name)}
+            </option>
+        `).join('')}
+    </select>
+</div>
+
+<div class="m-field">
+    <label>📦 Vật tư</label>
+    <select id="me-material">
+        ${materials.map(m => `
+            <option value="${m.id}"
+                data-cost="${m.cost}"
+                data-unit="${m.unit}"
+                data-qty="${m.qty}"
+                ${String(m.id) === String(defaultMaterialId) ? 'selected' : ''}>
+                ${escapeHtml(m.name)} (Còn: ${Number(m.qty).toLocaleString('vi-VN')} ${m.unit})
+            </option>
+        `).join('')}
+    </select>
+</div>
+
                 <div class="m-field">
                     <label>🔢 Số lượng</label>
                     <div class="m-qty-box">
@@ -747,13 +1090,22 @@ window.showMobileStock = function() {
             <div class="m-modal-bd" style="padding:12px;">
                 <input type="text" id="ms-search" class="m-search" placeholder="🔍 Tìm vật tư..." oninput="filterMStock()">
             </div>
+            <div class="m-stock-filter">
+    <button class="${stockStatusFilter === 'all' ? 'active' : ''}" onclick="filterMobileStockStatus('all')">Tất cả</button>
+    <button class="${stockStatusFilter === 'low' ? 'active' : ''}" onclick="filterMobileStockStatus('low')">Sắp hết</button>
+    <button class="${stockStatusFilter === 'ok' ? 'active' : ''}" onclick="filterMobileStockStatus('ok')">Còn hàng</button>
+</div>
             <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;" id="ms-list">
     `;
     
     materials.forEach(m => {
         const low = m.qty <= m.low;
         html += `
-<div class="m-stock-item" data-name="${escapeHtml(m.name).toLowerCase()}" data-status="${low ? 'low' : 'ok'}" onclick="window.showMobileMaterialDetail('${m.id}')">
+<div class="m-stock-item"
+    data-name="${escapeHtml(m.name).toLowerCase()}"
+    data-cat="${escapeHtml(m.cat || '').toLowerCase()}"
+    data-status="${low ? 'low' : 'ok'}"
+    onclick="window.showMobileMaterialDetail('${m.id}')">
 
                 <div class="m-stock-info">
                     <div class="m-stock-name">${low ? '⚠️ ' : ''}${escapeHtml(m.name)}</div>
@@ -792,7 +1144,7 @@ window.showMobileLowStock = function() {
     } else {
         materials.forEach(m => {
             html += `
-                <div class="m-stock-item" onclick="window.showMaterialDetail('${m.id}')">
+                <div class="m-stock-item" onclick="window.showMobileMaterialDetail('${m.id}')">
                     <div class="m-stock-info">
                         <div class="m-stock-name">⚠️ ${escapeHtml(m.name)}</div>
                         <div class="m-stock-meta">Cần nhập thêm ${Number(m.low - m.qty).toLocaleString('vi-VN')} ${m.unit}</div>
@@ -813,7 +1165,7 @@ window.showMobileLowStock = function() {
 // ========== MODAL CÔNG TRÌNH ==========
 window.showMobileProjects = function() {
     const projects = state.data.projects || [];
-    
+
     let html = `
         <div class="m-modal ios-liquid" id="m-project-modal">
             <div class="m-modal-hd">
@@ -821,19 +1173,13 @@ window.showMobileProjects = function() {
                 <span>🏗️ CÔNG TRÌNH (${projects.length})</span>
                 <div></div>
             </div>
-<div class="m-modal-bd" style="padding:12px;">
-    <input type="text" id="ms-search" class="m-search" placeholder="🔍 Tìm vật tư..." oninput="filterMStock()">
 
-    <div class="m-stock-filter">
-        <button class="${stockStatusFilter === 'all' ? 'active' : ''}" onclick="filterMobileStockStatus('all')">Tất cả</button>
-        <button class="${stockStatusFilter === 'low' ? 'active' : ''}" onclick="filterMobileStockStatus('low')">Sắp hết</button>
-        <button class="${stockStatusFilter === 'ok' ? 'active' : ''}" onclick="filterMobileStockStatus('ok')">Còn hàng</button>
-    </div>
-</div>
-<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;" id="ms-list">
+            <div class="m-modal-bd" style="padding:12px;">
+                <input type="text" id="mp-search" class="m-search" placeholder="🔍 Tìm công trình..." oninput="filterMobileProjects()">
+            </div>
 
-    `;
-    
+            <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;" id="mp-list">
+    `;   
     if (projects.length === 0) {
         html += '<div class="m-empty">📭 Chưa có công trình</div>';
     } else {
@@ -880,6 +1226,7 @@ const barColor = rawPct > 100
     document.getElementById('root').innerHTML = html;
     fixAllModalHeight();
 };
+// ========== CHI TIẾT VẬT TƯ ==========
 window.showMobileMaterialDetail = function(materialId) {
     const material = (state.data.materials || []).find(m => String(m.id) === String(materialId));
     if (!material) {
@@ -918,7 +1265,7 @@ window.showMobileMaterialDetail = function(materialId) {
         return `
             <div class="m-material-txn">
 
-                <div class="m-txn-icon ${isImport ? 'success' : isReturn ? 'info' : 'danger'}">${isImport ? '📥' : isReturn ? '🔄' : '📤'}</div>
+                <div class="m-txn-icon ${isImport ? 'success' : isReturn ? 'info' : 'danger'}">${mobileTxnTypeIcon(t.type, isImport ? 'Nhập kho' : isReturn ? 'Trả hàng' : 'Xuất kho')}</div>
                 <div>
                     <strong>${isImport ? 'Nhập kho' : isReturn ? 'Trả hàng' : 'Xuất kho'}</strong>
                     <small>${time} · ${escapeHtml(place || 'N/A')} · ${Number(t.qty || 0).toLocaleString('vi-VN')} ${material.unit || ''}</small>
@@ -982,6 +1329,7 @@ window.showMobileMaterialDetail = function(materialId) {
     fixAllModalHeight();
 };
 
+// ========== CHI TIẾT CÔNG TRÌNH ==========
 window.showMobileProjectDetail = function(projectId) {
     const project = (state.data.projects || []).find(p => String(p.id) === String(projectId));
     if (!project) {
@@ -1070,7 +1418,7 @@ const budgetTone = pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : 'safe';
 
         return `
             <div class="m-project-detail-txn">
-                <div class="m-txn-icon ${isReturn ? 'info' : 'danger'}">${isReturn ? '🔄' : '📤'}</div>
+                <div class="m-txn-icon ${isReturn ? 'info' : 'danger'}">${mobileTxnTypeIcon(t.type, isReturn ? 'Trả hàng' : 'Xuất kho')}</div>
                 <div>
                     <strong>${escapeHtml(mat?.name || 'N/A')}</strong>
                     <small>${time} · ${isReturn ? 'Trả' : 'Xuất'} · ${Number(t.qty || 0).toLocaleString('vi-VN')} ${mat?.unit || ''}</small>
@@ -1208,7 +1556,7 @@ window.showMobileReturn = function(defaultProjectId = null) {
 }, 250);
 
 };
-// ========== CÁC HÀM XỬ LÝ ==========
+// ========== XỬ LÝ SỐ LƯỢNG / TIỀN ==========
 window.changeMQty = function(delta) {
     const input = document.getElementById('mi-qty') || document.getElementById('me-qty') || document.getElementById('mr-qty');
     if (input) {
@@ -1274,6 +1622,7 @@ function bindMobileNumberInput(id, onChange = null) {
         if (onChange) onChange();
     });
 }
+// ========== DỌN FILE TẠM MOBILE ==========
 async function cleanupMobileTempFiles(type = null) {
     const uploads = window._upPaths || {};
     const types = type ? [type] : Object.keys(uploads);
@@ -1332,6 +1681,7 @@ function updateMobileTotal() {
         if (totalEl) totalEl.textContent = formatMoneyVND(total);
     }
 }
+// ========== XỬ LÝ SUBMIT MOBILE ==========
 window.doMobileImport = async function() {
     try {
         const supplierId = document.getElementById('mi-supplier')?.value;
@@ -1654,13 +2004,16 @@ window.doMobileReturn = async function() {
     }
 };
 
+// ========== TÌM KIẾM / BỘ LỌC ==========
 window.filterMStock = function() {
     const kw = document.getElementById('ms-search')?.value?.toLowerCase() || '';
 
     document.querySelectorAll('#ms-list .m-stock-item').forEach(function(el) {
         const matchName = (el.dataset.name || '').includes(kw);
+        const matchCat = (el.dataset.cat || '').includes(kw);
         const matchStatus = stockStatusFilter === 'all' || el.dataset.status === stockStatusFilter;
-        el.style.display = matchName && matchStatus ? '' : 'none';
+
+        el.style.display = (matchName || matchCat) && matchStatus ? '' : 'none';
     });
 };
 
@@ -1677,6 +2030,20 @@ window.filterMobileStockStatus = function(status) {
     filterMStock();
 };
 
+// ========== LỌC KHO THEO NHÓM VẬT TƯ ==========
+window.showMobileStockByCategory = function(encodedCategory) {
+    const category = decodeURIComponent(encodedCategory || '');
+    showMobileStock();
+
+    setTimeout(function() {
+        const search = document.getElementById('ms-search');
+
+        if (search) {
+            search.value = category;
+            filterMStock();
+        }
+    }, 80);
+};
 
 window.filterMobileProjects = function() {
     const kw = document.getElementById('mp-search')?.value?.toLowerCase() || '';
@@ -1688,6 +2055,7 @@ window.filterMobileProjects = function() {
 
 window.showMobileMenu = function() { const menu = document.getElementById('m-menu'); if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; };
 
+// ========== RENDER LẠI / CHUYỂN CHẾ ĐỘ ==========
 window.renderMobileViewOnly = function() {
     window.loadState().then(() => {
         document.getElementById('root').innerHTML = renderMobileView();
@@ -1702,7 +2070,7 @@ window.switchMobileMode = function(mode) { if (mode === 'desktop') { localStorag
 // Export global cho app.js
 window.renderMobileView = renderMobileView;
 window.renderMobileViewOnly = renderMobileViewOnly;
-// Chuyen trang
+// ========== PHÂN TRANG / LỌC GIAO DỊCH ==========
 window.changeTxnPage = function(page) {
     txnPage = page;
     const listEl = document.getElementById('m-txn-list');
@@ -1742,6 +2110,7 @@ window.filterMobileTxnType = function(type) {
     }
 };
 
+// ========== TIỆN ÍCH MODAL MOBILE ==========
 function fixAllModalHeight() {
     setTimeout(function() {
         var modals = document.querySelectorAll('.m-modal');
@@ -1845,6 +2214,7 @@ link.onclick = function(e) {
             });
     }
 };
+// ========== DASHBOARD MOBILE ==========
 function renderMobileDashboardHero() {
     const materials = state.data.materials || [];
     const transactions = state.data.transactions || [];
@@ -2170,7 +2540,7 @@ function drawDonutChart() {
 }
 window.updateMobileTotal = updateMobileTotal;
 
-// ========== INIT ==========
+// ========== INIT MOBILE ==========
 export function initMobileEvents() {
 // Fix chiều cao trên điện thoại thật
     function fixMobileHeight() {
