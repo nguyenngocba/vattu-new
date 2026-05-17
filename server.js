@@ -21,7 +21,6 @@ app.use('/uploads', express.static(uploads.uploadRoot));
 app.use(uploads.router);
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
-
 registerRoutes(app, {
   pool,
   withTransaction,
@@ -32,4 +31,5 @@ registerRoutes(app, {
 });
 
 server.listen(PORT, '0.0.0.0', () => console.log('OK'));
+
 

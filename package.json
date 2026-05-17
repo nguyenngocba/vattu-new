@@ -1,7 +1,9 @@
 {
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js"
+    "check": "node --check server.js",
+    "test:mobile": "node --no-warnings scripts/smoke-mobile-runtime.mjs",
+    "seed:demo": "node scripts/reset-demo-db.js --yes"
   },
   "dependencies": {
     "@socket.io/redis-adapter": "^8.3.0",
