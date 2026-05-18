@@ -35,24 +35,92 @@ function calculatePurchaseTotal() {
     if (subtotalEl) subtotalEl.innerText = formatMoneyVND(subtotal);
     if (vatEl) vatEl.innerText = formatMoneyVND(vatAmount);
     if (totalEl) totalEl.innerText = formatMoneyVND(total);
+    updatePurchaseContext();
+}
+
+function getMaterialPurchases(mid) {
+    return (state.data.transactions || [])
+        .filter(t => t.mid === mid && t.type === 'purchase')
+        .sort((a, b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date));
+}
+
+function updatePurchaseContext() {
+    const wrap = document.getElementById('purchase-context');
+    if (!wrap) return;
+    const mid = document.getElementById('purchase-mid')?.value;
+    const mat = matById(mid);
+    if (!mat) {
+        wrap.innerHTML = '<div class="metric-sub">Chọn vật tư để xem ngữ cảnh nhập kho.</div>';
+        return;
+    }
+    const qty = getNumberFromInput(document.getElementById('purchase-qty'));
+    const price = getNumberFromInput(document.getElementById('purchase-price')) || Number(mat.cost || 0);
+    const vatRate = getNumberFromInput(document.getElementById('purchase-vat'));
+    const total = qty * price * (1 + vatRate / 100);
+    const oldQty = Number(mat.qty || 0);
+    const oldValue = oldQty * Number(mat.cost || 0);
+    const nextQty = oldQty + qty;
+    const nextAvg = nextQty > 0 ? Math.round((oldValue + total) / nextQty) : price;
+    const lastPurchase = getMaterialPurchases(mid)[0];
+    const lastSupplier = lastPurchase ? supplierById(lastPurchase.supplierId) : null;
+    const priceDelta = lastPurchase && Number(lastPurchase.unitPrice || 0) > 0
+        ? ((price - Number(lastPurchase.unitPrice || 0)) / Number(lastPurchase.unitPrice || 0)) * 100
+        : 0;
+    const trendClass = priceDelta > 0 ? 'warn' : priceDelta < 0 ? 'good' : 'neutral';
+    wrap.innerHTML = `
+        <div class="smart-preview-grid">
+            <div><small>Tồn hiện tại</small><strong>${oldQty.toLocaleString('vi-VN', { maximumFractionDigits: 3 })} ${escapeHtml(mat.unit || '')}</strong></div>
+            <div><small>Sau nhập</small><strong>${nextQty.toLocaleString('vi-VN', { maximumFractionDigits: 3 })} ${escapeHtml(mat.unit || '')}</strong></div>
+            <div><small>Đơn giá TB mới</small><strong>${formatMoneyVND(nextAvg)}</strong></div>
+            <div><small>Giá nhập gần nhất</small><strong>${lastPurchase ? formatMoneyVND(lastPurchase.unitPrice) : 'Chưa có'}</strong></div>
+        </div>
+        <div class="smart-preview-note ${trendClass}">
+            ${lastPurchase
+                ? `NCC gần nhất: ${escapeHtml(lastSupplier?.name || 'N/A')} · ${formatDateTime(lastPurchase.datetime || lastPurchase.date)} · ${priceDelta >= 0 ? '+' : ''}${priceDelta.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}% so với lần nhập trước`
+                : 'Vật tư chưa có lịch sử nhập, đơn giá hiện tại sẽ trở thành mốc tham chiếu.'}
+        </div>
+    `;
 }
 
 function calculateExportTotal() {
     const mid = document.getElementById('txn-mid')?.value;
+    const pid = document.getElementById('txn-project')?.value;
     const mat = matById(mid);
+    const project = projectById(pid);
     const qty = getNumberFromInput(document.getElementById('txn-qty'));
     const total = (mat?.cost || 0) * qty;
     const previewEl = document.getElementById('preview-export-total');
     if (previewEl) previewEl.innerText = formatMoneyVND(total);
+    const stockEl = document.getElementById('preview-export-stock');
+    const afterEl = document.getElementById('preview-export-after');
+    const warnEl = document.getElementById('preview-export-warning');
+    const budgetEl = document.getElementById('preview-export-budget');
+    const budgetAfterEl = document.getElementById('preview-export-budget-after');
+    if (mat && stockEl) stockEl.innerText = `${Number(mat.qty || 0).toLocaleString('vi-VN', { maximumFractionDigits: 3 })} ${mat.unit || ''}`;
+    if (mat && afterEl) afterEl.innerText = `${Math.max(0, Number(mat.qty || 0) - qty).toLocaleString('vi-VN', { maximumFractionDigits: 3 })} ${mat.unit || ''}`;
+    if (project && budgetEl) budgetEl.innerText = `${formatMoneyVND(Number(project.spent || 0))} / ${formatMoneyVND(Number(project.budget || 0))}`;
+    if (project && budgetAfterEl) budgetAfterEl.innerText = formatMoneyVND(Number(project.spent || 0) + total);
+    if (mat && warnEl) {
+        const after = Number(mat.qty || 0) - qty;
+        const overBudget = project && Number(project.budget || 0) > 0 && (Number(project.spent || 0) + total) > Number(project.budget || 0);
+        warnEl.textContent = after < 0
+            ? 'Không đủ tồn để xuất'
+            : overBudget
+                ? 'Cảnh báo: công trình sẽ vượt ngân sách'
+                : after <= Number(mat.low || 0)
+                    ? 'Cảnh báo: sau xuất sẽ dưới ngưỡng an toàn'
+                    : 'Tồn sau xuất và ngân sách vẫn an toàn';
+        warnEl.className = after < 0 || overBudget ? 'text-danger' : after <= Number(mat.low || 0) ? 'text-warning' : 'text-success';
+    }
 }
 
 // ========== NHẬP KHO ==========
-export function openPurchaseModal() {
+export function openPurchaseModal(preselectedMaterialId = null) {
     if (!hasPermission('canImport')) { alert('Bạn không có quyền nhập kho'); return; }
     if (state.data.materials.length === 0) return alert('Chưa có vật tư trong kho');
     if (state.data.suppliers.length === 0) return alert('Chưa có nhà cung cấp');
 
-    const optsMat = state.data.materials.map(m => `<option value="${m.id}">${escapeHtml(m.name)} (Tồn: ${parseFloat(m.qty).toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3})} ${m.unit})</option>`).join('');
+    const optsMat = state.data.materials.map(m => `<option value="${m.id}" ${preselectedMaterialId === m.id ? 'selected' : ''}>${escapeHtml(m.name)} (Tồn: ${parseFloat(m.qty).toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3})} ${m.unit})</option>`).join('');
     const optsSup = state.data.suppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
     const currentDateTime = getCurrentDateTime();
 
@@ -67,6 +135,7 @@ export function openPurchaseModal() {
                 <div class="form-group"><label class="form-label">💰 Đơn giá nhập (VNĐ)</label><input type="text" id="purchase-price" placeholder="Nhập giá thực tế" style="text-align:right;" dir="ltr" autocomplete="off"></div>
                 <div class="form-group"><label class="form-label">🧾 Thuế VAT (%)</label><input type="text" id="purchase-vat" value="10" style="text-align:right;" dir="ltr" autocomplete="off"></div>
             </div>
+            <div id="purchase-context" class="smart-workflow-preview"></div>
             <div class="metric-card" style="margin-bottom:12px">
                 <div class="metric-sub">💰 Thành tiền trước VAT: <strong id="preview-subtotal">0 ₫</strong></div>
                 <div class="metric-sub">🧾 Tiền VAT: <strong id="preview-vat">0 ₫</strong></div>
@@ -85,9 +154,9 @@ export function openPurchaseModal() {
         const vatInput = document.getElementById('purchase-vat');
         const midSelect = document.getElementById('purchase-mid');
 
-        if (qtyInput) { setupNumberInput(qtyInput, { isInteger: false, decimals: 3 }); qtyInput.addEventListener('change', calculatePurchaseTotal); }
-        if (priceInput) { setupNumberInput(priceInput, { isInteger: false, decimals: 2 }); priceInput.addEventListener('change', calculatePurchaseTotal); }
-        if (vatInput) { setupNumberInput(vatInput, { isInteger: false, decimals: 1 }); vatInput.addEventListener('change', calculatePurchaseTotal); }
+        if (qtyInput) { setupNumberInput(qtyInput, { isInteger: false, decimals: 3 }); qtyInput.addEventListener('input', calculatePurchaseTotal); qtyInput.addEventListener('change', calculatePurchaseTotal); }
+        if (priceInput) { setupNumberInput(priceInput, { isInteger: false, decimals: 2 }); priceInput.addEventListener('input', calculatePurchaseTotal); priceInput.addEventListener('change', calculatePurchaseTotal); }
+        if (vatInput) { setupNumberInput(vatInput, { isInteger: false, decimals: 1 }); vatInput.addEventListener('input', calculatePurchaseTotal); vatInput.addEventListener('change', calculatePurchaseTotal); }
 
         const updateDefaultPrice = () => {
             const mid = midSelect?.value;
@@ -122,6 +191,7 @@ export function openPurchaseModalWithSupplier(supplierId) {
                 <div class="form-group"><label class="form-label">💰 Đơn giá nhập (VNĐ)</label><input type="text" id="purchase-price" placeholder="Nhập giá thực tế" style="text-align:right;" dir="ltr" autocomplete="off"></div>
                 <div class="form-group"><label class="form-label">🧾 Thuế VAT (%)</label><input type="text" id="purchase-vat" value="10" style="text-align:right;" dir="ltr" autocomplete="off"></div>
             </div>
+            <div id="purchase-context" class="smart-workflow-preview"></div>
             <div class="metric-card" style="margin-bottom:12px">
                 <div class="metric-sub">💰 Thành tiền trước VAT: <strong id="preview-subtotal">0 ₫</strong></div>
                 <div class="metric-sub">🧾 Tiền VAT: <strong id="preview-vat">0 ₫</strong></div>
@@ -139,10 +209,11 @@ export function openPurchaseModalWithSupplier(supplierId) {
         const priceInput = document.getElementById('purchase-price'); if (priceInput) { setupNumberInput(priceInput, { isInteger: false, decimals: 2 }); priceInput.addEventListener('change', calculatePurchaseTotal); }
         const vatInput = document.getElementById('purchase-vat');
         const midSelect = document.getElementById('purchase-mid');
+        const fileInput = document.getElementById('purchase-files');
 
-        if (qtyInput) { setupNumberInput(qtyInput, { isInteger: false, decimals: 3 }); qtyInput.addEventListener('change', calculatePurchaseTotal); }
-        if (priceInput) { setupNumberInput(priceInput, { isInteger: false, decimals: 2 }); priceInput.addEventListener('change', calculatePurchaseTotal); }
-        if (vatInput) { setupNumberInput(vatInput, { isInteger: false, decimals: 1 }); vatInput.addEventListener('change', calculatePurchaseTotal); }
+        if (qtyInput) { setupNumberInput(qtyInput, { isInteger: false, decimals: 3 }); qtyInput.addEventListener('input', calculatePurchaseTotal); qtyInput.addEventListener('change', calculatePurchaseTotal); }
+        if (priceInput) { setupNumberInput(priceInput, { isInteger: false, decimals: 2 }); priceInput.addEventListener('input', calculatePurchaseTotal); priceInput.addEventListener('change', calculatePurchaseTotal); }
+        if (vatInput) { setupNumberInput(vatInput, { isInteger: false, decimals: 1 }); vatInput.addEventListener('input', calculatePurchaseTotal); vatInput.addEventListener('change', calculatePurchaseTotal); }
         
         if (fileInput) {
             fileInput.addEventListener('change', function() {
@@ -214,7 +285,9 @@ export async function savePurchase() {
     addLog('Nhập kho', `${mat.name} - SL: ${qty.toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3})} - ${formatMoneyVND(totalAmount)} - NCC: ${supplierById(supplierId)?.name}`);
     saveState(); closeModal(); currentInvoiceBase64 = null;
     if (window.render) window.render();
-    alert('✅ Nhập kho thành công!');
+    if (window.refreshMaterialPanels) window.refreshMaterialPanels(mid);
+    if (window.showAppToast) window.showAppToast('Nhập kho thành công', `${mat.name} · ${qty.toLocaleString('vi-VN')} ${mat.unit}`, 'success');
+    else alert('✅ Nhập kho thành công!');
 }
 
 
@@ -250,16 +323,18 @@ state.data.transactions.unshift({
     addLog('Nhập kho', `${mat.name} - SL: ${qty.toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3})} - ${formatMoneyVND(totalAmount)}`);
     saveState(); closeModal(); currentInvoiceBase64 = null;
     if (window.render) window.render();
-    alert('✅ Nhập kho thành công!');
+    if (window.refreshMaterialPanels) window.refreshMaterialPanels(mid);
+    if (window.showAppToast) window.showAppToast('Nhập kho thành công', `${mat.name} · ${qty.toLocaleString('vi-VN')} ${mat.unit}`, 'success');
+    else alert('✅ Nhập kho thành công!');
 }
 
 // ========== XUẤT KHO ==========
-export function openTxnModal(type, preselectedProjectId = null) {
+export function openTxnModal(type, preselectedProjectId = null, preselectedMaterialId = null) {
     if (type === 'usage' && !hasPermission('canExport')) { alert('Bạn không có quyền xuất kho'); return; }
     if (state.data.materials.length === 0) return alert('Chưa có vật tư');
     if (state.data.projects.length === 0) return alert('Chưa có công trình');
 
-    const optsMat = state.data.materials.map(m => `<option value="${m.id}">${escapeHtml(m.name)} (Tồn: ${parseFloat(m.qty).toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3})} ${m.unit})</option>`).join('');
+    const optsMat = state.data.materials.map(m => `<option value="${m.id}" ${preselectedMaterialId === m.id ? 'selected' : ''}>${escapeHtml(m.name)} (Tồn: ${parseFloat(m.qty).toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3})} ${m.unit})</option>`).join('');
     const optsProj = state.data.projects.map(p => `<option value="${p.id}" ${preselectedProjectId===p.id?'selected':''}>${escapeHtml(p.name)} (NS: ${formatMoneyVND(p.budget)})</option>`).join('');
 
     const html = `
@@ -271,7 +346,16 @@ export function openTxnModal(type, preselectedProjectId = null) {
                 <div class="form-group"><label class="form-label">📦 Vật tư</label><select id="txn-mid">${optsMat}</select></div>
                 <div class="form-group"><label class="form-label">🔢 Số lượng</label><input type="text" id="txn-qty" value="1" style="text-align:right;" dir="ltr" autocomplete="off"></div>
             </div>
-            <div class="metric-card"><div class="metric-sub">💰 Thành tiền: <strong id="preview-export-total">0 ₫</strong></div></div>
+            <div class="metric-card">
+                <div class="smart-preview-grid">
+                    <div><small>Tồn hiện tại</small><strong id="preview-export-stock">0</strong></div>
+                    <div><small>Tồn sau xuất</small><strong id="preview-export-after">0</strong></div>
+                    <div><small>Đã dùng / ngân sách</small><strong id="preview-export-budget">0 ₫</strong></div>
+                    <div><small>Sau xuất</small><strong id="preview-export-budget-after">0 ₫</strong></div>
+                </div>
+                <div class="metric-sub" style="margin-top:10px;">💰 Thành tiền: <strong id="preview-export-total">0 ₫</strong></div>
+                <div id="preview-export-warning" class="metric-sub"></div>
+            </div>
             <div class="form-group"><label class="form-label">📎 File đính kèm</label><input type="file" id="export-files" multiple onchange="window.upFiles(this,'usage')"><div id="usage-file-list" style="margin-top:4px;font-size:11px;"></div></div>
             <div class="form-group"><label class="form-label">📝 Ghi chú</label><input type="text" id="txn-note"></div>
         </div>
@@ -283,7 +367,8 @@ export function openTxnModal(type, preselectedProjectId = null) {
         const qty = document.getElementById('txn-qty');
         const mid = document.getElementById('txn-mid');
         const att = document.getElementById('export-attachment');
-        if (qty) { setupNumberInput(qty, { isInteger: false, decimals: 3 }); qty.addEventListener('change', calculateExportTotal); }
+        const project = document.getElementById('txn-project');
+        if (qty) { setupNumberInput(qty, { isInteger: false, decimals: 3 }); qty.addEventListener('input', calculateExportTotal); qty.addEventListener('change', calculateExportTotal); }
         if (att) att.addEventListener('change', function() {
             const f = this.files[0]; if (!f) return;
             const r = new FileReader();
@@ -295,6 +380,7 @@ export function openTxnModal(type, preselectedProjectId = null) {
             r.readAsDataURL(f);
         });
         if (mid) mid.addEventListener('change', calculateExportTotal);
+        if (project) project.addEventListener('change', calculateExportTotal);
         calculateExportTotal();
     }, 150);
 }
@@ -333,7 +419,9 @@ export async function saveExport() {
     addLog('Xuất kho', `${mat.name} - SL: ${qty.toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3})} - ${formatMoneyVND(total)}`);
     saveState(); closeModal(); currentExportAttachmentBase64 = null;
     if (window.render) window.render();
-    alert('✅ Xuất kho thành công!');
+    if (window.refreshMaterialPanels) window.refreshMaterialPanels(mid);
+    if (window.showAppToast) window.showAppToast('Xuất kho thành công', `${mat.name} · ${qty.toLocaleString('vi-VN')} ${mat.unit}`, 'success');
+    else alert('✅ Xuất kho thành công!');
 }
 
 // ========== TRẢ HÀNG ==========
@@ -358,9 +446,17 @@ export function openReturnModal(preselectedProjectId = null) {
                 <div class="form-group"><label class="form-label">🔢 Số lượng</label><input type="text" id="return-qty" value="1" style="text-align:right;" dir="ltr" autocomplete="off"></div>
                 <div class="form-group"><label class="form-label">💰 Đơn giá</label><input type="text" id="return-price" readonly style="background:var(--surface3);text-align:right;" dir="ltr"></div>
             </div>
+            <div class="metric-card">
+                <div class="smart-preview-grid">
+                    <div><small>Có thể trả</small><strong id="preview-return-available">0</strong></div>
+                    <div><small>Sẽ trả</small><strong id="preview-return-qty">0</strong></div>
+                    <div><small>Tồn kho sau trả</small><strong id="preview-return-stock-after">0</strong></div>
+                    <div><small>Thành tiền</small><strong id="preview-return-total">0 ₫</strong></div>
+                </div>
+                <div id="preview-return-warning" class="metric-sub"></div>
+            </div>
             <div class="form-group"><label class="form-label">📎 File đính kèm</label><input type="file" id="return-files" multiple onchange="window.upFiles(this,'return')"><div id="return-file-list" style="margin-top:4px;font-size:11px;"></div></div>
-            <div class="form-group"><label class="form-label">📝 Ghi chú</label><input type="text" id="return-note">
-            <div class="metric-card"><div class="metric-sub">💰 Thành tiền: <strong id="preview-return-total">0 ₫</strong></div></div>
+            <div class="form-group"><label class="form-label">📝 Ghi chú</label><input type="text" id="return-note"></div>
         </div>
         <div class="modal-ft"><button onclick="closeModal()">Hủy</button><button class="primary" style="background:var(--success);" onclick="window.saveReturn()">Xác nhận</button></div>`;
 
@@ -373,7 +469,7 @@ export function openReturnModal(preselectedProjectId = null) {
         const prc = document.getElementById('return-price');
         const att = document.getElementById('return-attachment');
         
-        if (qty) { setupNumberInput(qty, { isInteger: false, decimals: 3 }); qty.addEventListener('change', upd); }
+        if (qty) { setupNumberInput(qty, { isInteger: false, decimals: 3 }); qty.addEventListener('input', upd); qty.addEventListener('change', upd); }
         if (att) att.addEventListener('change', function() {
             const f = this.files[0]; if (!f) return;
             const r = new FileReader();
@@ -389,9 +485,27 @@ export function openReturnModal(preselectedProjectId = null) {
             const o = ms?.options[ms.selectedIndex];
             const q = getNumberFromInput(qty);
             let up = 0;
+            let avail = 0;
+            let stockAfter = 0;
             if (o?.value) { up = parseFloat(o.dataset.up) || 0; if (prc) prc.value = up.toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3}); }
+            if (o?.value) {
+                avail = parseFloat(o.dataset.avail || 0) || 0;
+                const mat = matById(o.value);
+                stockAfter = Number(mat?.qty || 0) + q;
+            }
             const el = document.getElementById('preview-return-total');
             if (el) el.innerText = formatMoneyVND(up * q);
+            const availEl = document.getElementById('preview-return-available');
+            const qtyEl = document.getElementById('preview-return-qty');
+            const stockAfterEl = document.getElementById('preview-return-stock-after');
+            const warnEl = document.getElementById('preview-return-warning');
+            if (availEl) availEl.innerText = `${avail.toLocaleString('vi-VN', { maximumFractionDigits: 3 })}`;
+            if (qtyEl) qtyEl.innerText = `${q.toLocaleString('vi-VN', { maximumFractionDigits: 3 })}`;
+            if (stockAfterEl) stockAfterEl.innerText = `${stockAfter.toLocaleString('vi-VN', { maximumFractionDigits: 3 })}`;
+            if (warnEl) {
+                warnEl.textContent = q <= 0 ? 'Nhập số lượng trả hợp lệ' : q > avail ? 'Số lượng trả vượt phần còn có thể trả' : 'Số lượng trả hợp lệ';
+                warnEl.className = q <= 0 || q > avail ? 'text-danger' : 'text-success';
+            }
         }
 
         function loadMat() {
@@ -424,7 +538,7 @@ const list = Array.from(map.values()).map(i=>{
     return i;
 }).filter(i => i.avail > 0);           
             if(list.length===0){ms.innerHTML='<option value="">✅ Hết</option>';return;}
-ms.innerHTML = list.map(m=>`<option value="${m.id}" data-up="${m.up}">${escapeHtml(m.name)} (Có thể trả: ${m.avail.toLocaleString('vi-VN')} ${m.unit})</option>`).join('');
+ms.innerHTML = list.map(m=>`<option value="${m.id}" data-up="${m.up}" data-avail="${m.avail}">${escapeHtml(m.name)} (Có thể trả: ${m.avail.toLocaleString('vi-VN')} ${m.unit})</option>`).join('');
             upd();
         }
 
@@ -488,7 +602,9 @@ export async function saveReturn() {
     addLog('Trả hàng', `${mat.name} - SL: ${qty.toLocaleString('vi-VN', {minimumFractionDigits:0, maximumFractionDigits:3})} - ${formatMoneyVND(total)}`);
     saveState(); closeModal(); currentReturnAttachmentBase64 = null;
     if (window.render) window.render();
-    alert('✅ Đã nhập lại kho!');
+    if (window.refreshMaterialPanels) window.refreshMaterialPanels(mid);
+    if (window.showAppToast) window.showAppToast('Trả hàng thành công', `${mat.name} · ${qty.toLocaleString('vi-VN')} ${mat.unit}`, 'success');
+    else alert('✅ Đã nhập lại kho!');
 }
 
 

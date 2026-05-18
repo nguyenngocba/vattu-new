@@ -19,15 +19,48 @@ module.exports = function structuresBasicRoutes({ pool, withTransaction, clearCa
     try {
       await withTransaction(async (client) => {
         await client.query(
-          `INSERT INTO structures (id, name, unit, qty, cost, note)
-           VALUES ($1, $2, $3, $4, $5, $6)
+          `INSERT INTO structures (
+             id, name, unit, qty, cost, note,
+             type, zone, position_x, position_y, layer, rotation,
+             length, width, height, weight, project_id
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
            ON CONFLICT (id) DO UPDATE SET
              name = EXCLUDED.name,
              unit = EXCLUDED.unit,
              qty = EXCLUDED.qty,
              cost = EXCLUDED.cost,
-             note = EXCLUDED.note`,
-          [s.id, s.name, s.unit, s.qty || 0, s.cost || 0, s.note || '']
+             note = EXCLUDED.note,
+             type = EXCLUDED.type,
+             zone = EXCLUDED.zone,
+             position_x = EXCLUDED.position_x,
+             position_y = EXCLUDED.position_y,
+             layer = EXCLUDED.layer,
+             rotation = EXCLUDED.rotation,
+             length = EXCLUDED.length,
+             width = EXCLUDED.width,
+             height = EXCLUDED.height,
+             weight = EXCLUDED.weight,
+             project_id = EXCLUDED.project_id`,
+          [
+            s.id,
+            s.name,
+            s.unit,
+            s.qty || 0,
+            s.cost || 0,
+            s.note || '',
+            s.type || '',
+            s.zone || '',
+            s.position_x ?? s.positionX ?? 0,
+            s.position_y ?? s.positionY ?? 0,
+            s.layer || 1,
+            s.rotation || 0,
+            s.length || s.length_m || 6,
+            s.width || s.width_m || 1.2,
+            s.height || s.height_m || 0.8,
+            s.weight || 1200,
+            s.project_id || s.projectId || null
+          ]
         );
 
         await client.query('DELETE FROM structure_materials WHERE structure_id = $1', [s.id]);

@@ -1,5 +1,5 @@
 export let state = {
-  theme: 'dark', currentUser: null, currentPane: 'entry',
+  theme: 'light', currentUser: null, currentPane: 'entry',
   data: {
     materials: [], transactions: [], projects: [], suppliers: [], logs: [],
     categories: ['Dầm thép', 'Tấm thép', 'Thép hộp', 'Thép góc', 'Vật tư tiêu hao', 'Bu lông - Ốc vít', 'Ống thép', 'Thép hình'],

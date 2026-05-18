@@ -1,0 +1,478 @@
+/* ===== DESKTOP DARK DASHBOARD EXPERIENCE ===== */
+#app-layout.desktop-shell {
+    --bg: #03111f;
+    --surface: rgba(8, 24, 40, .92);
+    --surface2: rgba(11, 32, 52, .88);
+    --surface3: rgba(16, 43, 68, .9);
+    --border: rgba(125, 211, 252, .12);
+    --border2: rgba(125, 211, 252, .22);
+    --text: #e8f1ff;
+    --muted: #8fa7bf;
+    --hint: #647b91;
+    --accent: #1f7aff;
+    --accent-bg: rgba(31, 122, 255, .16);
+    --accent-text: #60a5fa;
+    --warn: #f59e0b;
+    --warn-bg: rgba(245, 158, 11, .14);
+    --warn-text: #fbbf24;
+    --danger: #ef4444;
+    --danger-bg: rgba(239, 68, 68, .14);
+    --danger-text: #fb7185;
+    --success: #10b981;
+    --success-bg: rgba(16, 185, 129, .14);
+    --success-text: #34d399;
+    background:
+        radial-gradient(circle at 28% -10%, rgba(31,122,255,.20), transparent 34%),
+        radial-gradient(circle at 78% 0%, rgba(16,185,129,.13), transparent 28%),
+        linear-gradient(180deg, #020915 0%, #03111f 48%, #020813 100%);
+    color: var(--text);
+}
+
+#app-layout.desktop-shell .main-content {
+    background: transparent;
+}
+
+#app-layout.desktop-shell .sidebar {
+    background: linear-gradient(180deg, rgba(2,13,26,.98), rgba(3,24,42,.98));
+    border-right: 1px solid rgba(125,211,252,.12);
+    box-shadow: 14px 0 36px rgba(0, 0, 0, .26);
+}
+
+#app-layout.desktop-shell .topbar {
+    background: rgba(3, 13, 26, .86);
+    border-bottom: 1px solid rgba(125,211,252,.10);
+    backdrop-filter: blur(18px);
+}
+
+#app-layout.desktop-shell .topbar-title,
+#app-layout.desktop-shell .topbar-title strong,
+#app-layout.desktop-shell .desktop-user-chip strong,
+#app-layout.desktop-shell .desktop-period-row strong,
+#app-layout.desktop-shell .desktop-period-row span,
+#app-layout.desktop-shell .desktop-module-stats strong,
+#app-layout.desktop-shell .desktop-rank-meta,
+#app-layout.desktop-shell .kpi-value,
+#app-layout.desktop-shell .metric-val,
+#app-layout.desktop-shell td {
+    color: #e8f1ff;
+}
+
+#app-layout.desktop-shell .topbar-title small,
+#app-layout.desktop-shell .kpi-sub,
+#app-layout.desktop-shell .metric-sub,
+#app-layout.desktop-shell .desktop-module-card p,
+#app-layout.desktop-shell .desktop-module-stats span,
+#app-layout.desktop-shell .desktop-alert-row small,
+#app-layout.desktop-shell .desktop-rank-meta span {
+    color: #8fa7bf;
+}
+
+#app-layout.desktop-shell .card,
+#app-layout.desktop-shell .metric-card,
+#app-layout.desktop-shell .kpi-card,
+#app-layout.desktop-shell .tbl-wrap,
+#app-layout.desktop-shell .desktop-module-card,
+#app-layout.desktop-shell #projects-resizable-container .resizable-panel,
+#app-layout.desktop-shell #suppliers-resizable-container .resizable-panel {
+    background:
+        linear-gradient(145deg, rgba(12,32,52,.95), rgba(5,18,32,.95)),
+        radial-gradient(circle at 0 0, rgba(31,122,255,.16), transparent 34%);
+    border: 1px solid rgba(125,211,252,.12);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, .24);
+}
+
+#app-layout.desktop-shell .desktop-click-card {
+    cursor: pointer;
+}
+
+#app-layout.desktop-shell .desktop-click-card:hover,
+#app-layout.desktop-shell .kpi-card:hover,
+#app-layout.desktop-shell .desktop-module-card:hover,
+#app-layout.desktop-shell .metric-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(59,130,246,.78);
+    box-shadow:
+        0 0 0 1px rgba(59,130,246,.18),
+        0 0 34px rgba(37,99,235,.30),
+        0 22px 52px rgba(0,0,0,.34);
+}
+
+#app-layout.desktop-shell .kpi-card::after {
+    background: linear-gradient(135deg, transparent 20%, rgba(59,130,246,.55));
+}
+
+#app-layout.desktop-shell .kpi-icon,
+#app-layout.desktop-shell .desktop-module-icon {
+    background: rgba(31,122,255,.18);
+    box-shadow: inset 0 0 18px rgba(96,165,250,.20);
+}
+
+#app-layout.desktop-shell .kpi-import .kpi-icon,
+#app-layout.desktop-shell .kpi-export .kpi-icon,
+#app-layout.desktop-shell .kpi-inventory .kpi-icon,
+#app-layout.desktop-shell .kpi-warning .kpi-icon,
+#app-layout.desktop-shell .kpi-materials .kpi-icon {
+    background: rgba(31,122,255,.18);
+}
+
+#app-layout.desktop-shell .kpi-label,
+#app-layout.desktop-shell .metric-label,
+#app-layout.desktop-shell .sec-title,
+#app-layout.desktop-shell th {
+    color: #dbeafe;
+}
+
+#app-layout.desktop-shell .desktop-top-search,
+#app-layout.desktop-shell .desktop-date-chip,
+#app-layout.desktop-shell .desktop-icon-btn,
+#app-layout.desktop-shell .desktop-user-chip,
+#app-layout.desktop-shell button,
+#app-layout.desktop-shell input[type=text],
+#app-layout.desktop-shell input[type=number],
+#app-layout.desktop-shell input[type=date],
+#app-layout.desktop-shell input[type=datetime-local],
+#app-layout.desktop-shell input[type=password],
+#app-layout.desktop-shell select,
+#app-layout.desktop-shell textarea {
+    background: rgba(7, 22, 38, .92);
+    border-color: rgba(125,211,252,.14);
+    color: #e8f1ff;
+}
+
+#app-layout.desktop-shell .desktop-top-search input {
+    color: #e8f1ff;
+}
+
+#app-layout.desktop-shell .desktop-card-head button,
+#app-layout.desktop-shell .desktop-module-card .desktop-card-head button {
+    color: #60a5fa;
+    background: transparent;
+}
+
+#app-layout.desktop-shell .dashboard-tab {
+    background: rgba(7, 22, 38, .86);
+    border-color: rgba(125,211,252,.12);
+    color: #a9bdd3;
+    box-shadow: none;
+}
+
+#app-layout.desktop-shell .dashboard-tab.active {
+    color: #fff;
+    background: linear-gradient(135deg, #1f7aff, #0757c7);
+    border-color: rgba(96,165,250,.76);
+    box-shadow: 0 0 24px rgba(31,122,255,.30);
+}
+
+#app-layout.desktop-shell table,
+#app-layout.desktop-shell th {
+    background: rgba(5, 18, 32, .82);
+}
+
+#app-layout.desktop-shell th,
+#app-layout.desktop-shell td {
+    border-bottom-color: rgba(125,211,252,.10);
+}
+
+#app-layout.desktop-shell tr:hover td {
+    background: rgba(31,122,255,.08);
+}
+
+#app-layout.desktop-shell .desktop-table-wrap {
+    border-color: rgba(125,211,252,.12);
+    background: rgba(3,13,26,.36);
+}
+
+#app-layout.desktop-shell .progress-bar {
+    background: rgba(100, 116, 139, .24);
+}
+
+#app-layout.desktop-shell .progress-fill {
+    background: linear-gradient(90deg, #10b981, #34d399);
+    box-shadow: 0 0 14px rgba(16,185,129,.32);
+}
+
+#app-layout.desktop-shell .desktop-export-fill {
+    background: linear-gradient(90deg, #2563eb, #60a5fa);
+    box-shadow: 0 0 14px rgba(37,99,235,.32);
+}
+
+#app-layout.desktop-shell .status-good {
+    color: #34d399;
+    background: rgba(16,185,129,.13);
+}
+
+#app-layout.desktop-shell .status-warn {
+    color: #fbbf24;
+    background: rgba(245,158,11,.14);
+}
+
+#app-layout.desktop-shell .status-danger {
+    color: #fb7185;
+    background: rgba(239,68,68,.14);
+}
+
+#app-layout.desktop-shell .desktop-alert-row {
+    background: rgba(245,158,11,.12);
+    color: #e8f1ff;
+}
+
+#app-layout.desktop-shell .desktop-alert-row:nth-child(1) {
+    background: rgba(239,68,68,.13);
+}
+
+#app-layout.desktop-shell .desktop-alert-row strong {
+    color: #f8fbff;
+}
+
+#app-layout.desktop-shell .desktop-module-card::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.08), rgba(3,13,26,.78)),
+        radial-gradient(circle at 85% 12%, rgba(31,122,255,.24), transparent 38%);
+}
+
+#app-layout.desktop-shell .desktop-module-suppliers::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.08), rgba(3,13,26,.78)),
+        radial-gradient(circle at 85% 12%, rgba(16,185,129,.26), transparent 38%);
+}
+
+#app-layout.desktop-shell .desktop-module-projects::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.08), rgba(3,13,26,.78)),
+        radial-gradient(circle at 85% 12%, rgba(124,58,237,.28), transparent 38%);
+}
+
+#app-layout.desktop-shell .desktop-module-structures::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.08), rgba(3,13,26,.78)),
+        radial-gradient(circle at 85% 12%, rgba(245,158,11,.28), transparent 38%);
+}
+
+/* ===== DESKTOP DARK DASHBOARD ACTIVE OVERRIDES ===== */
+#app-layout.desktop-shell {
+    --bg: #03111f;
+    --surface: rgba(8, 24, 40, .92);
+    --surface2: rgba(11, 32, 52, .88);
+    --surface3: rgba(16, 43, 68, .9);
+    --border: rgba(125, 211, 252, .12);
+    --border2: rgba(125, 211, 252, .22);
+    --text: #e8f1ff;
+    --muted: #8fa7bf;
+    --hint: #647b91;
+    --accent: #1f7aff;
+    --accent-bg: rgba(31, 122, 255, .16);
+    --accent-text: #60a5fa;
+    --warn-bg: rgba(245, 158, 11, .14);
+    --warn-text: #fbbf24;
+    --danger-bg: rgba(239, 68, 68, .14);
+    --danger-text: #fb7185;
+    --success-bg: rgba(16, 185, 129, .14);
+    --success-text: #34d399;
+    background:
+        radial-gradient(circle at 28% -10%, rgba(31,122,255,.20), transparent 34%),
+        radial-gradient(circle at 78% 0%, rgba(16,185,129,.13), transparent 28%),
+        linear-gradient(180deg, #020915 0%, #03111f 48%, #020813 100%);
+    color: var(--text);
+}
+
+#app-layout.desktop-shell .main-content {
+    background: transparent;
+}
+
+#app-layout.desktop-shell .sidebar {
+    background: linear-gradient(180deg, rgba(2,13,26,.98), rgba(3,24,42,.98));
+    border-right: 1px solid rgba(125,211,252,.12);
+    box-shadow: 14px 0 36px rgba(0, 0, 0, .26);
+}
+
+#app-layout.desktop-shell .topbar {
+    background: rgba(3, 13, 26, .86);
+    border-bottom: 1px solid rgba(125,211,252,.10);
+    backdrop-filter: blur(18px);
+}
+
+#app-layout.desktop-shell .card,
+#app-layout.desktop-shell .metric-card,
+#app-layout.desktop-shell .kpi-card,
+#app-layout.desktop-shell .tbl-wrap,
+#app-layout.desktop-shell .desktop-module-card,
+#app-layout.desktop-shell #projects-resizable-container .resizable-panel,
+#app-layout.desktop-shell #suppliers-resizable-container .resizable-panel {
+    background:
+        linear-gradient(145deg, rgba(12,32,52,.95), rgba(5,18,32,.95)),
+        radial-gradient(circle at 0 0, rgba(31,122,255,.16), transparent 34%);
+    border: 1px solid rgba(125,211,252,.12);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, .24);
+}
+
+#app-layout.desktop-shell .desktop-click-card {
+    cursor: pointer;
+}
+
+#app-layout.desktop-shell .desktop-click-card:hover,
+#app-layout.desktop-shell .kpi-card:hover,
+#app-layout.desktop-shell .desktop-module-card:hover,
+#app-layout.desktop-shell .metric-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(59,130,246,.78);
+    box-shadow:
+        0 0 0 1px rgba(59,130,246,.18),
+        0 0 34px rgba(37,99,235,.30),
+        0 22px 52px rgba(0,0,0,.34);
+}
+
+#app-layout.desktop-shell .topbar-title,
+#app-layout.desktop-shell .topbar-title strong,
+#app-layout.desktop-shell .desktop-user-chip strong,
+#app-layout.desktop-shell .desktop-period-row strong,
+#app-layout.desktop-shell .desktop-period-row span,
+#app-layout.desktop-shell .desktop-module-stats strong,
+#app-layout.desktop-shell .desktop-rank-meta,
+#app-layout.desktop-shell .kpi-value,
+#app-layout.desktop-shell .metric-val,
+#app-layout.desktop-shell td {
+    color: #e8f1ff;
+}
+
+#app-layout.desktop-shell .topbar-title small,
+#app-layout.desktop-shell .kpi-sub,
+#app-layout.desktop-shell .metric-sub,
+#app-layout.desktop-shell .desktop-module-card p,
+#app-layout.desktop-shell .desktop-module-stats span,
+#app-layout.desktop-shell .desktop-alert-row small,
+#app-layout.desktop-shell .desktop-rank-meta span {
+    color: #8fa7bf;
+}
+
+#app-layout.desktop-shell .kpi-label,
+#app-layout.desktop-shell .metric-label,
+#app-layout.desktop-shell .sec-title,
+#app-layout.desktop-shell th {
+    color: #dbeafe;
+}
+
+#app-layout.desktop-shell .desktop-top-search,
+#app-layout.desktop-shell .desktop-date-chip,
+#app-layout.desktop-shell .desktop-icon-btn,
+#app-layout.desktop-shell .desktop-user-chip,
+#app-layout.desktop-shell button,
+#app-layout.desktop-shell input[type=text],
+#app-layout.desktop-shell input[type=number],
+#app-layout.desktop-shell input[type=date],
+#app-layout.desktop-shell input[type=datetime-local],
+#app-layout.desktop-shell input[type=password],
+#app-layout.desktop-shell select,
+#app-layout.desktop-shell textarea {
+    background: rgba(7, 22, 38, .92);
+    border-color: rgba(125,211,252,.14);
+    color: #e8f1ff;
+}
+
+#app-layout.desktop-shell .desktop-top-search input {
+    color: #e8f1ff;
+}
+
+#app-layout.desktop-shell .desktop-card-head button,
+#app-layout.desktop-shell .desktop-module-card .desktop-card-head button {
+    color: #60a5fa;
+    background: transparent;
+}
+
+#app-layout.desktop-shell .dashboard-tab {
+    background: rgba(7, 22, 38, .86);
+    border-color: rgba(125,211,252,.12);
+    color: #a9bdd3;
+    box-shadow: none;
+}
+
+#app-layout.desktop-shell .dashboard-tab.active {
+    color: #fff;
+    background: linear-gradient(135deg, #1f7aff, #0757c7);
+    border-color: rgba(96,165,250,.76);
+    box-shadow: 0 0 24px rgba(31,122,255,.30);
+}
+
+#app-layout.desktop-shell table,
+#app-layout.desktop-shell th {
+    background: rgba(5, 18, 32, .82);
+}
+
+#app-layout.desktop-shell th,
+#app-layout.desktop-shell td {
+    border-bottom-color: rgba(125,211,252,.10);
+}
+
+#app-layout.desktop-shell tr:hover td {
+    background: rgba(31,122,255,.08);
+}
+
+#app-layout.desktop-shell .desktop-table-wrap {
+    border-color: rgba(125,211,252,.12);
+    background: rgba(3,13,26,.36);
+}
+
+#app-layout.desktop-shell .progress-bar {
+    background: rgba(100, 116, 139, .24);
+}
+
+#app-layout.desktop-shell .progress-fill {
+    background: linear-gradient(90deg, #10b981, #34d399);
+    box-shadow: 0 0 14px rgba(16,185,129,.32);
+}
+
+#app-layout.desktop-shell .desktop-export-fill {
+    background: linear-gradient(90deg, #2563eb, #60a5fa);
+    box-shadow: 0 0 14px rgba(37,99,235,.32);
+}
+
+#app-layout.desktop-shell .status-good {
+    color: #34d399;
+    background: rgba(16,185,129,.13);
+}
+
+#app-layout.desktop-shell .status-warn {
+    color: #fbbf24;
+    background: rgba(245,158,11,.14);
+}
+
+#app-layout.desktop-shell .status-danger {
+    color: #fb7185;
+    background: rgba(239,68,68,.14);
+}
+
+#app-layout.desktop-shell .desktop-alert-row {
+    background: rgba(245,158,11,.12);
+    color: #e8f1ff;
+}
+
+#app-layout.desktop-shell .desktop-alert-row:nth-child(1) {
+    background: rgba(239,68,68,.13);
+}
+
+#app-layout.desktop-shell .desktop-alert-row strong {
+    color: #f8fbff;
+}
+
+#app-layout.desktop-shell .desktop-module-card::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.08), rgba(3,13,26,.78)),
+        radial-gradient(circle at 85% 12%, rgba(31,122,255,.24), transparent 38%);
+}
+
+#app-layout.desktop-shell .desktop-module-suppliers::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.08), rgba(3,13,26,.78)),
+        radial-gradient(circle at 85% 12%, rgba(16,185,129,.26), transparent 38%);
+}
+
+#app-layout.desktop-shell .desktop-module-projects::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.08), rgba(3,13,26,.78)),
+        radial-gradient(circle at 85% 12%, rgba(124,58,237,.28), transparent 38%);
+}
+
+#app-layout.desktop-shell .desktop-module-structures::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.08), rgba(3,13,26,.78)),
+        radial-gradient(circle at 85% 12%, rgba(245,158,11,.28), transparent 38%);
+}

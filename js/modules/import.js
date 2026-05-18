@@ -1,4 +1,4 @@
-import { state, saveState, addLog, genMid, genPid, genSid } from './state.js';
+import { state, saveState, addLog, genMid, genPid, genSid, escapeHtml } from './state.js';
 import { parseNumber, formatMoneyVND } from './utils.js?v=1777963068';
 
 export function readExcelFile(file) {
@@ -22,96 +22,157 @@ export function readExcelFile(file) {
 export async function importMaterialsFromExcel(file) {
     try {
         const data = await readExcelFile(file);
-        if (data.length === 0) return { success: false, count: 0, errors: [] };
-        
-        let successCount = 0, errorCount = 0;
-        const errors = [];
-        
-        for (const row of data) {
-            try {
-                const name = row['Tên vật tư'] || row['Tên'] || row['name'] || row['Name'];
-                const cat = row['Loại'] || row['Danh mục'] || row['category'] || row['cat'] || 'Vật tư khác';
-                const unit = row['Đơn vị'] || row['unit'] || 'cái';
-                const qty = parseNumber(row['Số lượng'] || row['Tồn kho'] || row['qty'] || 0);
-                const cost = parseNumber(row['Đơn giá'] || row['Giá'] || row['cost'] || 0);
-                const low = parseNumber(row['Ngưỡng cảnh báo'] || row['low'] || 5);
-                const note = row['Ghi chú'] || row['note'] || '';
-                
-                if (!name) { errorCount++; errors.push(`Dòng ${data.indexOf(row) + 2}: Thiếu tên vật tư`); continue; }
-                
-                const exists = state.data.materials.some(m => m.name.toLowerCase() === name.toLowerCase());
-                // Allow duplicate names - skip existence check
-                
-                state.data.materials.push({ id: genMid(), name, cat, unit, qty, cost, low, note });
-          fetch("/api/materials", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({id: genMid(), name, cat, unit, qty, cost, low, note}) });
-                fetch("/api/materials", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: genMid(), name, cat, unit, qty, cost, low, note }) });
-                successCount++;
-            } catch (err) { errorCount++; errors.push(`Dòng ${data.indexOf(row) + 2}: ${err.message}`); }
-        }
-        
-        if (successCount > 0) { saveState(); addLog('Import Excel', `Đã import ${successCount} vật tư từ Excel`); }
-        return { success: true, count: successCount, errors, total: data.length };
+        const preview = buildImportPreview('materials', data);
+        return await commitImportPreview('materials', preview);
     } catch (error) { return { success: false, count: 0, errors: [error.message] }; }
 }
 
 export async function importProjectsFromExcel(file) {
     try {
         const data = await readExcelFile(file);
-        if (data.length === 0) return { success: false, count: 0, errors: [] };
-        
-        let successCount = 0, errorCount = 0;
-        const errors = [];
-        
-        for (const row of data) {
-            try {
-                const name = row['Tên công trình'] || row['Tên'] || row['name'] || row['Name'];
-                const budget = parseNumber(row['Ngân sách'] || row['budget'] || 0);
-                
-                if (!name) { errorCount++; errors.push(`Dòng ${data.indexOf(row) + 2}: Thiếu tên công trình`); continue; }
-                
-                const exists = state.data.projects.some(p => p.name.toLowerCase() === name.toLowerCase());
-                if (exists) { errorCount++; errors.push(`Dòng ${data.indexOf(row) + 2}: Công trình "${name}" đã tồn tại`); continue; }
-                
-                fetch("/api/projects", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: genPid(), name, budget, spent: 0 }) });
-                state.data.projects.push({ id: genPid(), name, budget, spent: 0 });
-                successCount++;
-            } catch (err) { errorCount++; errors.push(`Dòng ${data.indexOf(row) + 2}: ${err.message}`); }
-        }
-        
-        if (successCount > 0) { saveState(); addLog('Import Excel', `Đã import ${successCount} công trình từ Excel`); }
-        return { success: true, count: successCount, errors, total: data.length };
+        const preview = buildImportPreview('projects', data);
+        return await commitImportPreview('projects', preview);
     } catch (error) { return { success: false, count: 0, errors: [error.message] }; }
 }
 
 export async function importSuppliersFromExcel(file) {
     try {
         const data = await readExcelFile(file);
-        if (data.length === 0) return { success: false, count: 0, errors: [] };
-        
-        let successCount = 0, errorCount = 0;
-        const errors = [];
-        
-        for (const row of data) {
-            try {
-                const name = row['Tên nhà cung cấp'] || row['Tên'] || row['name'] || row['Name'];
-                const phone = row['SĐT'] || row['Điện thoại'] || row['phone'] || '';
-                const email = row['Email'] || row['email'] || '';
-                const address = row['Địa chỉ'] || row['address'] || '';
-                
-                if (!name) { errorCount++; errors.push(`Dòng ${data.indexOf(row) + 2}: Thiếu tên nhà cung cấp`); continue; }
-                
-                const exists = state.data.suppliers.some(s => s.name.toLowerCase() === name.toLowerCase());
-                if (exists) { errorCount++; errors.push(`Dòng ${data.indexOf(row) + 2}: Nhà cung cấp "${name}" đã tồn tại`); continue; }
-                fetch("/api/suppliers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: genSid(), name, phone, email, address }) });
-                
-                state.data.suppliers.push({ id: genSid(), name, phone, email, address });
-                successCount++;
-            } catch (err) { errorCount++; errors.push(`Dòng ${data.indexOf(row) + 2}: ${err.message}`); }
-        }
-        
-        if (successCount > 0) { saveState(); addLog('Import Excel', `Đã import ${successCount} nhà cung cấp từ Excel`); }
-        return { success: true, count: successCount, errors, total: data.length };
+        const preview = buildImportPreview('suppliers', data);
+        return await commitImportPreview('suppliers', preview);
     } catch (error) { return { success: false, count: 0, errors: [error.message] }; }
+}
+
+function cell(row, keys, fallback = '') {
+    for (const key of keys) {
+        if (row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== '') return row[key];
+    }
+    return fallback;
+}
+
+function buildImportPreview(type, data) {
+    const rows = (data || []).map((row, index) => {
+        const rowNumber = index + 2;
+        const errors = [];
+        const warnings = [];
+        let payload = null;
+
+        if (type === 'materials') {
+            const name = String(cell(row, ['Tên vật tư', 'Tên', 'name', 'Name'])).trim();
+            const cat = String(cell(row, ['Loại', 'Danh mục', 'category', 'cat'], 'Vật tư khác')).trim() || 'Vật tư khác';
+            const unit = String(cell(row, ['Đơn vị', 'unit'], 'cái')).trim() || 'cái';
+            const qty = parseNumber(cell(row, ['Số lượng', 'Tồn kho', 'qty'], 0));
+            const cost = parseNumber(cell(row, ['Đơn giá', 'Giá', 'cost'], 0));
+            const low = parseNumber(cell(row, ['Ngưỡng cảnh báo', 'low'], 5));
+            const note = String(cell(row, ['Ghi chú', 'note'], '') || '');
+            if (!name) errors.push('Thiếu tên vật tư');
+            if (qty < 0) errors.push('Số lượng âm');
+            if (cost < 0) errors.push('Đơn giá âm');
+            if (low < 0) errors.push('Ngưỡng cảnh báo âm');
+            if (state.data.materials.some(m => String(m.name || '').toLowerCase() === name.toLowerCase())) warnings.push('Trùng tên vật tư hiện có');
+            payload = { name, cat, unit, qty, cost, low, note };
+        }
+
+        if (type === 'projects') {
+            const name = String(cell(row, ['Tên công trình', 'Tên', 'name', 'Name'])).trim();
+            const budget = parseNumber(cell(row, ['Ngân sách', 'budget'], 0));
+            if (!name) errors.push('Thiếu tên công trình');
+            if (budget < 0) errors.push('Ngân sách âm');
+            if (state.data.projects.some(p => String(p.name || '').toLowerCase() === name.toLowerCase())) errors.push('Công trình đã tồn tại');
+            payload = { name, budget, spent: 0 };
+        }
+
+        if (type === 'suppliers') {
+            const name = String(cell(row, ['Tên nhà cung cấp', 'Tên', 'name', 'Name'])).trim();
+            const phone = String(cell(row, ['SĐT', 'Điện thoại', 'phone'], '') || '');
+            const email = String(cell(row, ['Email', 'email'], '') || '');
+            const address = String(cell(row, ['Địa chỉ', 'address'], '') || '');
+            if (!name) errors.push('Thiếu tên nhà cung cấp');
+            if (state.data.suppliers.some(s => String(s.name || '').toLowerCase() === name.toLowerCase())) errors.push('Nhà cung cấp đã tồn tại');
+            payload = { name, phone, email, address };
+        }
+
+        return {
+            rowNumber,
+            status: errors.length ? 'error' : warnings.length ? 'warning' : 'ok',
+            errors,
+            warnings,
+            payload
+        };
+    });
+
+    return {
+        type,
+        total: rows.length,
+        rows,
+        validRows: rows.filter(row => row.status !== 'error'),
+        errorRows: rows.filter(row => row.status === 'error'),
+        warningRows: rows.filter(row => row.status === 'warning')
+    };
+}
+
+async function commitImportPreview(type, preview) {
+    if (!preview || preview.total === 0) return { success: false, count: 0, errors: ['File không có dữ liệu'], total: 0 };
+    const errors = preview.errorRows.map(row => `Dòng ${row.rowNumber}: ${row.errors.join(', ')}`);
+    let successCount = 0;
+
+    for (const row of preview.validRows) {
+        if (type === 'materials') {
+            const item = { id: genMid(), ...row.payload };
+            state.data.materials.push(item);
+            fetch('/api/materials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) }).catch(function(){});
+            successCount++;
+        }
+        if (type === 'projects') {
+            const item = { id: genPid(), ...row.payload };
+            state.data.projects.push(item);
+            fetch('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) }).catch(function(){});
+            successCount++;
+        }
+        if (type === 'suppliers') {
+            const item = { id: genSid(), ...row.payload };
+            state.data.suppliers.push(item);
+            fetch('/api/suppliers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) }).catch(function(){});
+            successCount++;
+        }
+    }
+
+    if (successCount > 0) {
+        saveState();
+        const label = type === 'materials' ? 'vật tư' : type === 'projects' ? 'công trình' : 'nhà cung cấp';
+        addLog('Import Excel', `Đã import ${successCount} ${label} từ Excel`);
+    }
+
+    return { success: successCount > 0, count: successCount, errors, total: preview.total, warnings: preview.warningRows.length };
+}
+
+function renderPreviewTable(preview) {
+    if (!preview) return '';
+    const rows = preview.rows.slice(0, 30);
+    return `
+        <div class="import-preview-summary">
+            <div><strong>${preview.total}</strong><small>Tổng dòng</small></div>
+            <div><strong>${preview.validRows.length}</strong><small>Có thể import</small></div>
+            <div><strong>${preview.warningRows.length}</strong><small>Cảnh báo</small></div>
+            <div><strong>${preview.errorRows.length}</strong><small>Lỗi</small></div>
+        </div>
+        <div class="desktop-table-wrap import-preview-table">
+            <table>
+                <thead><tr><th>Dòng</th><th>Trạng thái</th><th>Dữ liệu chính</th><th>Ghi chú kiểm tra</th></tr></thead>
+                <tbody>${rows.map(row => {
+                    const p = row.payload || {};
+                    const main = preview.type === 'materials'
+                        ? `${p.name || '—'} · ${p.cat || '—'} · ${p.qty ?? 0} ${p.unit || ''} · ${formatMoneyVND(p.cost || 0)}`
+                        : preview.type === 'projects'
+                            ? `${p.name || '—'} · ${formatMoneyVND(p.budget || 0)}`
+                            : `${p.name || '—'} · ${p.phone || '—'} · ${p.email || '—'}`;
+                    const notes = [...row.errors, ...row.warnings];
+                    return `<tr class="import-row-${row.status}"><td>${row.rowNumber}</td><td>${row.status === 'ok' ? 'Hợp lệ' : row.status === 'warning' ? 'Cảnh báo' : 'Lỗi'}</td><td>${escapeHtml(main)}</td><td>${notes.length ? escapeHtml(notes.join(' · ')) : 'Sẵn sàng import'}</td></tr>`;
+                }).join('')}</tbody>
+            </table>
+        </div>
+        ${preview.rows.length > rows.length ? `<div class="metric-sub">Chỉ hiển thị trước 30/${preview.rows.length} dòng đầu.</div>` : ''}
+    `;
 }
 
 export function showImportModal(type, onSuccess) {
@@ -128,9 +189,10 @@ export function showImportModal(type, onSuccess) {
             <div class="metric-sub">📋 Định dạng file Excel (.xlsx, .xls)</div><div class="metric-sub">Các cột khuyến nghị: ${acceptFormat}</div>
             <div class="metric-sub" style="margin-top: 8px;"><a href="#" id="download-template-${type}" style="color: var(--accent);">📎 Tải file mẫu</a></div></div>
             <div class="form-group"><label class="form-label">Chọn file Excel</label><input type="file" id="import-file-input" accept=".xlsx,.xls"></div>
+            <div id="import-preview" style="display:none;"></div>
             <div id="import-progress" style="display: none; margin-top: 12px;"><div class="progress-bar"><div id="import-progress-bar" class="progress-fill" style="width: 0%;"></div></div><div id="import-status" class="metric-sub" style="margin-top: 8px;"></div></div>
         </div>
-        <div class="modal-ft"><button onclick="closeModal()">Hủy</button><button class="primary" id="confirm-import">Import dữ liệu</button></div>`;
+        <div class="modal-ft"><button onclick="closeModal()">Hủy</button><button class="primary" id="confirm-import" disabled style="opacity:.55;cursor:not-allowed;">Import dữ liệu</button></div>`;
     
     window.showModal(modalHtml, null);
     
@@ -139,28 +201,63 @@ export function showImportModal(type, onSuccess) {
         if (downloadLink) downloadLink.onclick = (e) => { e.preventDefault(); downloadTemplate(type); };
         
         const confirmBtn = document.getElementById('confirm-import');
+        const fileInput = document.getElementById('import-file-input');
+        const previewDiv = document.getElementById('import-preview');
+        let currentPreview = null;
+
+        if (fileInput) fileInput.onchange = async () => {
+            const file = fileInput.files[0];
+            currentPreview = null;
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.style.opacity = '.55';
+                confirmBtn.style.cursor = 'not-allowed';
+            }
+            if (!file) {
+                if (previewDiv) { previewDiv.style.display = 'none'; previewDiv.innerHTML = ''; }
+                return;
+            }
+            if (previewDiv) {
+                previewDiv.style.display = 'block';
+                previewDiv.innerHTML = '<div class="metric-card">Đang đọc và kiểm tra file...</div>';
+            }
+            try {
+                const data = await readExcelFile(file);
+                currentPreview = buildImportPreview(type, data);
+                if (previewDiv) previewDiv.innerHTML = renderPreviewTable(currentPreview);
+                if (confirmBtn) {
+                    confirmBtn.disabled = currentPreview.validRows.length === 0;
+                    confirmBtn.style.opacity = currentPreview.validRows.length === 0 ? '.55' : '1';
+                    confirmBtn.style.cursor = currentPreview.validRows.length === 0 ? 'not-allowed' : 'pointer';
+                    confirmBtn.textContent = `Import ${currentPreview.validRows.length} dòng hợp lệ`;
+                }
+            } catch (err) {
+                if (previewDiv) previewDiv.innerHTML = `<div class="metric-card text-danger">Không thể đọc file: ${escapeHtml(err.message)}</div>`;
+            }
+        };
+
         if (confirmBtn) confirmBtn.onclick = async () => {
-            const fileInput = document.getElementById('import-file-input');
-            const file = fileInput?.files[0];
-            if (!file) { alert('Vui lòng chọn file Excel'); return; }
+            if (!currentPreview) { alert('Vui lòng chọn và kiểm tra file Excel trước'); return; }
+            if (currentPreview.validRows.length === 0) { alert('Không có dòng hợp lệ để import'); return; }
             
             const progressDiv = document.getElementById('import-progress');
             const progressBar = document.getElementById('import-progress-bar');
             const statusDiv = document.getElementById('import-status');
             progressDiv.style.display = 'block'; progressBar.style.width = '50%'; statusDiv.innerText = 'Đang xử lý...';
             
-            let result;
-            switch(type) {
-                case 'materials': result = await importMaterialsFromExcel(file); break;
-                case 'projects': result = await importProjectsFromExcel(file); break;
-                case 'suppliers': result = await importSuppliersFromExcel(file); break;
-            }
+            const result = await commitImportPreview(type, currentPreview);
             
             progressBar.style.width = '100%';
             if (result.success) {
                 statusDiv.innerText = `✅ Import thành công: ${result.count}/${result.total} bản ghi`;
                 if (result.errors.length > 0) console.warn('Import errors:', result.errors);
-                setTimeout(() => { window.closeModal(); if (onSuccess) onSuccess(); if (window.render) window.render(); alert(`✅ Import hoàn tất!\nThành công: ${result.count}\nThất bại: ${result.errors.length}`); }, 1500);
+                setTimeout(() => {
+                    window.closeModal();
+                    if (onSuccess) onSuccess();
+                    if (window.render) window.render();
+                    if (window.showAppToast) window.showAppToast('Import hoàn tất', `Thành công ${result.count}, lỗi ${result.errors.length}`, 'success');
+                    else alert(`✅ Import hoàn tất!\nThành công: ${result.count}\nThất bại: ${result.errors.length}`);
+                }, 1500);
             } else {
                 statusDiv.innerText = `❌ Import thất bại: ${result.errors[0] || 'Lỗi không xác định'}`;
                 setTimeout(() => { progressDiv.style.display = 'none'; }, 2000);

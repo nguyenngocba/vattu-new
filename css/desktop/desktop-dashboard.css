@@ -1,0 +1,1270 @@
+#app-layout.desktop-shell #pane-dashboard .card {
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+#app-layout.desktop-shell #pane-dashboard .card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(59,130,246,.58);
+    box-shadow:
+        0 0 0 1px rgba(59,130,246,.14),
+        0 0 26px rgba(37,99,235,.20),
+        0 18px 44px rgba(0,0,0,.30);
+}
+
+.desktop-dashboard-popup {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: grid;
+    place-items: center;
+    padding: 32px;
+}
+
+.desktop-dashboard-popup-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 5, 12, .72);
+    backdrop-filter: blur(10px);
+}
+
+.desktop-dashboard-popup-card {
+    position: relative;
+    z-index: 1;
+    width: min(1080px, calc(100vw - 64px));
+    max-height: calc(100vh - 72px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(96,165,250,.42);
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at 18% 0%, rgba(31,122,255,.20), transparent 36%),
+        linear-gradient(145deg, rgba(10,29,49,.98), rgba(3,13,26,.98));
+    box-shadow: 0 0 50px rgba(37,99,235,.30), 0 32px 90px rgba(0,0,0,.52);
+    color: #e8f1ff;
+}
+
+.desktop-dashboard-popup-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 22px;
+    border-bottom: 1px solid rgba(125,211,252,.14);
+}
+
+.desktop-dashboard-popup-head h2 {
+    margin: 0;
+    color: #f8fbff;
+    font-size: 22px;
+    letter-spacing: 0;
+}
+
+.desktop-dashboard-popup-head p {
+    margin: 4px 0 0;
+    color: #8fa7bf;
+}
+
+.desktop-dashboard-popup-head button {
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid rgba(125,211,252,.18);
+    border-radius: 12px;
+    background: rgba(7,22,38,.92);
+    color: #e8f1ff;
+    cursor: pointer;
+}
+
+.desktop-dashboard-popup-head .desktop-popup-close {
+    width: 38px;
+    padding: 0;
+    font-size: 24px;
+}
+
+.desktop-dashboard-popup-body {
+    min-height: 0;
+    overflow: auto;
+    padding: 20px 22px 24px;
+}
+
+.desktop-popup-chart {
+    height: 330px;
+    margin-bottom: 18px;
+    padding: 16px;
+    border: 1px solid rgba(125,211,252,.14);
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at 12% 0%, rgba(31,122,255,.16), transparent 38%),
+        rgba(3,13,26,.36);
+}
+
+.desktop-popup-chart canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.desktop-popup-table {
+    overflow: auto;
+    border: 1px solid rgba(125,211,252,.14);
+    border-radius: 16px;
+}
+
+.desktop-popup-table table {
+    min-width: 760px;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: rgba(3,13,26,.36);
+}
+
+.desktop-popup-table th,
+.desktop-popup-table td {
+    padding: 13px 14px;
+    border-bottom: 1px solid rgba(125,211,252,.10);
+    text-align: left;
+}
+
+.desktop-popup-table th {
+    color: #dbeafe;
+    background: rgba(31,122,255,.09);
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.desktop-popup-table td {
+    color: #dbeafe;
+}
+
+.desktop-popup-table tr:hover td {
+    background: rgba(31,122,255,.08);
+}
+#app-layout.desktop-shell .card,
+#app-layout.desktop-shell .metric-card,
+#app-layout.desktop-shell .kpi-card,
+#app-layout.desktop-shell .tbl-wrap,
+#app-layout.desktop-shell #projects-resizable-container .resizable-panel,
+#app-layout.desktop-shell #suppliers-resizable-container .resizable-panel {
+    background: #fff;
+    border: 1px solid rgba(15,23,42,.08);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, .045);
+}
+
+#app-layout.desktop-shell .card {
+    padding: 18px;
+}
+
+#app-layout.desktop-shell .grid2 {
+    gap: 18px;
+}
+
+#app-layout.desktop-shell .desktop-dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(360px, .92fr);
+    gap: 18px;
+    margin-bottom: 18px;
+    align-items: stretch;
+}
+
+#app-layout.desktop-shell .desktop-dashboard-grid-main {
+    grid-template-columns: minmax(360px, .9fr) minmax(0, 1.35fr);
+}
+
+#app-layout.desktop-shell .desktop-card-head {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+#app-layout.desktop-shell .desktop-card-head .sec-title {
+    margin-bottom: 0;
+}
+
+#app-layout.desktop-shell .desktop-card-head button {
+    color: #0b63ce;
+    border: 0;
+    background: transparent;
+    padding: 4px 0;
+    font-weight: 800;
+}
+
+#app-layout.desktop-shell .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+#app-layout.desktop-shell .kpi-card {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    align-items: start;
+    column-gap: 16px;
+    min-height: 136px;
+    padding: 20px 18px 44px;
+    overflow: hidden;
+    position: relative;
+}
+
+#app-layout.desktop-shell .kpi-card::after {
+    display: none;
+}
+
+#app-layout.desktop-shell .kpi-card:hover,
+#app-layout.desktop-shell .metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px rgba(15,23,42,.08);
+}
+
+#app-layout.desktop-shell .kpi-icon {
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+    align-self: start;
+    margin-top: 2px;
+    border-radius: 50%;
+    background: #eaf3ff;
+    flex: none;
+}
+
+#app-layout.desktop-shell .kpi-icon img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+}
+
+#app-layout.desktop-shell .kpi-info {
+    position: static;
+    z-index: 1;
+    min-width: 0;
+    padding-right: 0;
+    text-align: left;
+}
+
+#app-layout.desktop-shell .kpi-label {
+    max-width: 100%;
+    margin: 0 0 8px;
+    font-size: 11px;
+    line-height: 1.25;
+    text-align: left;
+    letter-spacing: .02em;
+    overflow-wrap: normal;
+}
+
+#app-layout.desktop-shell .kpi-value {
+    margin: 0;
+    font-size: 26px;
+    line-height: 1.08;
+    white-space: nowrap;
+}
+
+#app-layout.desktop-shell .kpi-sub {
+    max-width: 150px;
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.25;
+    text-align: left;
+}
+
+#app-layout.desktop-shell .desktop-kpi-trend {
+    position: absolute;
+    left: 20px;
+    bottom: 17px;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    width: 126px;
+    margin-top: 0;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+#app-layout.desktop-shell .desktop-kpi-trend small {
+    flex: 0 0 100%;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+#app-layout.desktop-shell .desktop-kpi-trend.up {
+    color: #059669;
+}
+
+#app-layout.desktop-shell .desktop-kpi-trend.down {
+    color: #dc2626;
+}
+
+#app-layout.desktop-shell .desktop-kpi-trend.neutral {
+    color: #64748b;
+}
+
+#app-layout.desktop-shell .desktop-kpi-spark {
+    position: absolute;
+    right: 20px;
+    bottom: 14px;
+    width: min(124px, 46%);
+    height: 36px;
+    filter: drop-shadow(0 0 10px currentColor);
+    opacity: .95;
+    pointer-events: none;
+}
+
+#app-layout.desktop-shell .desktop-kpi-year-chart {
+    position: absolute;
+    right: 12px;
+    bottom: 11px;
+    width: 52%;
+    height: 44px;
+    z-index: 1;
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--mini-color) 44%, transparent));
+    pointer-events: none;
+}
+
+#app-layout.desktop-shell .kpi-import .kpi-icon { background: #eaf3ff; }
+#app-layout.desktop-shell .kpi-export .kpi-icon { background: #eef6ff; }
+#app-layout.desktop-shell .kpi-inventory .kpi-icon { background: #ecfdf5; }
+#app-layout.desktop-shell .kpi-warning .kpi-icon { background: #fff7ed; }
+#app-layout.desktop-shell .kpi-materials .kpi-icon { background: #eaf3ff; }
+
+#app-layout.desktop-shell .kpi-grid > .kpi-materials,
+#app-layout.desktop-shell .kpi-grid > .kpi-inventory,
+#app-layout.desktop-shell .kpi-grid > .kpi-import,
+#app-layout.desktop-shell .kpi-grid > .kpi-export,
+#app-layout.desktop-shell .kpi-grid > .kpi-warning {
+    min-height: 164px;
+    padding: 24px 20px 54px;
+    grid-template-columns: 64px minmax(0, 1fr);
+    column-gap: 18px;
+}
+
+#app-layout.desktop-shell .kpi-grid > .kpi-materials .kpi-icon,
+#app-layout.desktop-shell .kpi-grid > .kpi-inventory .kpi-icon,
+#app-layout.desktop-shell .kpi-grid > .kpi-import .kpi-icon,
+#app-layout.desktop-shell .kpi-grid > .kpi-export .kpi-icon,
+#app-layout.desktop-shell .kpi-grid > .kpi-warning .kpi-icon {
+    width: 64px;
+    height: 64px;
+}
+
+#app-layout.desktop-shell .kpi-grid > .kpi-materials .kpi-icon img,
+#app-layout.desktop-shell .kpi-grid > .kpi-inventory .kpi-icon img,
+#app-layout.desktop-shell .kpi-grid > .kpi-import .kpi-icon img,
+#app-layout.desktop-shell .kpi-grid > .kpi-export .kpi-icon img,
+#app-layout.desktop-shell .kpi-grid > .kpi-warning .kpi-icon img {
+    width: 39px;
+    height: 39px;
+}
+
+#app-layout.desktop-shell .kpi-grid > .kpi-materials .kpi-label,
+#app-layout.desktop-shell .kpi-grid > .kpi-inventory .kpi-label,
+#app-layout.desktop-shell .kpi-grid > .kpi-import .kpi-label,
+#app-layout.desktop-shell .kpi-grid > .kpi-export .kpi-label,
+#app-layout.desktop-shell .kpi-grid > .kpi-warning .kpi-label {
+    font-size: 12px;
+    margin-bottom: 9px;
+}
+
+#app-layout.desktop-shell .kpi-grid > .kpi-materials .kpi-value,
+#app-layout.desktop-shell .kpi-grid > .kpi-inventory .kpi-value,
+#app-layout.desktop-shell .kpi-grid > .kpi-import .kpi-value,
+#app-layout.desktop-shell .kpi-grid > .kpi-export .kpi-value,
+#app-layout.desktop-shell .kpi-grid > .kpi-warning .kpi-value {
+    font-size: 31px;
+}
+
+#app-layout.desktop-shell .kpi-grid > .kpi-materials .desktop-kpi-trend,
+#app-layout.desktop-shell .kpi-grid > .kpi-inventory .desktop-kpi-trend,
+#app-layout.desktop-shell .kpi-grid > .kpi-import .desktop-kpi-trend,
+#app-layout.desktop-shell .kpi-grid > .kpi-export .desktop-kpi-trend,
+#app-layout.desktop-shell .kpi-grid > .kpi-warning .desktop-kpi-trend {
+    left: 22px;
+    bottom: 20px;
+    font-size: 15px;
+    width: 148px;
+}
+
+#app-layout.desktop-shell .kpi-grid > .kpi-materials .desktop-kpi-trend small,
+#app-layout.desktop-shell .kpi-grid > .kpi-inventory .desktop-kpi-trend small,
+#app-layout.desktop-shell .kpi-grid > .kpi-import .desktop-kpi-trend small,
+#app-layout.desktop-shell .kpi-grid > .kpi-export .desktop-kpi-trend small,
+#app-layout.desktop-shell .kpi-grid > .kpi-warning .desktop-kpi-trend small {
+    font-size: 12px;
+}
+
+#app-layout.desktop-shell .kpi-grid > .kpi-materials .desktop-kpi-year-chart,
+#app-layout.desktop-shell .kpi-grid > .kpi-inventory .desktop-kpi-year-chart,
+#app-layout.desktop-shell .kpi-grid > .kpi-import .desktop-kpi-year-chart,
+#app-layout.desktop-shell .kpi-grid > .kpi-export .desktop-kpi-year-chart,
+#app-layout.desktop-shell .kpi-grid > .kpi-warning .desktop-kpi-year-chart {
+    right: 16px;
+    bottom: 16px;
+    width: 50%;
+    height: 54px;
+}
+
+#app-layout.desktop-shell .kpi-label,
+#app-layout.desktop-shell .metric-label,
+#app-layout.desktop-shell .sec-title,
+#app-layout.desktop-shell th {
+    color: #475569;
+    font-family: var(--sans);
+    font-weight: 800;
+    letter-spacing: .02em;
+}
+
+#app-layout.desktop-shell .kpi-value,
+#app-layout.desktop-shell .metric-val {
+    color: #0b2b52;
+    font-family: var(--sans);
+    font-weight: 900;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+}
+
+#app-layout.desktop-shell .kpi-sub,
+#app-layout.desktop-shell .metric-sub {
+    color: #64748b;
+}
+
+#app-layout.desktop-shell .dashboard-tabs {
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+#app-layout.desktop-shell .dashboard-tab {
+    min-height: 42px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid rgba(15,23,42,.10);
+    color: #334155;
+    box-shadow: 0 6px 18px rgba(15,23,42,.04);
+}
+
+#app-layout.desktop-shell .dashboard-tab.active {
+    color: #fff;
+    background: #0b63ce;
+    border-color: #0b63ce;
+    box-shadow: 0 10px 22px rgba(11,99,206,.22);
+}
+
+#app-layout.desktop-shell input[type=text],
+#app-layout.desktop-shell input[type=number],
+#app-layout.desktop-shell input[type=date],
+#app-layout.desktop-shell input[type=datetime-local],
+#app-layout.desktop-shell input[type=password],
+#app-layout.desktop-shell select,
+#app-layout.desktop-shell textarea {
+    background: #fff;
+    border: 1px solid rgba(15,23,42,.12);
+    color: #0f2747;
+    border-radius: 10px;
+}
+
+#app-layout.desktop-shell button {
+    border-radius: 10px;
+    border: 1px solid rgba(15,23,42,.12);
+    background: #fff;
+    color: #0f2747;
+}
+
+#app-layout.desktop-shell button.primary,
+#app-layout.desktop-shell .topbar button.primary {
+    color: #fff;
+    background: #0b63ce;
+    border-color: #0b63ce;
+}
+
+#app-layout.desktop-shell .topbar button {
+    min-height: 34px;
+}
+
+#app-layout.desktop-shell table {
+    background: #fff;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+#app-layout.desktop-shell th {
+    background: #f8fafc;
+    border-bottom: 1px solid rgba(15,23,42,.08);
+    padding: 12px 14px;
+}
+
+#app-layout.desktop-shell td {
+    color: #1e293b;
+    border-bottom: 1px solid rgba(15,23,42,.07);
+    padding: 12px 14px;
+}
+
+#app-layout.desktop-shell tr:hover td {
+    background: #f8fafc;
+}
+
+#app-layout.desktop-shell .progress-bar {
+    background: #e2e8f0;
+    height: 7px;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+#app-layout.desktop-shell .progress-fill {
+    background: linear-gradient(90deg, #0b63ce, #38bdf8);
+    border-radius: inherit;
+}
+
+#app-layout.desktop-shell .status-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    border-radius: 999px;
+    padding: 4px 9px;
+    font-weight: 800;
+}
+
+#app-layout.desktop-shell .status-good {
+    color: #047857;
+    background: #ecfdf5;
+}
+
+#app-layout.desktop-shell .status-warn {
+    color: #b45309;
+    background: #fff7ed;
+}
+
+#app-layout.desktop-shell .status-danger {
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+#app-layout.desktop-shell .desktop-table-wrap {
+    overflow-x: auto;
+    border: 1px solid rgba(15,23,42,.08);
+    border-radius: 12px;
+}
+
+#app-layout.desktop-shell .desktop-table-wrap table {
+    min-width: 760px;
+    width: 100%;
+}
+
+#app-layout.desktop-shell .desktop-low-stock-card {
+    border-left: 0 !important;
+}
+
+#app-layout.desktop-shell .desktop-alert-list {
+    display: grid;
+    gap: 10px;
+}
+
+#app-layout.desktop-shell .desktop-alert-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 9px 8px;
+    text-align: left;
+    border: 0;
+    border-radius: 12px;
+    background: #fff7ed;
+    color: #0f2747;
+}
+
+#app-layout.desktop-shell .desktop-alert-row:nth-child(1) {
+    background: #fef2f2;
+}
+
+#app-layout.desktop-shell .desktop-alert-row strong {
+    display: block;
+    overflow: hidden;
+    color: #0f2747;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+#app-layout.desktop-shell .desktop-alert-row small {
+    display: block;
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 11px;
+}
+
+#app-layout.desktop-shell .desktop-alert-row em {
+    color: #64748b;
+    font-style: normal;
+    font-weight: 900;
+}
+
+#app-layout.desktop-shell .desktop-alert-mark {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: #f59e0b;
+    color: #fff;
+    font-weight: 900;
+}
+
+#app-layout.desktop-shell .desktop-alert-row:nth-child(1) .desktop-alert-mark {
+    background: #ef4444;
+}
+
+#app-layout.desktop-shell .desktop-rank-list {
+    display: grid;
+    gap: 13px;
+}
+
+#app-layout.desktop-shell .desktop-rank-row {
+    cursor: pointer;
+    padding: 8px 0;
+}
+
+#app-layout.desktop-shell .desktop-rank-row + .desktop-rank-row {
+    border-top: 1px solid rgba(15,23,42,.06);
+}
+
+#app-layout.desktop-shell .desktop-rank-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+    color: #0f2747;
+}
+
+#app-layout.desktop-shell .desktop-rank-meta strong {
+    min-width: 0;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#app-layout.desktop-shell .desktop-rank-meta span {
+    flex-shrink: 0;
+    color: #334155;
+    font-weight: 800;
+    font-size: 12px;
+}
+
+#app-layout.desktop-shell .desktop-inventory-value-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 180px;
+}
+
+#app-layout.desktop-shell .desktop-overview-main {
+    display: grid;
+    grid-template-columns: minmax(420px, 1.45fr) minmax(320px, 1.1fr) minmax(280px, .85fr);
+    gap: 18px;
+    margin-bottom: 18px;
+    align-items: stretch;
+}
+
+#app-layout.desktop-shell .desktop-overview-main .card {
+    min-height: 330px;
+}
+
+#app-layout.desktop-shell .desktop-overview-filter {
+    margin-bottom: 16px;
+    padding: 10px 14px;
+}
+
+#app-layout.desktop-shell .desktop-overview-filter-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+#app-layout.desktop-shell .desktop-period-filter-btn {
+    min-width: 190px;
+    display: inline-grid;
+    gap: 2px;
+    text-align: left;
+}
+
+#app-layout.desktop-shell .desktop-period-filter-btn span {
+    font-weight: 900;
+}
+
+#app-layout.desktop-shell .desktop-period-filter-btn small {
+    color: #8fa7bf;
+    font-size: 11px;
+}
+
+.desktop-period-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 10020;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+}
+
+.desktop-period-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 5, 12, .72);
+    backdrop-filter: blur(10px);
+}
+
+.desktop-period-panel {
+    position: relative;
+    z-index: 1;
+    width: min(520px, calc(100vw - 48px));
+    padding: 20px;
+    border: 1px solid rgba(96,165,250,.34);
+    border-radius: 20px;
+    background: linear-gradient(145deg, rgba(10,29,49,.98), rgba(3,13,26,.98));
+    color: #e8f1ff;
+    box-shadow: 0 28px 80px rgba(0,0,0,.48);
+}
+
+.desktop-period-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.desktop-period-head h3 {
+    margin: 0;
+}
+
+.desktop-period-panel label {
+    display: block;
+    margin: 12px 0 6px;
+    color: #8fa7bf;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.desktop-period-panel input,
+.desktop-period-panel select {
+    width: 100%;
+    min-height: 40px;
+}
+
+.desktop-period-month-list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.desktop-period-month-list button {
+    min-height: 40px;
+    border-color: rgba(96,165,250,.20);
+    background:
+        radial-gradient(circle at 20% 0%, rgba(96,165,250,.20), transparent 50%),
+        rgba(8,24,40,.92);
+    color: #cfe3ff;
+    font-weight: 900;
+}
+
+.desktop-period-month-list button:nth-child(3n + 2) {
+    background:
+        radial-gradient(circle at 20% 0%, rgba(16,185,129,.18), transparent 50%),
+        rgba(8,24,40,.92);
+}
+
+.desktop-period-month-list button:nth-child(3n) {
+    background:
+        radial-gradient(circle at 20% 0%, rgba(245,158,11,.18), transparent 50%),
+        rgba(8,24,40,.92);
+}
+
+.desktop-period-month-list button.active {
+    color: #fff;
+    background:
+        linear-gradient(135deg, #0b63ce, #1f7aff);
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 1px rgba(96,165,250,.28), 0 12px 28px rgba(31,122,255,.24);
+}
+
+.desktop-period-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.desktop-period-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+}
+
+#app-layout.desktop-shell .desktop-category-card-body {
+    display: grid;
+    grid-template-columns: minmax(150px, .85fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 16px;
+    min-height: 270px;
+}
+
+#app-layout.desktop-shell .desktop-category-donut {
+    position: relative;
+    width: 100%;
+    max-width: 230px;
+    aspect-ratio: 1;
+    margin: 0 auto;
+}
+
+#app-layout.desktop-shell .desktop-category-donut canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+#app-layout.desktop-shell .desktop-category-center {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    width: 94px;
+    height: 94px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    border-radius: 999px;
+    background: rgba(3,13,26,.78);
+    border: 1px solid rgba(125,211,252,.12);
+    text-align: center;
+    pointer-events: none;
+}
+
+#app-layout.desktop-shell .desktop-category-center strong {
+    color: #e8f1ff;
+    font-size: 18px;
+    line-height: 1.08;
+}
+
+#app-layout.desktop-shell .desktop-category-center span {
+    color: #8fa7bf;
+    font-size: 11px;
+}
+
+#app-layout.desktop-shell .desktop-category-legend {
+    display: grid;
+    gap: 12px;
+}
+
+#app-layout.desktop-shell .desktop-category-row {
+    display: grid;
+    grid-template-columns: 10px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+    color: #dbeafe;
+    font-size: 13px;
+}
+
+#app-layout.desktop-shell .desktop-category-row strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#app-layout.desktop-shell .desktop-category-row em {
+    color: #dbeafe;
+    font-style: normal;
+    font-weight: 800;
+}
+
+#app-layout.desktop-shell .desktop-category-row small {
+    grid-column: 2 / 4;
+    color: #8fa7bf;
+    font-size: 12px;
+}
+
+#app-layout.desktop-shell .desktop-category-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+}
+
+#app-layout.desktop-shell .desktop-module-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+#app-layout.desktop-shell .desktop-module-card {
+    position: relative;
+    min-height: 218px;
+    padding: 18px 18px 54px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid rgba(125,211,252,.14);
+    border-radius: 14px;
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.38), rgba(3,13,26,.92)),
+        radial-gradient(circle at 76% 10%, rgba(31,122,255,.22), transparent 42%),
+        #061528;
+    box-shadow: 0 18px 44px rgba(0,0,0,.24);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+#app-layout.desktop-shell .desktop-module-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(11,99,206,.26);
+    box-shadow: 0 18px 38px rgba(15,23,42,.08);
+}
+
+#app-layout.desktop-shell .desktop-module-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: .32;
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.18), rgba(3,13,26,.96)),
+        url('/images/material-groups/thep-hinh.png') center / cover no-repeat;
+    pointer-events: none;
+}
+
+#app-layout.desktop-shell .desktop-module-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(90deg, rgba(3,13,26,.88), rgba(3,13,26,.45) 48%, rgba(3,13,26,.92)),
+        radial-gradient(circle at 16% 100%, rgba(31,122,255,.26), transparent 34%);
+    pointer-events: none;
+}
+
+#app-layout.desktop-shell .desktop-module-card > * {
+    position: relative;
+    z-index: 2;
+}
+
+#app-layout.desktop-shell .desktop-module-card .desktop-card-head {
+    margin-bottom: 16px;
+}
+
+#app-layout.desktop-shell .desktop-module-card p {
+    margin: 0 0 18px;
+    color: #b8c9db;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+#app-layout.desktop-shell .desktop-module-icon {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 14px;
+    border-radius: 14px;
+    background: rgba(31,122,255,.28);
+    box-shadow: inset 0 0 18px rgba(96,165,250,.24), 0 10px 28px rgba(31,122,255,.16);
+}
+
+#app-layout.desktop-shell .desktop-module-icon img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+#app-layout.desktop-shell .desktop-module-stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    margin-bottom: 10px;
+    width: 100%;
+    align-items: start;
+}
+
+#app-layout.desktop-shell .desktop-module-stats {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 0 14px;
+    border-right: 1px solid rgba(125,211,252,.10);
+}
+
+#app-layout.desktop-shell .desktop-module-stats:first-child {
+    padding-left: 0;
+    text-align: left;
+    align-items: flex-start;
+}
+
+#app-layout.desktop-shell .desktop-module-stats:nth-child(2) {
+    text-align: center;
+    align-items: center;
+}
+
+#app-layout.desktop-shell .desktop-module-stats:last-child {
+    border-right: 0;
+    padding-right: 0;
+    text-align: right;
+    align-items: flex-end;
+}
+
+#app-layout.desktop-shell .desktop-module-stats strong {
+    color: #f8fbff;
+    font-size: 20px;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#app-layout.desktop-shell .desktop-module-stats span {
+    color: #8fa7bf;
+    font-size: 11px;
+    line-height: 1.25;
+}
+
+#app-layout.desktop-shell .desktop-module-card .desktop-kpi-spark {
+    left: 24px;
+    right: 24px;
+    bottom: 18px;
+    width: calc(100% - 48px);
+    height: 40px;
+    z-index: 2;
+    filter: drop-shadow(0 0 12px currentColor);
+}
+
+#app-layout.desktop-shell .desktop-module-card .desktop-kpi-spark path {
+    transform: translateY(7px);
+}
+
+#app-layout.desktop-shell .desktop-module-bars {
+    position: absolute;
+    left: 22px;
+    right: 22px;
+    bottom: 18px;
+    height: 42px;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    gap: 7px;
+    padding-top: 6px;
+    border-bottom: 1px solid rgba(125,211,252,.12);
+    pointer-events: none;
+}
+
+#app-layout.desktop-shell .desktop-module-bars span {
+    flex: 1;
+    min-width: 4px;
+    border-radius: 999px 999px 0 0;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--bar-color) 92%, white 8%), color-mix(in srgb, var(--bar-color) 68%, transparent));
+    box-shadow: 0 0 14px color-mix(in srgb, var(--bar-color) 45%, transparent);
+    opacity: .92;
+}
+
+#app-layout.desktop-shell .desktop-module-area {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 16px;
+    width: calc(100% - 20px);
+    height: 48px;
+    z-index: 2;
+    filter: drop-shadow(0 0 12px color-mix(in srgb, var(--area-color) 45%, transparent));
+    pointer-events: none;
+}
+
+#app-layout.desktop-shell .desktop-module-year-chart {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: 10px;
+    width: calc(100% - 4px);
+    height: 58px;
+    z-index: 2;
+    display: block;
+    filter: drop-shadow(0 0 12px color-mix(in srgb, var(--mini-color) 42%, transparent));
+    pointer-events: none;
+}
+
+#app-layout.desktop-shell .desktop-tab-kpi-card {
+    min-height: 172px;
+    padding-bottom: 68px;
+}
+
+#app-layout.desktop-shell .desktop-tab-kpi-card .kpi-value {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#app-layout.desktop-shell .desktop-tab-kpi-card .desktop-kpi-trend {
+    position: static;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 5px;
+    width: auto;
+    margin-top: 7px;
+    font-size: 13px;
+    line-height: 1.2;
+    text-align: left;
+    white-space: nowrap;
+    z-index: 2;
+}
+
+#app-layout.desktop-shell .desktop-tab-kpi-card .desktop-kpi-trend small {
+    flex: 0 1 auto;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+#app-layout.desktop-shell .desktop-tab-kpi-card .kpi-sub {
+    display: none;
+}
+
+#app-layout.desktop-shell .desktop-tab-kpi-chart {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 8px;
+    width: 100%;
+    height: 62px;
+    z-index: 2;
+    display: block;
+    overflow: visible;
+    filter: drop-shadow(0 0 12px color-mix(in srgb, var(--mini-color) 42%, transparent));
+    pointer-events: none;
+}
+
+#app-layout.desktop-shell .desktop-module-card > .desktop-module-year-chart {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    width: calc(100% - 4px);
+    max-width: none;
+}
+
+#app-layout.desktop-shell .desktop-module-suppliers::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.18), rgba(3,13,26,.96)),
+        url('/images/login-factory-bg.jpg') center / cover no-repeat;
+}
+
+#app-layout.desktop-shell .desktop-module-suppliers::after {
+    background:
+        linear-gradient(90deg, rgba(3,13,26,.88), rgba(3,13,26,.45) 48%, rgba(3,13,26,.92)),
+        radial-gradient(circle at 22% 100%, rgba(16,185,129,.30), transparent 34%);
+}
+
+#app-layout.desktop-shell .desktop-module-projects::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.18), rgba(3,13,26,.96)),
+        url('/images/login-factory-bg.jpg') center / cover no-repeat;
+}
+
+#app-layout.desktop-shell .desktop-module-projects::after {
+    background:
+        linear-gradient(90deg, rgba(3,13,26,.88), rgba(3,13,26,.42) 48%, rgba(3,13,26,.92)),
+        radial-gradient(circle at 22% 100%, rgba(139,92,246,.32), transparent 34%);
+}
+
+#app-layout.desktop-shell .desktop-module-structures::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.18), rgba(3,13,26,.96)),
+        url('/images/material-groups/thep-hop.png') center / cover no-repeat;
+}
+
+#app-layout.desktop-shell .desktop-module-structures::after {
+    background:
+        linear-gradient(90deg, rgba(3,13,26,.88), rgba(3,13,26,.45) 48%, rgba(3,13,26,.92)),
+        radial-gradient(circle at 22% 100%, rgba(245,158,11,.32), transparent 34%);
+}
+
+#app-layout.desktop-shell .desktop-module-materials::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.18), rgba(3,13,26,.96)),
+        url('/images/material-groups/thep-hinh.png') center / cover no-repeat !important;
+}
+
+#app-layout.desktop-shell .desktop-module-suppliers::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.18), rgba(3,13,26,.96)),
+        url('/images/login-factory-bg.jpg') center / cover no-repeat !important;
+}
+
+#app-layout.desktop-shell .desktop-module-projects::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.18), rgba(3,13,26,.96)),
+        url('/images/login-factory-bg.jpg') center / cover no-repeat !important;
+}
+
+#app-layout.desktop-shell .desktop-module-structures::before {
+    background:
+        linear-gradient(180deg, rgba(3,13,26,.18), rgba(3,13,26,.96)),
+        url('/images/material-groups/thep-hop.png') center / cover no-repeat !important;
+}
+
+#app-layout.desktop-shell .desktop-bottom-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(320px, .9fr);
+    gap: 18px;
+    align-items: stretch;
+}
+
+#app-layout.desktop-shell .desktop-period-value-card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#app-layout.desktop-shell .desktop-period-row {
+    display: grid;
+    gap: 9px;
+}
+
+#app-layout.desktop-shell .desktop-period-row > div:first-child {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+#app-layout.desktop-shell .desktop-period-row strong {
+    color: #0f2747;
+}
+
+#app-layout.desktop-shell .desktop-period-row span {
+    color: #0b2b52;
+    font-weight: 900;
+}
+
+#app-layout.desktop-shell .desktop-export-fill {
+    background: linear-gradient(90deg, #2563eb, #60a5fa);
+}
+
+@media (max-width: 1280px) {
+    #app-layout.desktop-shell .kpi-grid {
+        grid-template-columns: repeat(3, minmax(180px, 1fr));
+    }
+    #app-layout.desktop-shell .desktop-dashboard-grid,
+    #app-layout.desktop-shell .desktop-dashboard-grid-main,
+    #app-layout.desktop-shell .desktop-overview-main,
+    #app-layout.desktop-shell .desktop-bottom-grid {
+        grid-template-columns: 1fr;
+    }
+    #app-layout.desktop-shell .desktop-module-grid {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+    #app-layout.desktop-shell .desktop-top-search {
+        display: none;
+    }
+}

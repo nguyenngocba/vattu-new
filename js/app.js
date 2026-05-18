@@ -51,7 +51,7 @@ function render() {
     // ===== HẾT MOBILE =====
     
     const cp = state.currentPane;    
-    root.innerHTML = `<div id="app-layout"><div class="sidebar ${sidebarCollapsed ? 'collapsed' : ''}">${renderSidebar()}</div><div class="main-content">${renderTopbar()}<div id="pane-entry" class="pane ${cp==='entry'?'active':''}">${renderMaterials()}</div><div id="pane-dashboard" class="pane ${cp==='dashboard'?'active':''}">${renderDashboard()}</div><div id="pane-structures" class="pane ${cp==='structures'?'active':''}">${renderStructures()}</div>
+    root.innerHTML = `<div id="app-layout" class="desktop-shell">${renderSidebar()}<div class="main-content">${renderTopbar()}<div id="pane-entry" class="pane ${cp==='entry'?'active':''}">${renderMaterials()}</div><div id="pane-dashboard" class="pane ${cp==='dashboard'?'active':''}">${renderDashboard()}</div><div id="pane-structures" class="pane ${cp==='structures'?'active':''}">${renderStructures()}</div>
         <div id="pane-projects" class="pane ${cp==='projects'?'active':''}">${renderProjects()}</div><div id="pane-suppliers" class="pane ${cp==='suppliers'?'active':''}">${renderSuppliers()}</div><div id="pane-logs" class="pane ${cp==='logs'?'active':''}">${renderLogs()}</div><div id="pane-settings" class="pane ${cp==='settings'?'active':''}">${renderSettings()}</div><div id="modal-area"></div></div></div>`;
     if (cp === 'dashboard') setTimeout(() => { renderDashboardChart(); bindDashboardSearchEvents(); }, 100);
 }
@@ -95,7 +95,7 @@ loadState().then(() => {
     window.deleteSupplier = deleteSupplier; window.showSupplierDetail = showSupplierDetail; window.viewSupplierHistory = viewSupplierHistory;
     window.exportSupplierDetail = exportSupplierDetail; window.exportAllSuppliersReport = exportAllSuppliersReport;
     window.openPurchaseModal = openPurchaseModal; window.savePurchase = savePurchase;
-    window.openTxnModal = (type, pid = null) => openTxnModal(type, pid); window.saveExport = saveExport;
+    window.openTxnModal = (type, pid = null, mid = null) => openTxnModal(type, pid, mid); window.saveExport = saveExport;
     window.calculatePurchaseTotal = calculatePurchaseTotal; window.calculateExportTotal = calculateExportTotal;
     window.openPurchaseModalWithSupplier = openPurchaseModalWithSupplier;
     window.savePurchaseWithSupplier = savePurchaseWithSupplier;

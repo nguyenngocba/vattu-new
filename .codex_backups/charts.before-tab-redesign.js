@@ -45,14 +45,10 @@ function toInputDate(date) {
 }
 
 function currentOverviewPeriod() {
-    return getDashboardFilterPeriod('overview');
-}
-
-function defaultDashboardPeriod() {
     const now = new Date();
     return {
-        start: toInputDate(new Date(now.getFullYear(), now.getMonth(), 1)),
-        end: toInputDate(now)
+        start: filterOverview.dateFrom || toInputDate(new Date(now.getFullYear(), now.getMonth(), 1)),
+        end: filterOverview.dateTo || toInputDate(now)
     };
 }
 
@@ -191,10 +187,9 @@ function renderYearMiniChart(values, color = '#1f7aff', selectedIndex = 0, class
     const min = Math.min(...nums, 0);
     const range = Math.max(max - min, 1);
     const isModuleChart = String(className).includes('module');
-    const isTabChart = String(className).includes('tab');
     const chartWidth = isModuleChart ? 420 : 220;
-    const leftPad = isTabChart ? 0 : 8;
-    const rightPad = isTabChart ? 0 : 8;
+    const leftPad = isModuleChart ? 8 : 8;
+    const rightPad = isModuleChart ? 8 : 8;
     const usableWidth = chartWidth - leftPad - rightPad;
     const linePoints = nums.map((value, index) => {
         const x = leftPad + (index / Math.max(nums.length - 1, 1)) * usableWidth;
@@ -207,8 +202,7 @@ function renderYearMiniChart(values, color = '#1f7aff', selectedIndex = 0, class
         return `<circle cx="${x}" cy="${y}" r="${active ? '4.2' : '2.6'}" fill="${active ? '#fff' : color}" stroke="${color}" stroke-width="${active ? '2.2' : '0'}" opacity="${active ? '1' : '.9'}"/>`;
     }).join('');
     const area = `${leftPad},54 ${linePoints.join(' ')} ${chartWidth - rightPad},54`;
-    const aspect = isTabChart ? ' preserveAspectRatio="none"' : '';
-    return `<svg class="${className}" viewBox="0 0 ${chartWidth} 58"${aspect} aria-hidden="true" style="--mini-color:${color}"><polygon points="${area}" fill="${color}" opacity=".08"/><polyline points="${linePoints.join(' ')}" fill="none" stroke="${color}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" opacity=".95"/>${dots}<path d="M${leftPad} 55 H${chartWidth - rightPad}" stroke="rgba(125,211,252,.12)" stroke-width="1"/></svg>`;
+    return `<svg class="${className}" viewBox="0 0 ${chartWidth} 58" aria-hidden="true" style="--mini-color:${color}"><polygon points="${area}" fill="${color}" opacity=".08"/><polyline points="${linePoints.join(' ')}" fill="none" stroke="${color}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" opacity=".95"/>${dots}<path d="M${leftPad} 55 H${chartWidth - rightPad}" stroke="rgba(125,211,252,.12)" stroke-width="1"/></svg>`;
 }
 
 function getTransactionQtyTotal(transactions, types) {
@@ -310,41 +304,6 @@ let filterProjects = { dateFrom: '', dateTo: '', projectId: 'all' };
 let filterSuppliers = { dateFrom: '', dateTo: '', supplierId: 'all' };
 let filterStructures = { dateFrom: '', dateTo: '' };
 let filterOverview = { dateFrom: '', dateTo: '', transactionType: 'all' };
-let filterForecast = { dateFrom: '', dateTo: '' };
-
-function getDashboardFilterState(scope = 'overview') {
-    if (scope === 'projects') return filterProjects;
-    if (scope === 'suppliers') return filterSuppliers;
-    if (scope === 'structures') return filterStructures;
-    if (scope === 'forecast') return filterForecast;
-    return filterOverview;
-}
-
-function getDashboardFilterPeriod(scope = 'overview') {
-    const defaults = defaultDashboardPeriod();
-    const filter = getDashboardFilterState(scope);
-    return {
-        start: filter.dateFrom || defaults.start,
-        end: filter.dateTo || defaults.end
-    };
-}
-
-function setDashboardFilterPeriod(scope = 'overview', start = '', end = '') {
-    const filter = getDashboardFilterState(scope);
-    filter.dateFrom = start;
-    filter.dateTo = end;
-    advancedFilters.dateFrom = start;
-    advancedFilters.dateTo = end;
-}
-
-function syncAdvancedFiltersForTab(scope = currentDashboardTab) {
-    const period = getDashboardFilterPeriod(scope);
-    advancedFilters.dateFrom = period.start;
-    advancedFilters.dateTo = period.end;
-    advancedFilters.projectId = scope === 'projects' ? filterProjects.projectId : 'all';
-    advancedFilters.supplierId = scope === 'suppliers' ? filterSuppliers.supplierId : 'all';
-    advancedFilters.transactionType = scope === 'overview' ? filterOverview.transactionType : 'all';
-}
 // ========== CACHE CHO DASHBOARD ==========
 let dashboardCache = {
     html_cache: null,
@@ -508,53 +467,8 @@ function getInventorySnapshot(dateTo = advancedFilters.dateTo) {
     };
 }
 
-function transactionNetStructureQty(t) {
-    const qty = Number(t.qty || 0);
-    if (t.type === 'produce' || t.type === 'structure_return') return qty;
-    if (t.type === 'structure_export') return -qty;
-    return 0;
-}
-
-function getStructureSnapshotsAt(dateTo = advancedFilters.dateTo) {
-    const snapshots = (state.data.structures || []).map(s => ({
-        ...s,
-        snapshotQty: Number(s.qty || 0)
-    }));
-    if (!dateTo) return snapshots;
-
-    const byId = new Map(snapshots.map(s => [String(s.id), s]));
-    const endDate = new Date(`${dateTo}T23:59:59.999`);
-    if (isNaN(endDate.getTime())) return snapshots;
-
-    (state.data.transactions || []).forEach(t => {
-        const d = new Date(t.datetime || t.date);
-        if (isNaN(d.getTime()) || d <= endDate) return;
-        const structure = byId.get(String(t.mid));
-        if (!structure) return;
-        structure.snapshotQty = Math.max(0, Number(structure.snapshotQty || 0) - transactionNetStructureQty(t));
-    });
-    return snapshots;
-}
-
-function getStructureInventorySnapshot(dateTo = advancedFilters.dateTo) {
-    const rows = getStructureSnapshotsAt(dateTo).map(s => ({
-        id: s.id,
-        name: s.name,
-        unit: s.unit,
-        qty: Number(s.snapshotQty || 0),
-        cost: Number(s.cost || 0),
-        totalValue: Number(s.snapshotQty || 0) * Number(s.cost || 0)
-    })).sort((a, b) => b.totalValue - a.totalValue);
-    return {
-        rows,
-        qty: rows.reduce((sum, s) => sum + Number(s.qty || 0), 0),
-        value: rows.reduce((sum, s) => sum + Number(s.totalValue || 0), 0),
-        lowCount: rows.filter(s => Number(s.qty || 0) < 10).length
-    };
-}
-
-function getSelectedOverviewMonth(scope = 'overview') {
-    const period = getDashboardFilterPeriod(scope);
+function getSelectedOverviewMonth() {
+    const period = currentOverviewPeriod();
     const source = period.end || period.start || toInputDate(new Date());
     const [year, month] = String(source).split('-').map(Number);
     const safeDate = new Date();
@@ -570,41 +484,11 @@ function txInMonth(t, year, month) {
     return !isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() + 1 === month;
 }
 
-function previousMonth(year, month) {
-    const d = new Date(year, month - 2, 1);
-    return { year: d.getFullYear(), month: d.getMonth() + 1 };
-}
-
 function monthEndDate(year, month) {
     const end = new Date(year, month, 0);
     const today = new Date();
     if (year === today.getFullYear() && month === today.getMonth() + 1 && today < end) return today;
     return end;
-}
-
-function getMonthTransactions(year, month, scope = 'overview') {
-    let txns = (state.data.transactions || []).filter(t => txInMonth(t, year, month));
-    if (scope === 'projects' && filterProjects.projectId !== 'all') {
-        txns = txns.filter(t => t.projectId === filterProjects.projectId);
-    }
-    if (scope === 'suppliers' && filterSuppliers.supplierId !== 'all') {
-        txns = txns.filter(t => t.supplierId === filterSuppliers.supplierId);
-    }
-    if (scope === 'overview' && filterOverview.transactionType !== 'all') {
-        txns = txns.filter(t => t.type === filterOverview.transactionType);
-    }
-    return txns;
-}
-
-function getComparisonContext(scope = 'overview') {
-    const selected = getSelectedOverviewMonth(scope);
-    const prev = previousMonth(selected.year, selected.month);
-    return {
-        selected,
-        previous: prev,
-        previousEnd: toInputDate(monthEndDate(prev.year, prev.month)),
-        previousTxns: getMonthTransactions(prev.year, prev.month, scope)
-    };
 }
 
 function getYearlyOverviewData(year = getSelectedOverviewMonth().year) {
@@ -621,9 +505,6 @@ function getYearlyOverviewData(year = getSelectedOverviewMonth().year) {
         const supplierActive = new Set(txns.filter(t => t.type === 'purchase' && t.supplierId).map(t => t.supplierId)).size;
         const projectActive = new Set(txns.filter(t => (t.type === 'usage' || t.type === 'structure_export') && t.projectId).map(t => t.projectId)).size;
         const structureProduced = txns.filter(t => t.type === 'produce').reduce((s, t) => s + Number(t.qty || 0), 0);
-        const structureExported = txns.filter(t => t.type === 'structure_export').reduce((s, t) => s + Number(t.qty || 0), 0);
-        const structureReturned = txns.filter(t => t.type === 'structure_return').reduce((s, t) => s + Number(t.qty || 0), 0);
-        const structureSnapshot = getStructureInventorySnapshot(end);
         return {
             month,
             label: `T${month}`,
@@ -634,10 +515,7 @@ function getYearlyOverviewData(year = getSelectedOverviewMonth().year) {
             lowCount: snapshot.lowCount,
             supplierActive,
             projectActive,
-            structureProduced,
-            structureExported,
-            structureReturned,
-            structureLowCount: structureSnapshot.lowCount
+            structureProduced
         };
     });
 }
@@ -662,25 +540,6 @@ function makeYearBarChart(label, data, color, valueType = 'money') {
             borderRadius: 8
         }]
     };
-}
-
-function renderDesktopTabKpi({ panel = 'inventoryValue', icon = 'logo-baocao.png', label = '', value = '', sub = '', series = [], color = '#1f7aff', trend = null, scope = currentDashboardTab }) {
-    const selected = getSelectedOverviewMonth(scope);
-    const trendHtml = trend
-        ? `<div class="desktop-kpi-trend ${trend.className}"><span>${trend.arrow}</span> ${trend.text} <small>so với tháng trước</small></div>`
-        : '';
-    return `
-        <div class="kpi-card desktop-click-card desktop-tab-kpi-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('${panel}')">
-            <div class="kpi-icon"><img src="/images/mobile-icons/${icon}" alt=""></div>
-            <div class="kpi-info">
-                <div class="kpi-label">${escapeHtml(label)}</div>
-                <div class="kpi-value">${value}</div>
-                ${trendHtml}
-                <div class="kpi-sub">${escapeHtml(sub)}</div>
-            </div>
-            ${renderYearMiniChart(series, color, selected.index, 'desktop-tab-kpi-chart')}
-        </div>
-    `;
 }
 
 function getMonthlyData() {
@@ -754,8 +613,8 @@ function getTotalsForPeriod(transactions) {
     let totalImport = 0, totalExport = 0, totalReturn = 0;
     transactions.forEach(t => {
         if (t.type === 'purchase') totalImport += (parseFloat(parseFloat(t.totalAmount))||0);
-        if (t.type === 'usage' || t.type === 'structure_export') totalExport += (parseFloat(parseFloat(t.totalAmount))||0);
-        if (t.type === 'return' || t.type === 'structure_return' || t.type === 'return_from_sw') totalReturn += (parseFloat(parseFloat(t.totalAmount))||0);
+        if (t.type === 'usage') totalExport += (parseFloat(parseFloat(t.totalAmount))||0);
+        if (t.type === 'return') totalReturn += (parseFloat(parseFloat(t.totalAmount))||0);
     });
     return { totalImport, totalExport, totalReturn, netSpent: totalExport - totalReturn };
 }
@@ -894,10 +753,9 @@ function resetFilters() {
 }
 
 function updateDashboardContent() {
-    syncAdvancedFiltersForTab(currentDashboardTab);
     const pane = document.getElementById('pane-dashboard');
     if (pane) {
-        if (currentDashboardTab === 'projects' || currentDashboardTab === 'suppliers' || currentDashboardTab === 'structures' || currentDashboardTab === 'forecast') {
+        if (currentDashboardTab === 'projects' || currentDashboardTab === 'suppliers' || currentDashboardTab === 'structures') {
             pane.innerHTML = renderTabContent(currentDashboardTab);
         } else {
             pane.innerHTML = renderDashboard();
@@ -906,7 +764,7 @@ function updateDashboardContent() {
             renderDashboardChart(); 
             bindDashboardFilterEvents();
             // RENDER LẠI CHART SAU KHI FILTER
-            if (currentDashboardTab === 'projects' || currentDashboardTab === 'suppliers' || currentDashboardTab === 'structures' || currentDashboardTab === 'forecast') {
+            if (currentDashboardTab === 'projects' || currentDashboardTab === 'suppliers' || currentDashboardTab === 'structures') {
                 window.switchDashboardTab(currentDashboardTab);
             }
         }, 200);
@@ -940,7 +798,7 @@ function dashboardTable(headers, rows) {
 function getDashboardPanelContent(kind) {
     const allTxns = getFilteredTransactions();
     const monthlyData = getMonthlyData();
-    const selectedMonth = getSelectedOverviewMonth(currentDashboardTab);
+    const selectedMonth = getSelectedOverviewMonth();
     const yearRows = getYearlyOverviewData(selectedMonth.year);
     const inventorySnapshot = getInventorySnapshot();
     const totalInventory = inventorySnapshot.value;
@@ -1136,37 +994,6 @@ window.closeDesktopDashboardPanel = function() {
     document.getElementById('desktop-dashboard-popup')?.remove();
 };
 
-function renderStructureTabCharts() {
-    if (typeof Chart === 'undefined') return;
-    applyDashboardChartTheme();
-    const selected = getSelectedOverviewMonth('structures');
-    const rows = getYearlyOverviewData(selected.year);
-    const ctx = document.getElementById('structure-trend-chart');
-    if (ctx) {
-        if (window._structureTrendChart) window._structureTrendChart.destroy();
-        window._structureTrendChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: rows.map(r => r.label),
-                datasets: [
-                    { label: 'Sản xuất', data: rows.map(r => r.structureProduced), backgroundColor: monthHighlightColors('rgb(16,185,129)', selected.index, '.22', rows.length), borderRadius: 7 },
-                    { label: 'Xuất CT', data: rows.map(r => r.structureExported), backgroundColor: monthHighlightColors('rgb(139,92,246)', selected.index, '.18', rows.length), borderRadius: 7 },
-                    { label: 'Trả về', data: rows.map(r => r.structureReturned), backgroundColor: monthHighlightColors('rgb(96,165,250)', selected.index, '.18', rows.length), borderRadius: 7 }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { labels: { usePointStyle: true, boxWidth: 8 } } },
-                scales: {
-                    x: { grid: { color: 'rgba(148,163,184,.08)' } },
-                    y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,.10)' }, ticks: { callback: v => Number(v).toLocaleString('vi-VN') } }
-                }
-            }
-        });
-    }
-}
-
 window.openDesktopDashboardPanel = function(kind) {
     const panel = getDashboardPanelContent(kind);
     window.closeDesktopDashboardPanel();
@@ -1191,25 +1018,37 @@ window.openDesktopDashboardPanel = function(kind) {
 
 function renderKPICards() {
     const allTxns = getFilteredTransactions();
-    const selectedYearMonth = getSelectedOverviewMonth('overview');
-    const comparison = getComparisonContext('overview');
+    const selectedYearMonth = getSelectedOverviewMonth();
     const kpiYearRows = getYearlyOverviewData(selectedYearMonth.year);
     const { totalImport, totalExport } = getTotalsForPeriod(allTxns);
     const inventorySnapshot = getInventorySnapshot();
     const totalInventory = inventorySnapshot.value;
-    const lowStockCount = inventorySnapshot.lowCount;
+    const lowStockCount = state.data.materials.filter(m => Number(m.qty || 0) <= Number(m.low || 0)).length;
     const totalStockQty = inventorySnapshot.qty;
     const importCount = allTxns.filter(t => t.type === 'purchase').length;
     const exportCount = allTxns.filter(t => t.type === 'usage' || t.type === 'structure_export').length;
     
-    const lastMonthTxns = comparison.previousTxns;
+    const lastMonthTxns = state.data.transactions.filter(t => {
+        const d = new Date(t.datetime || t.date);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        return key === getLastMonth();
+    });
     const lastMonth = getTotalsForPeriod(lastMonthTxns);
-    const previousInventorySnapshot = getInventorySnapshot(comparison.previousEnd);
-    const inventoryTrend = formatTrend(totalInventory, previousInventorySnapshot.value);
-    const stockTrend = formatTrend(totalStockQty, previousInventorySnapshot.qty);
+    const importQty = getTransactionQtyTotal(allTxns, ['purchase']);
+    const exportQty = getTransactionQtyTotal(allTxns, ['usage', 'structure_export']);
+    const lastMonthImportQty = getTransactionQtyTotal(lastMonthTxns, ['purchase']);
+    const lastMonthExportQty = getTransactionQtyTotal(lastMonthTxns, ['usage', 'structure_export']);
+    const estimatedPrevInventory = Math.max(0, totalInventory - totalImport + totalExport);
+    const estimatedPrevStockQty = Math.max(0, totalStockQty - importQty + exportQty);
+    const inventoryTrend = formatTrend(totalInventory, estimatedPrevInventory);
+    const stockTrend = formatTrend(totalStockQty, estimatedPrevStockQty);
     const importTrend = formatTrend(totalImport, lastMonth.totalImport);
     const exportTrend = formatTrend(totalExport, lastMonth.totalExport);
-    const lowStockTrend = formatTrend(lowStockCount, previousInventorySnapshot.lowCount);
+    const lowStockPrev = Math.max(0, lowStockCount - 2);
+    const lowStockDelta = lowStockCount - lowStockPrev;
+    const lowStockTrend = lowStockDelta === 0
+        ? { text: '0', className: 'neutral', arrow: '→' }
+        : { text: String(Math.abs(lowStockDelta)), className: lowStockDelta > 0 ? 'up' : 'down', arrow: lowStockDelta > 0 ? '↑' : '↓' };
     const inventorySeries = kpiYearRows.map(row => row.stockValue);
     const stockSeries = kpiYearRows.map(row => row.stockQty);
     const importSeries = kpiYearRows.map(row => row.importValue);
@@ -1496,14 +1335,13 @@ function renderFiltersAndTabs() {
             <div class="dashboard-tab ${currentDashboardTab==='structures'?'active':''}" onclick="window.switchDashboardTab('structures')">Cấu kiện</div>
             <div class="dashboard-tab ${currentDashboardTab==='forecast'?'active':''}" onclick="window.switchDashboardTab('forecast')">Dự báo</div>
         </div>
-        ${currentDashboardTab === 'projects' ? renderFilterProjects() : currentDashboardTab === 'suppliers' ? renderFilterSuppliers() : currentDashboardTab === 'structures' ? renderFilterStructures() : currentDashboardTab === 'overview' ? renderFilterOverview() : currentDashboardTab === 'forecast' ? renderFilterForecast() : ''}
+        ${currentDashboardTab === 'projects' ? renderFilterProjects() : currentDashboardTab === 'suppliers' ? renderFilterSuppliers() : currentDashboardTab === 'structures' ? renderFilterStructures() : currentDashboardTab === 'overview' ? renderFilterOverview() : currentDashboardTab === 'forecast' ? '' : ''}
     `;
 }
 
         window.switchDashboardTab = function(tab) {
     applyDashboardChartTheme();
     currentDashboardTab = tab;
-    syncAdvancedFiltersForTab(tab);
     clearDashboardCache();   
  if (tab === 'projects' || tab === 'suppliers' || tab === 'structures' || tab === 'forecast') {
         document.getElementById('pane-dashboard').innerHTML = renderTabContent(tab);
@@ -1519,16 +1357,15 @@ function renderFiltersAndTabs() {
                     if (filterProjects.projectId !== 'all') {
                         filteredProjs = filteredProjs.filter(function(p) { return p.id === filterProjects.projectId; });
                     }
-                    var chartTxns = getFilteredTransactions(false);
                     var pdata = filteredProjs.map(function(p){
-                        var u = chartTxns.filter(function(t){return t.projectId===p.id&&(t.type==='usage'||t.type==='structure_export')}).reduce(function(s,t){return s+Number(t.totalAmount||0)},0);
-                        var r = chartTxns.filter(function(t){return t.projectId===p.id&&(t.type==='return'||t.type==='structure_return')}).reduce(function(s,t){return s+Number(t.totalAmount||0)},0);
+                        var u = state.data.transactions.filter(function(t){return t.projectId===p.id&&t.type==='usage'}).reduce(function(s,t){return s+Number(t.totalAmount||0)},0);
+                        var r = state.data.transactions.filter(function(t){return t.projectId===p.id&&t.type==='return'}).reduce(function(s,t){return s+Number(t.totalAmount||0)},0);
                         return { name: p.name.length>20?p.name.substring(0,20):p.name, spent: u-r };
                     }).sort(function(a,b){return b.spent-a.spent}).slice(0,5);
                     topProjectsChart = new Chart(ctx1, { type:'bar', data:{ labels:pdata.map(function(p){return p.name}), datasets:[{ label:'Chi', data:pdata.map(function(p){return p.spent}), backgroundColor:['#378ADD','#97C459','#FAC775','#F09595','#85B7EB'], borderRadius:6 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } } });
                     var tu = pdata.reduce(function(s,p){return s+p.spent},0);
                     var tb = filteredProjs.reduce(function(s,p){return s+Number(p.budget||0)},0);
-                    window._bp = new Chart(ctx2, { type:'doughnut', data:{ labels:['Đã sử dụng','Còn lại'], datasets:[{ data:[tu, Math.max(0,tb-tu)], backgroundColor:['#f59e0b','#10b981'], borderWidth:0 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } } });
+                    window._bp = new Chart(ctx2, { type:'doughnut', data:{ labels:['Dung','Con'], datasets:[{ data:[tu, Math.max(0,tb-tu)], backgroundColor:['#F09595','#97C459'], borderWidth:0 }] }, options:{ responsive:true, maintainAspectRatio:false } });
                 }
             }
             if (tab === 'suppliers') {
@@ -1541,18 +1378,17 @@ function renderFiltersAndTabs() {
                     if (filterSuppliers.supplierId !== 'all') {
                         filteredSups = filteredSups.filter(function(s) { return s.id === filterSuppliers.supplierId; });
                     }
-                    var chartTxns = getFilteredTransactions(false);
                     var sdata = filteredSups.map(function(s){
-                        var t = chartTxns.filter(function(x){return x.type==='purchase'&&x.supplierId===s.id}).reduce(function(a,x){return a+Number(x.totalAmount||0)},0);
+                        var t = state.data.transactions.filter(function(x){return x.type==='purchase'&&x.supplierId===s.id}).reduce(function(a,x){return a+Number(x.totalAmount||0)},0);
                         return { name: s.name.length>20?s.name.substring(0,20):s.name, total: t };
                     }).sort(function(a,b){return b.total-a.total}).slice(0,5);
                     topSuppliersChart = new Chart(ctx1, { type:'bar', data:{ labels:sdata.map(function(s){return s.name}), datasets:[{ label:'Tong chi', data:sdata.map(function(s){return s.total}), backgroundColor:['#378ADD','#97C459','#FAC775','#F09595','#85B7EB'], borderRadius:6 }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } } });
                     var t5 = sdata.reduce(function(s,p){return s+p.total},0);
-                    var at = filteredSups.reduce(function(s,p){ var t=chartTxns.filter(function(x){return x.type==='purchase'&&x.supplierId===p.id}).reduce(function(a,x){return a+Number(x.totalAmount||0)},0); return s+t; },0);
-                    window._sp = new Chart(ctx2, { type:'doughnut', data:{ labels:sdata.map(function(s){return s.name}).concat(['Khác']), datasets:[{ data:sdata.map(function(s){return s.total}).concat([Math.max(0,at-t5)]), backgroundColor:['#10b981','#1f7aff','#f59e0b','#8b5cf6','#94a3b8','#64748b'], borderWidth:0 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } } });
+                    var at = filteredSups.reduce(function(s,p){ var t=state.data.transactions.filter(function(x){return x.type==='purchase'&&x.supplierId===p.id}).reduce(function(a,x){return a+Number(x.totalAmount||0)},0); return s+t; },0);
+                    window._sp = new Chart(ctx2, { type:'doughnut', data:{ labels:sdata.map(function(s){return s.name}).concat(['Khac']), datasets:[{ data:sdata.map(function(s){return s.total}).concat([Math.max(0,at-t5)]), backgroundColor:['#378ADD','#97C459','#FAC775','#F09595','#85B7EB','#BA7517'], borderWidth:0 }] }, options:{ responsive:true, maintainAspectRatio:false } });
                 }
             }	    if (tab === 'structures') {
-                renderStructureTabCharts();            
+                renderStructureDashboardCharts();            
 		}
 		if (tab === 'forecast') {
 		 loadForecast();
@@ -1568,11 +1404,6 @@ function renderFiltersAndTabs() {
 
 function renderTabContent(tab) {
     const filters = renderFiltersAndTabs();
-    const tabTxns = getFilteredTransactions();
-    const selectedMonth = getSelectedOverviewMonth(tab);
-    const yearRows = getYearlyOverviewData(selectedMonth.year);
-    const comparison = getComparisonContext(tab);
-    const prevTxns = comparison.previousTxns;
    
     if (tab === 'projects') {
                 // LỌC THEO CÔNG TRÌNH ĐƯỢC CHỌN
@@ -1581,8 +1412,8 @@ function renderTabContent(tab) {
             filteredProjects = filteredProjects.filter(function(p) { return p.id === filterProjects.projectId; });
         }
         const projects = filteredProjects.map(p => {
-            const u = tabTxns.filter(t=>t.projectId===p.id&&(t.type==='usage'||t.type==='structure_export')).reduce((s,t)=>s+(parseFloat(parseFloat(t.totalAmount))||0),0);
-            const r = tabTxns.filter(t=>t.projectId===p.id&&(t.type==='return'||t.type==='structure_return')).reduce((s,t)=>s+(parseFloat(parseFloat(t.totalAmount))||0),0);
+            const u = state.data.transactions.filter(t=>t.projectId===p.id&&t.type==='usage').reduce((s,t)=>s+(parseFloat(parseFloat(t.totalAmount))||0),0);
+            const r = state.data.transactions.filter(t=>t.projectId===p.id&&t.type==='return').reduce((s,t)=>s+(parseFloat(parseFloat(t.totalAmount))||0),0);
             return { ...p, spent: u-r, pct: p.budget>0?(u-r)/p.budget*100:0 };
         }).sort((a,b)=>b.spent-a.spent);
         const projectPage = getPagedData('projects', projects);
@@ -1592,31 +1423,12 @@ function renderTabContent(tab) {
         const totalProjects = projects.length;
         const totalBudget = projects.reduce((s, p) => s + Number(p.budget||0), 0);
         const totalSpentAll = projects.reduce((s, p) => s + Number(p.spent||0), 0);
-        const totalReturnedAll = tabTxns.filter(t => t.type === 'return' || t.type === 'structure_return').reduce((s, t) => s + Number(t.totalAmount || 0), 0);
-        const projectIds = new Set(filteredProjects.map(p => p.id));
-        const activeProjects = new Set(tabTxns.filter(t => projectIds.has(t.projectId) && (t.type === 'usage' || t.type === 'structure_export')).map(t => t.projectId)).size;
-        const prevActiveProjects = new Set(prevTxns.filter(t => projectIds.has(t.projectId) && (t.type === 'usage' || t.type === 'structure_export')).map(t => t.projectId)).size;
-        const prevSpentAll = filteredProjects.reduce((sum, p) => {
-            const used = prevTxns.filter(t => t.projectId === p.id && (t.type === 'usage' || t.type === 'structure_export')).reduce((s, t) => s + Number(t.totalAmount || 0), 0);
-            const returned = prevTxns.filter(t => t.projectId === p.id && (t.type === 'return' || t.type === 'structure_return')).reduce((s, t) => s + Number(t.totalAmount || 0), 0);
-            return sum + used - returned;
-        }, 0);
-        const prevReturnedAll = prevTxns.filter(t => t.type === 'return' || t.type === 'structure_return').reduce((s, t) => s + Number(t.totalAmount || 0), 0);
         const avgPct = totalBudget > 0 ? (totalSpentAll / totalBudget * 100) : 0;
-        const budgetRemain = Math.max(0, totalBudget - totalSpentAll);
-        const prevBudgetRemain = Math.max(0, totalBudget - prevSpentAll);
-        const budgetRows = [
-            { name: 'Đã sử dụng', value: totalSpentAll, color: '#f59e0b' },
-            { name: 'Còn lại', value: budgetRemain, color: '#10b981' },
-            { name: 'Đã trả về', value: totalReturnedAll, color: '#1f7aff' }
-        ].filter(item => item.value > 0 || totalBudget === 0);
-        const budgetTotal = Math.max(totalBudget, budgetRows.reduce((sum, item) => sum + item.value, 0), 1);
         const projectKPIs = `<div class="kpi-grid" style="margin-bottom:16px;">
-            ${renderDesktopTabKpi({ scope: 'projects', panel: 'projects', icon: 'logo-tongcongtrinh.png', label: 'TỔNG CÔNG TRÌNH', value: totalProjects, sub: `${activeProjects} có phát sinh`, series: yearRows.map(r => r.projectActive), color: '#8b5cf6', trend: formatTrend(activeProjects, prevActiveProjects) })}
-            ${renderDesktopTabKpi({ scope: 'projects', panel: 'projects', icon: 'logo-baocao.png', label: 'TỔNG NGÂN SÁCH', value: formatCompactMoney(totalBudget), sub: 'Tất cả công trình', series: yearRows.map(r => totalBudget), color: '#1f7aff', trend: formatTrend(totalBudget, totalBudget) })}
-            ${renderDesktopTabKpi({ scope: 'projects', panel: 'projects', icon: 'logo-xuatkho.png', label: 'ĐÃ SỬ DỤNG', value: formatCompactMoney(totalSpentAll), sub: `${avgPct.toFixed(1)}% ngân sách`, series: yearRows.map(r => r.exportValue), color: '#f59e0b', trend: formatTrend(totalSpentAll, prevSpentAll) })}
-            ${renderDesktopTabKpi({ scope: 'projects', panel: 'projects', icon: 'logo-tongquan.png', label: 'CÒN LẠI', value: formatCompactMoney(totalBudget - totalSpentAll), sub: `${Math.max(0, 100 - avgPct).toFixed(1)}% còn lại`, series: yearRows.map(r => Math.max(0, totalBudget - r.exportValue)), color: '#10b981', trend: formatTrend(budgetRemain, prevBudgetRemain) })}
-            ${renderDesktopTabKpi({ scope: 'projects', panel: 'projects', icon: 'logo-trahang.png', label: 'ĐÃ TRẢ', value: formatCompactMoney(totalReturnedAll), sub: 'Vật tư/cấu kiện trả', series: yearRows.map(r => r.exportValue * .08), color: '#60a5fa', trend: formatTrend(totalReturnedAll, prevReturnedAll) })}
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('projects')"><div class="kpi-icon"><img src="/images/mobile-icons/logo-tongcongtrinh.png" alt=""></div><div class="kpi-info"><div class="kpi-label">TỔNG CÔNG TRÌNH</div><div class="kpi-value">${totalProjects}</div><div class="kpi-sub">Đang theo dõi</div></div></div>
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('projects')"><div class="kpi-icon"><img src="/images/mobile-icons/logo-baocao.png" alt=""></div><div class="kpi-info"><div class="kpi-label">TỔNG NGÂN SÁCH</div><div class="kpi-value">${formatMoneyVND(totalBudget)}</div><div class="kpi-sub">Tất cả công trình</div></div></div>
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('projects')"><div class="kpi-icon"><img src="/images/mobile-icons/logo-xuatkho.png" alt=""></div><div class="kpi-info"><div class="kpi-label">ĐÃ SỬ DỤNG</div><div class="kpi-value">${formatMoneyVND(totalSpentAll)}</div><div class="kpi-sub">${avgPct.toFixed(1)}% ngân sách</div></div></div>
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('projects')"><div class="kpi-icon"><img src="/images/mobile-icons/logo-tongquan.png" alt=""></div><div class="kpi-info"><div class="kpi-label">CÒN LẠI</div><div class="kpi-value">${formatMoneyVND(totalBudget - totalSpentAll)}</div><div class="kpi-sub">${(100 - avgPct).toFixed(1)}% còn lại</div></div></div>
         </div>`;
         return filters + projectKPIs + `
     <div class="desktop-dashboard-grid" style="margin-bottom:18px;">
@@ -1626,18 +1438,7 @@ function renderTabContent(tab) {
         </div>
         <div class="card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('projects')">
             <div class="desktop-card-head"><div class="sec-title">Cơ cấu ngân sách</div></div>
-            <div class="desktop-category-card-body">
-                <div class="desktop-category-donut">
-                    <canvas id="budget-pie-chart"></canvas>
-                    <div class="desktop-category-center"><strong>${formatCompactMoney(totalBudget)}</strong><span>ngân sách</span></div>
-                </div>
-                <div class="desktop-category-legend">
-                    ${budgetRows.map(item => {
-                        const pct = budgetTotal ? item.value / budgetTotal * 100 : 0;
-                        return `<div class="desktop-category-row"><span class="desktop-category-dot" style="background:${item.color}"></span><strong>${escapeHtml(item.name)}</strong><em>${pct.toFixed(1)}%</em><small>${formatCompactMoney(item.value)}</small></div>`;
-                    }).join('')}
-                </div>
-            </div>
+            <div class="chart-container" style="height:280px;"><canvas id="budget-pie-chart"></canvas></div>
         </div>
     </div>
 
@@ -1676,7 +1477,7 @@ function renderTabContent(tab) {
         if (filterSuppliers.supplierId !== 'all') {
             filteredSuppliers = filteredSuppliers.filter(function(s) { return s.id === filterSuppliers.supplierId; });
         }
-        const suppliers = filteredSuppliers.map(s => {            const txns = tabTxns.filter(t=>t.type==='purchase'&&t.supplierId===s.id);
+        const suppliers = filteredSuppliers.map(s => {            const txns = state.data.transactions.filter(t=>t.type==='purchase'&&t.supplierId===s.id);
             return { ...s, total: txns.reduce((sum,t)=>sum+(parseFloat(parseFloat(t.totalAmount))||0),0), count: txns.length };
         }).sort((a,b)=>b.total-a.total);
         const supplierPage = getPagedData('suppliers', suppliers);
@@ -1686,30 +1487,12 @@ function renderTabContent(tab) {
         const totalSuppliers = suppliers.length;
         const totalSpentAll = suppliers.reduce((s, p) => s + Number(p.total||0), 0);
         const totalOrders = suppliers.reduce((s, p) => s + Number(p.count||0), 0);
-        const avgOrderValue = totalOrders > 0 ? totalSpentAll / totalOrders : 0;
         const topSup = suppliers[0];
-        const supplierIds = new Set(filteredSuppliers.map(s => s.id));
-        const prevSupplierTxns = prevTxns.filter(t => t.type === 'purchase' && supplierIds.has(t.supplierId));
-        const activeSuppliers = new Set(tabTxns.filter(t => t.type === 'purchase' && supplierIds.has(t.supplierId)).map(t => t.supplierId)).size;
-        const prevActiveSuppliers = new Set(prevSupplierTxns.map(t => t.supplierId)).size;
-        const prevSpentAll = prevSupplierTxns.reduce((sum, t) => sum + Number(t.totalAmount || 0), 0);
-        const prevOrders = prevSupplierTxns.length;
-        const prevAvgOrderValue = prevOrders > 0 ? prevSpentAll / prevOrders : 0;
-        const prevTopSupTotal = Math.max(0, ...filteredSuppliers.map(s => prevSupplierTxns.filter(t => t.supplierId === s.id).reduce((sum, t) => sum + Number(t.totalAmount || 0), 0)));
-        const supplierShareRows = suppliers.slice(0, 5).map((s, index) => ({
-            name: s.name,
-            value: Number(s.total || 0),
-            color: ['#10b981', '#1f7aff', '#f59e0b', '#8b5cf6', '#94a3b8'][index]
-        })).filter(item => item.value > 0);
-        const otherSupplierValue = Math.max(0, totalSpentAll - supplierShareRows.reduce((sum, item) => sum + item.value, 0));
-        if (otherSupplierValue > 0) supplierShareRows.push({ name: 'Khác', value: otherSupplierValue, color: '#64748b' });
-        const supplierShareTotal = Math.max(totalSpentAll, 1);
         const supplierKPIs = `<div class="kpi-grid" style="margin-bottom:16px;">
-            ${renderDesktopTabKpi({ scope: 'suppliers', panel: 'suppliers', icon: 'logo-tongnhacungcap.png', label: 'TỔNG NHÀ CUNG CẤP', value: totalSuppliers, sub: `${activeSuppliers} có phát sinh`, series: yearRows.map(r => r.supplierActive), color: '#10b981', trend: formatTrend(activeSuppliers, prevActiveSuppliers) })}
-            ${renderDesktopTabKpi({ scope: 'suppliers', panel: 'suppliers', icon: 'logo-nhapkho.png', label: 'TỔNG CHI TIÊU', value: formatCompactMoney(totalSpentAll), sub: 'Theo kỳ đang chọn', series: yearRows.map(r => r.importValue), color: '#1f7aff', trend: formatTrend(totalSpentAll, prevSpentAll) })}
-            ${renderDesktopTabKpi({ scope: 'suppliers', panel: 'suppliers', icon: 'logo-taophieunhap.png', label: 'SỐ LẦN NHẬP', value: totalOrders, sub: 'Tổng giao dịch', series: yearRows.map(r => r.importValue), color: '#8b5cf6', trend: formatTrend(totalOrders, prevOrders) })}
-            ${renderDesktopTabKpi({ scope: 'suppliers', panel: 'suppliers', icon: 'logo-baocao.png', label: 'NCC LỚN NHẤT', value: topSup?.name || '—', sub: topSup ? formatCompactMoney(topSup.total) : '0 đ', series: yearRows.map(r => r.supplierActive), color: '#f59e0b', trend: formatTrend(Number(topSup?.total || 0), prevTopSupTotal) })}
-            ${renderDesktopTabKpi({ scope: 'suppliers', panel: 'suppliers', icon: 'logo-tongquan.png', label: 'TB/LẦN NHẬP', value: formatCompactMoney(avgOrderValue), sub: 'Giá trị trung bình', series: yearRows.map(r => r.importValue), color: '#60a5fa', trend: formatTrend(avgOrderValue, prevAvgOrderValue) })}
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('suppliers')"><div class="kpi-icon"><img src="/images/mobile-icons/logo-tongnhacungcap.png" alt=""></div><div class="kpi-info"><div class="kpi-label">TỔNG NHÀ CUNG CẤP</div><div class="kpi-value">${totalSuppliers}</div><div class="kpi-sub">Đang hợp tác</div></div></div>
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('suppliers')"><div class="kpi-icon"><img src="/images/mobile-icons/logo-nhapkho.png" alt=""></div><div class="kpi-info"><div class="kpi-label">TỔNG CHI TIÊU</div><div class="kpi-value">${formatMoneyVND(totalSpentAll)}</div><div class="kpi-sub">Tất cả NCC</div></div></div>
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('suppliers')"><div class="kpi-icon"><img src="/images/mobile-icons/logo-taophieunhap.png" alt=""></div><div class="kpi-info"><div class="kpi-label">SỐ LẦN NHẬP</div><div class="kpi-value">${totalOrders}</div><div class="kpi-sub">Tổng giao dịch</div></div></div>
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('suppliers')"><div class="kpi-icon"><img src="/images/mobile-icons/logo-baocao.png" alt=""></div><div class="kpi-info"><div class="kpi-label">NCC LỚN NHẤT</div><div class="kpi-value" style="font-size:14px">${topSup?.name||'—'}</div><div class="kpi-sub">${topSup ? formatMoneyVND(topSup.total) : '0 ₫'}</div></div></div>
         </div>`;
         return filters + supplierKPIs + `
     <div class="desktop-dashboard-grid" style="margin-bottom:18px;">
@@ -1719,18 +1502,7 @@ function renderTabContent(tab) {
         </div>
         <div class="card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('suppliers')">
             <div class="desktop-card-head"><div class="sec-title">Tỷ lệ chi tiêu</div></div>
-            <div class="desktop-category-card-body">
-                <div class="desktop-category-donut">
-                    <canvas id="supplier-pie-chart"></canvas>
-                    <div class="desktop-category-center"><strong>${formatCompactMoney(totalSpentAll)}</strong><span>chi tiêu</span></div>
-                </div>
-                <div class="desktop-category-legend">
-                    ${supplierShareRows.map(item => {
-                        const pct = supplierShareTotal ? item.value / supplierShareTotal * 100 : 0;
-                        return `<div class="desktop-category-row"><span class="desktop-category-dot" style="background:${item.color}"></span><strong>${escapeHtml(item.name)}</strong><em>${pct.toFixed(1)}%</em><small>${formatCompactMoney(item.value)}</small></div>`;
-                    }).join('')}
-                </div>
-            </div>
+            <div class="chart-container" style="height:280px;"><canvas id="supplier-pie-chart"></canvas></div>
         </div>
     </div>
 
@@ -1766,40 +1538,48 @@ function renderTabContent(tab) {
     }
 if (tab === 'structures') {
     const stats = getStructureStats();
-    const structureSnapshot = getStructureInventorySnapshot(advancedFilters.dateTo);
-    const prevStructureSnapshot = getStructureInventorySnapshot(comparison.previousEnd);
-    const producedInPeriod = tabTxns.filter(t => t.type === 'produce').reduce((sum, t) => sum + Number(t.qty || 0), 0);
-    const exportedInPeriod = tabTxns.filter(t => t.type === 'structure_export').reduce((sum, t) => sum + Number(t.qty || 0), 0);
-    const exportedValueInPeriod = tabTxns.filter(t => t.type === 'structure_export').reduce((sum, t) => sum + Number(t.totalAmount || 0), 0);
-    const structureReturnedInPeriod = tabTxns.filter(t => t.type === 'structure_return' || t.type === 'return_from_sw').reduce((sum, t) => sum + Number(t.qty || 0), 0);
-    const prevProducedInPeriod = prevTxns.filter(t => t.type === 'produce').reduce((sum, t) => sum + Number(t.qty || 0), 0);
-    const prevExportedInPeriod = prevTxns.filter(t => t.type === 'structure_export').reduce((sum, t) => sum + Number(t.qty || 0), 0);
-    const prevStructureReturnedInPeriod = prevTxns.filter(t => t.type === 'structure_return' || t.type === 'return_from_sw').reduce((sum, t) => sum + Number(t.qty || 0), 0);
     
     // KPI Cards riêng cho tab Cấu kiện
     const structureKPIs = `
         <div class="kpi-grid" style="margin-bottom:16px;">
-            ${renderDesktopTabKpi({ scope: 'structures', panel: 'structures', icon: 'logo-tongcaukien.png', label: 'TỔNG CẤU KIỆN', value: stats.totalStructures || 0, sub: 'Loại cấu kiện', series: yearRows.map(r => r.structureProduced), color: '#f59e0b', trend: formatTrend(stats.totalStructures || 0, stats.totalStructures || 0) })}
-            ${renderDesktopTabKpi({ scope: 'structures', panel: 'structures', icon: 'logo-kiemkekho.png', label: 'SẢN XUẤT TRONG KỲ', value: formatCompactNumber(producedInPeriod), sub: `${stats.totalProductionRuns || 0} đợt sản xuất`, series: yearRows.map(r => r.structureProduced), color: '#10b981', trend: formatTrend(producedInPeriod, prevProducedInPeriod) })}
-            ${renderDesktopTabKpi({ scope: 'structures', panel: 'structures', icon: 'logo-xuatkho.png', label: 'XUẤT CT TRONG KỲ', value: formatCompactNumber(exportedInPeriod), sub: formatCompactMoney(exportedValueInPeriod), series: yearRows.map(r => r.structureExported), color: '#8b5cf6', trend: formatTrend(exportedInPeriod, prevExportedInPeriod) })}
-            ${renderDesktopTabKpi({ scope: 'structures', panel: 'structures', icon: 'logo-chuongthongbao.png', label: 'TỒN THẤP', value: structureSnapshot.lowCount || 0, sub: structureSnapshot.lowCount > 0 ? 'Cần sản xuất thêm' : 'Tất cả ổn', series: yearRows.map(r => r.structureLowCount), color: '#ef4444', trend: formatTrend(structureSnapshot.lowCount || 0, prevStructureSnapshot.lowCount || 0) })}
-            ${renderDesktopTabKpi({ scope: 'structures', panel: 'structures', icon: 'logo-trahang.png', label: 'TRẢ TỪ CT', value: formatCompactNumber(structureReturnedInPeriod), sub: 'Cấu kiện trả về', series: yearRows.map(r => r.structureReturned), color: '#60a5fa', trend: formatTrend(structureReturnedInPeriod, prevStructureReturnedInPeriod) })}
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('structures')">
+                <div class="kpi-icon"><img src="/images/mobile-icons/logo-tongcaukien.png" alt=""></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">TỔNG CẤU KIỆN</div>
+                    <div class="kpi-value">${stats.totalStructures || 0}</div>
+                    <div class="kpi-sub">Loại cấu kiện</div>
+                </div>
+            </div>
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('structures')">
+                <div class="kpi-icon"><img src="/images/mobile-icons/logo-kiemkekho.png" alt=""></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">ĐÃ SẢN XUẤT</div>
+                    <div class="kpi-value">${Number(stats.totalProduced || 0).toLocaleString('vi-VN')}</div>
+                    <div class="kpi-sub">${stats.totalProductionRuns || 0} đợt sản xuất</div>
+                </div>
+            </div>
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('structures')">
+                <div class="kpi-icon"><img src="/images/mobile-icons/logo-xuatkho.png" alt=""></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">ĐÃ XUẤT CT</div>
+                    <div class="kpi-value">${Number(stats.totalExported || 0).toLocaleString('vi-VN')}</div>
+                    <div class="kpi-sub">${formatMoneyVND(stats.totalExportValue || 0)}</div>
+                </div>
+            </div>
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('structures')">
+                <div class="kpi-icon"><img src="/images/mobile-icons/logo-chuongthongbao.png" alt=""></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">TỒN THẤP</div>
+                    <div class="kpi-value" style="color: ${stats.lowStockCount > 0 ? 'var(--danger-text)' : 'var(--success-text)'};">${stats.lowStockCount || 0}</div>
+                    <div class="kpi-sub">${stats.lowStockCount > 0 ? 'Cần sản xuất thêm' : 'Tất cả ổn'}</div>
+                </div>
+            </div>
         </div>
     `;
     
     // Tạo bảng top cấu kiện
     let topListHtml = '<div class="metric-sub" style="text-align:center;padding:20px;">Chưa có dữ liệu sản xuất</div>';
-    let topProducedRows = [];
-    const producedMap = new Map();
-    tabTxns.filter(t => t.type === 'produce').forEach(t => {
-        const structure = (state.data.structures || []).find(s => String(s.id) === String(t.mid));
-        const key = String(t.mid || structure?.id || '');
-        if (!key) return;
-        if (!producedMap.has(key)) producedMap.set(key, { name: structure?.name || t.mid, qty: 0, unit: structure?.unit || '' });
-        producedMap.get(key).qty += Number(t.qty || 0);
-    });
-    topProducedRows = [...producedMap.values()].sort((a, b) => b.qty - a.qty).slice(0, 8);
-    if (topProducedRows && topProducedRows.length > 0) {
+    if (stats.topProduced && stats.topProduced.length > 0) {
         topListHtml = `
             <div class="desktop-table-wrap">
                 <table style="min-width: 300px;">
@@ -1811,11 +1591,11 @@ if (tab === 'structures') {
                         </tr>
                     </thead>
                     <tbody>
-                        ${topProducedRows.map(p => `
+                        ${stats.topProduced.map(p => `
                             <tr>
                                 <td><strong>${escapeHtml(p.name)}</strong></td>
                                 <td style="text-align:right;font-weight:bold;color:var(--accent);">${Number(p.qty).toLocaleString('vi-VN')}</td>
-                                <td>${p.unit || ''}</td>
+                                <td>${p.unit}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -1825,7 +1605,7 @@ if (tab === 'structures') {
     }
     
     // Bảng tồn kho cấu kiện có phân trang
-    const stockStats = structureSnapshot.rows || [];
+    const stockStats = stats.stockStats || [];
     const structurePage = getPagedData('structures', stockStats);
     const paginatedData = structurePage.rows;
 
@@ -1885,25 +1665,41 @@ if (tab === 'structures') {
     `;
 }
 if (tab === 'forecast') {
-    const snapshot = getInventorySnapshot();
-    const urgentCount = (getMaterialSnapshotsAt(advancedFilters.dateTo) || []).filter(m => Number(m.snapshotQty || 0) <= Number(m.low || 0)).length;
-    const warningCount = (getMaterialSnapshotsAt(advancedFilters.dateTo) || []).filter(m => Number(m.snapshotQty || 0) > Number(m.low || 0) && Number(m.snapshotQty || 0) <= Number(m.low || 0) * 1.5).length;
-    const goodCount = Math.max(0, state.data.materials.length - urgentCount - warningCount);
-    const returnedItems = new Set(tabTxns.filter(t => ['return', 'structure_return', 'return_from_sw'].includes(t.type)).map(t => String(t.mid || t.materialId || ''))).size;
-    const returnedValue = tabTxns.filter(t => ['return', 'structure_return', 'return_from_sw'].includes(t.type)).reduce((sum, t) => sum + Number(t.totalAmount || 0), 0);
-    const prevMaterials = getMaterialSnapshotsAt(comparison.previousEnd) || [];
-    const prevUrgentCount = prevMaterials.filter(m => Number(m.snapshotQty || 0) <= Number(m.low || 0)).length;
-    const prevWarningCount = prevMaterials.filter(m => Number(m.snapshotQty || 0) > Number(m.low || 0) && Number(m.snapshotQty || 0) <= Number(m.low || 0) * 1.5).length;
-    const prevGoodCount = Math.max(0, state.data.materials.length - prevUrgentCount - prevWarningCount);
-    const prevReturnedItems = new Set(prevTxns.filter(t => ['return', 'structure_return', 'return_from_sw'].includes(t.type)).map(t => String(t.mid || t.materialId || ''))).size;
     return `
         ${renderFiltersAndTabs()}
         <div class="kpi-grid" style="margin-bottom:16px;">
-            ${renderDesktopTabKpi({ scope: 'forecast', panel: 'materials', icon: 'logo-tongvattu.png', label: 'TỔNG VẬT TƯ', value: state.data.materials.length, sub: 'Đang theo dõi', series: yearRows.map(r => r.stockQty), color: '#1f7aff', trend: formatTrend(state.data.materials.length, state.data.materials.length) })}
-            ${renderDesktopTabKpi({ scope: 'forecast', panel: 'alerts', icon: 'logo-chuongthongbao.png', label: 'CẦN NHẬP GẤP', value: urgentCount, sub: 'Dưới ngưỡng an toàn', series: yearRows.map(r => r.lowCount), color: '#ef4444', trend: formatTrend(urgentCount, prevUrgentCount) })}
-            ${renderDesktopTabKpi({ scope: 'forecast', panel: 'alerts', icon: 'logo-dubao.png', label: 'SẮP HẾT', value: warningCount, sub: 'Cần theo dõi', series: yearRows.map(r => r.lowCount), color: '#f59e0b', trend: formatTrend(warningCount, prevWarningCount) })}
-            ${renderDesktopTabKpi({ scope: 'forecast', panel: 'stockQty', icon: 'logo-tongquanlykho.png', label: 'ĐỦ HÀNG', value: goodCount, sub: formatCompactNumber(snapshot.qty), series: yearRows.map(r => r.stockQty), color: '#10b981', trend: formatTrend(goodCount, prevGoodCount) })}
-            ${renderDesktopTabKpi({ scope: 'forecast', panel: 'recent', icon: 'logo-trahang.png', label: 'HÀNG TRẢ VỀ', value: returnedItems, sub: formatCompactMoney(returnedValue), series: yearRows.map(r => Math.max(0, r.exportValue * .04)), color: '#60a5fa', trend: formatTrend(returnedItems, prevReturnedItems) })}
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('materials')">
+                <div class="kpi-icon"><img src="/images/mobile-icons/logo-tongvattu.png" alt=""></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">TỔNG VẬT TƯ</div>
+                    <div class="kpi-value">${state.data.materials.length}</div>
+                    <div class="kpi-sub">Đang theo dõi</div>
+                </div>
+            </div>
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('alerts')">
+                <div class="kpi-icon"><img src="/images/mobile-icons/logo-chuongthongbao.png" alt=""></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">CẦN NHẬP GẤP</div>
+                    <div class="kpi-value" id="forecast-urgent-count" style="color:var(--danger-text);">—</div>
+                    <div class="kpi-sub">Dưới ngưỡng an toàn</div>
+                </div>
+            </div>
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('alerts')">
+                <div class="kpi-icon"><img src="/images/mobile-icons/logo-dubao.png" alt=""></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">SẮP HẾT</div>
+                    <div class="kpi-value" id="forecast-warning-count" style="color:var(--warn-text);">—</div>
+                    <div class="kpi-sub">Cần theo dõi</div>
+                </div>
+            </div>
+            <div class="kpi-card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('stockQty')">
+                <div class="kpi-icon"><img src="/images/mobile-icons/logo-tongquanlykho.png" alt=""></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">ĐỦ HÀNG</div>
+                    <div class="kpi-value" id="forecast-good-count" style="color:var(--success-text);">—</div>
+                    <div class="kpi-sub">An toàn</div>
+                </div>
+            </div>
         </div>
         <div class="card desktop-click-card" onclick="window.openDesktopDashboardPanel && window.openDesktopDashboardPanel('alerts')">
     <div id="forecast-container">
@@ -2026,11 +1822,9 @@ setTimeout(() => {
         if (topProjectsChart) topProjectsChart.destroy();
         if (window._budgetPie) window._budgetPie.destroy();
         
-        const chartTxns = getFilteredTransactions(false);
-        const sourceProjects = filterProjects.projectId === 'all' ? state.data.projects : state.data.projects.filter(p => p.id === filterProjects.projectId);
-        const projects2 = sourceProjects.map(p => {
-            const u = chartTxns.filter(t=>t.projectId===p.id&&(t.type==='usage'||t.type==='structure_export')).reduce((s,t)=>s+Number(t.totalAmount||0),0);
-            const r = chartTxns.filter(t=>t.projectId===p.id&&(t.type==='return'||t.type==='structure_return')).reduce((s,t)=>s+Number(t.totalAmount||0),0);
+        const projects2 = state.data.projects.map(p => {
+            const u = state.data.transactions.filter(t=>t.projectId===p.id&&t.type==='usage').reduce((s,t)=>s+Number(t.totalAmount||0),0);
+            const r = state.data.transactions.filter(t=>t.projectId===p.id&&t.type==='return').reduce((s,t)=>s+Number(t.totalAmount||0),0);
             return { name: p.name.length>20?p.name.substring(0,20)+'...':p.name, spent: u-r, budget: Number(p.budget||0) };
         }).sort((a,b)=>b.spent-a.spent).slice(0,5);
         
@@ -2050,14 +1844,14 @@ setTimeout(() => {
         });
         
         const totalUsed = projects2.reduce((s,p)=>s+p.spent,0);
-        const totalBud = sourceProjects.reduce((s,p)=>s+Number(p.budget||0),0);
+        const totalBud = state.data.projects.reduce((s,p)=>s+Number(p.budget||0),0);
         window._budgetPie = new Chart(pieCtx, {
             type: 'doughnut', data: {
                 labels: ['Đã dùng','Còn lại'],
-                datasets: [{ data: [totalUsed, Math.max(0,totalBud-totalUsed)], backgroundColor: ['#f59e0b','#10b981'], borderWidth: 0, borderRadius: 4 }]
+                datasets: [{ data: [totalUsed, Math.max(0,totalBud-totalUsed)], backgroundColor: ['#F09595','#97C459'], borderWidth: 0, borderRadius: 4 }]
             },
             options: { responsive:true, maintainAspectRatio:false,
-                plugins: { legend:{ display:false } }
+                plugins: { legend:{ position:'bottom' } }
             }
         });
     }
@@ -2068,10 +1862,8 @@ setTimeout(() => {
         if (topSuppliersChart) topSuppliersChart.destroy();
         if (window._supPie) window._supPie.destroy();
         
-        const chartTxns2 = getFilteredTransactions(false);
-        const sourceSuppliers = filterSuppliers.supplierId === 'all' ? state.data.suppliers : state.data.suppliers.filter(s => s.id === filterSuppliers.supplierId);
-        const sups2 = sourceSuppliers.map(s => {
-            const total = chartTxns2.filter(t=>t.type==='purchase'&&t.supplierId===s.id).reduce((a,t)=>a+Number(t.totalAmount||0),0);
+        const sups2 = state.data.suppliers.map(s => {
+            const total = state.data.transactions.filter(t=>t.type==='purchase'&&t.supplierId===s.id).reduce((a,t)=>a+Number(t.totalAmount||0),0);
             return { name: s.name.length>20?s.name.substring(0,20)+'...':s.name, total };
         }).sort((a,b)=>b.total-a.total).slice(0,5);
         
@@ -2091,14 +1883,14 @@ setTimeout(() => {
         });
         
         const top5Total = sups2.reduce((s,p)=>s+p.total,0);
-        const allTotal = sourceSuppliers.reduce((s,p)=>{ const t=chartTxns2.filter(x=>x.type==='purchase'&&x.supplierId===p.id).reduce((a,x)=>a+Number(x.totalAmount||0),0); return s+t; },0);
+        const allTotal = state.data.suppliers.reduce((s,p)=>{ const t=state.data.transactions.filter(x=>x.type==='purchase'&&x.supplierId===p.id).reduce((a,x)=>a+Number(x.totalAmount||0),0); return s+t; },0);
         window._supPie = new Chart(pieCtx2, {
             type: 'doughnut', data: {
                 labels: [...sups2.map(s=>s.name), 'Khác'],
-                datasets: [{ data: [...sups2.map(s=>s.total), Math.max(0,allTotal-top5Total)], backgroundColor: ['#10b981','#1f7aff','#f59e0b','#8b5cf6','#94a3b8','#64748b'], borderWidth: 0, borderRadius: 4 }]
+                datasets: [{ data: [...sups2.map(s=>s.total), Math.max(0,allTotal-top5Total)], backgroundColor: ['#378ADD','#97C459','#FAC775','#F09595','#85B7EB','#BA7517'], borderWidth: 0, borderRadius: 4 }]
             },
             options: { responsive:true, maintainAspectRatio:false,
-                plugins: { legend:{ display:false } }
+                plugins: { legend:{ position:'bottom', labels:{ padding:10, usePointStyle:true } } }
             }
         });
     }
@@ -2138,20 +1930,24 @@ function renderFilterProjects() {
     var opts = projects.map(function(p) {
         return '<option value="' + p.id + '"' + (filterProjects.projectId===p.id?' selected':'') + '>' + p.name + '</option>';
     }).join('');
-    const period = getDashboardFilterPeriod('projects');
-    return '<div class="card desktop-overview-filter">' +
-        '<div class="desktop-overview-filter-row">' +
-        '<span style="font-weight:600;">Lọc công trình:</span>' +
-        '<button type="button" class="desktop-period-filter-btn" onclick="openDesktopPeriodSheet(\'projects\')"><span>' + periodButtonLabel(period) + '</span><small>' + periodLabel(period) + '</small></button>' +
+    return '<div class="card" style="margin-bottom:16px;padding:10px 14px;">' +
+        '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
+        '<span style="font-weight:600;">🔧 LỌC CÔNG TRÌNH:</span>' +
+        '<input type="date" id="fproj-date-from" value="' + filterProjects.dateFrom + '" style="width:130px;">' +
+        '<input type="date" id="fproj-date-to" value="' + filterProjects.dateTo + '" style="width:130px;">' +
         '<select id="fproj-project" style="width:200px;">' + opts + '</select>' +
-        '<button class="sm primary" onclick="applyFilterProjects()">Áp dụng</button>' +
-        '<button class="sm" onclick="resetFilterProjects()">Bỏ</button>' +
+        '<button class="sm primary" onclick="applyFilterProjects()">🔍 Áp dụng</button>' +
+        '<button class="sm" onclick="resetFilterProjects()">🗑️ Bỏ</button>' +
         '</div></div>';
 }
 
 window.applyFilterProjects = function() {
+    filterProjects.dateFrom = document.getElementById('fproj-date-from')?.value || '';
+    filterProjects.dateTo = document.getElementById('fproj-date-to')?.value || '';
     filterProjects.projectId = document.getElementById('fproj-project')?.value || 'all';
-    syncAdvancedFiltersForTab('projects');
+    advancedFilters.dateFrom = filterProjects.dateFrom;
+    advancedFilters.dateTo = filterProjects.dateTo;
+    advancedFilters.projectId = filterProjects.projectId;
     clearDashboardCache();
     updateDashboardContent();
 };
@@ -2170,20 +1966,24 @@ function renderFilterSuppliers() {
     var opts = suppliers.map(function(s) {
         return '<option value="' + s.id + '"' + (filterSuppliers.supplierId===s.id?' selected':'') + '>' + s.name + '</option>';
     }).join('');
-    const period = getDashboardFilterPeriod('suppliers');
-    return '<div class="card desktop-overview-filter">' +
-        '<div class="desktop-overview-filter-row">' +
-        '<span style="font-weight:600;">Lọc nhà cung cấp:</span>' +
-        '<button type="button" class="desktop-period-filter-btn" onclick="openDesktopPeriodSheet(\'suppliers\')"><span>' + periodButtonLabel(period) + '</span><small>' + periodLabel(period) + '</small></button>' +
+    return '<div class="card" style="margin-bottom:16px;padding:10px 14px;">' +
+        '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
+        '<span style="font-weight:600;">🔧 LỌC NHÀ CUNG CẤP:</span>' +
+        '<input type="date" id="fsup-date-from" value="' + filterSuppliers.dateFrom + '" style="width:130px;">' +
+        '<input type="date" id="fsup-date-to" value="' + filterSuppliers.dateTo + '" style="width:130px;">' +
         '<select id="fsup-supplier" style="width:200px;">' + opts + '</select>' +
-        '<button class="sm primary" onclick="applyFilterSuppliers()">Áp dụng</button>' +
-        '<button class="sm" onclick="resetFilterSuppliers()">Bỏ</button>' +
+        '<button class="sm primary" onclick="applyFilterSuppliers()">🔍 Áp dụng</button>' +
+        '<button class="sm" onclick="resetFilterSuppliers()">🗑️ Bỏ</button>' +
         '</div></div>';
 }
 
 window.applyFilterSuppliers = function() {
+    filterSuppliers.dateFrom = document.getElementById('fsup-date-from')?.value || '';
+    filterSuppliers.dateTo = document.getElementById('fsup-date-to')?.value || '';
     filterSuppliers.supplierId = document.getElementById('fsup-supplier')?.value || 'all';
-    syncAdvancedFiltersForTab('suppliers');
+    advancedFilters.dateFrom = filterSuppliers.dateFrom;
+    advancedFilters.dateTo = filterSuppliers.dateTo;
+    advancedFilters.supplierId = filterSuppliers.supplierId;
     clearDashboardCache();
     updateDashboardContent();
 };
@@ -2198,12 +1998,14 @@ window.resetFilterSuppliers = function() {
 };
 
 function renderFilterOverview() {
-    const period = getDashboardFilterPeriod('overview');
-    return '<div class="card desktop-overview-filter"><div class="desktop-overview-filter-row"><span style="font-weight:600;">Lọc tổng quan:</span><button type="button" class="desktop-period-filter-btn" onclick="openDesktopPeriodSheet(\'overview\')"><span>' + periodButtonLabel(period) + '</span><small>' + periodLabel(period) + '</small></button><select id="fover-type" style="width:140px;"><option value="all">Tất cả</option><option value="purchase"' + (filterOverview.transactionType==='purchase'?' selected':'') + '>Nhập</option><option value="usage"' + (filterOverview.transactionType==='usage'?' selected':'') + '>Xuất</option></select><button class="sm primary" onclick="applyFilterOverview()">Áp dụng</button><button class="sm" onclick="resetFilterOverview()">Bỏ</button></div></div>';
+    const period = currentOverviewPeriod();
+    return '<div class="card desktop-overview-filter"><div class="desktop-overview-filter-row"><span style="font-weight:600;">Lọc tổng quan:</span><button type="button" class="desktop-period-filter-btn" onclick="openDesktopPeriodSheet()"><span>' + periodButtonLabel(period) + '</span><small>' + periodLabel(period) + '</small></button><select id="fover-type" style="width:140px;"><option value="all">Tất cả</option><option value="purchase"' + (filterOverview.transactionType==='purchase'?' selected':'') + '>Nhập</option><option value="usage"' + (filterOverview.transactionType==='usage'?' selected':'') + '>Xuất</option></select><button class="sm primary" onclick="applyFilterOverview()">Áp dụng</button><button class="sm" onclick="resetFilterOverview()">Bỏ</button></div></div>';
 }
 window.applyFilterOverview = function() {
     filterOverview.transactionType = document.getElementById('fover-type')?.value || 'all';
-    syncAdvancedFiltersForTab('overview');
+    advancedFilters.dateFrom = filterOverview.dateFrom;
+    advancedFilters.dateTo = filterOverview.dateTo;
+    advancedFilters.transactionType = filterOverview.transactionType;
     clearDashboardCache(); updateDashboardContent();
 };
 window.resetFilterOverview = function() {
@@ -2212,10 +2014,9 @@ window.resetFilterOverview = function() {
     clearDashboardCache(); updateDashboardContent();
 };
 
-window.openDesktopPeriodSheet = function(scope = currentDashboardTab || 'overview') {
+window.openDesktopPeriodSheet = function() {
     document.getElementById('desktop-period-sheet')?.remove();
-    const activeScope = ['overview', 'projects', 'suppliers', 'structures', 'forecast'].includes(scope) ? scope : 'overview';
-    const period = getDashboardFilterPeriod(activeScope);
+    const period = currentOverviewPeriod();
     const monthValue = String(period.start || '').slice(0, 7);
     const selectedYear = Number(monthValue.slice(0, 4)) || new Date().getFullYear();
     const yearsHtml = availableDashboardYears().map(year =>
@@ -2227,7 +2028,6 @@ window.openDesktopPeriodSheet = function(scope = currentDashboardTab || 'overvie
     const sheet = document.createElement('div');
     sheet.id = 'desktop-period-sheet';
     sheet.className = 'desktop-period-sheet';
-    sheet.dataset.scope = activeScope;
     sheet.innerHTML = `
         <div class="desktop-period-backdrop" onclick="this.parentElement.remove()"></div>
         <section class="desktop-period-panel" onclick="event.stopPropagation()">
@@ -2256,8 +2056,7 @@ window.openDesktopPeriodSheet = function(scope = currentDashboardTab || 'overvie
 window.renderDesktopPeriodMonths = function(year) {
     const list = document.getElementById('desktop-period-month-list');
     if (!list) return;
-    const scope = document.getElementById('desktop-period-sheet')?.dataset.scope || 'overview';
-    const period = getDashboardFilterPeriod(scope);
+    const period = currentOverviewPeriod();
     const monthValue = String(period.start || '').slice(0, 7);
     list.innerHTML = monthsOfYear(Number(year) || new Date().getFullYear()).map(month =>
         '<button type="button" class="' + (monthValue === month ? 'active' : '') + '" onclick="setDesktopOverviewMonth(\'' + month + '\')">' + monthDisplay(month) + '</button>'
@@ -2271,63 +2070,37 @@ window.setDesktopOverviewMonth = function(value) {
     const start = new Date(year, month - 1, 1);
     const monthEnd = new Date(year, month, 0);
     const end = today.getFullYear() === year && today.getMonth() === month - 1 && today < monthEnd ? today : monthEnd;
-    const scope = document.getElementById('desktop-period-sheet')?.dataset.scope || 'overview';
-    setDashboardFilterPeriod(scope, toInputDate(start), toInputDate(end));
-    syncAdvancedFiltersForTab(scope);
+    filterOverview.dateFrom = toInputDate(start);
+    filterOverview.dateTo = toInputDate(end);
+    advancedFilters.dateFrom = filterOverview.dateFrom;
+    advancedFilters.dateTo = filterOverview.dateTo;
     document.getElementById('desktop-period-sheet')?.remove();
     clearDashboardCache();
     updateDashboardContent();
 };
 
 window.applyDesktopOverviewPeriod = function() {
-    const scope = document.getElementById('desktop-period-sheet')?.dataset.scope || 'overview';
-    setDashboardFilterPeriod(
-        scope,
-        parseDateInputVN(document.getElementById('desktop-period-start')?.value || ''),
-        parseDateInputVN(document.getElementById('desktop-period-end')?.value || '')
-    );
-    syncAdvancedFiltersForTab(scope);
+    filterOverview.dateFrom = parseDateInputVN(document.getElementById('desktop-period-start')?.value || '');
+    filterOverview.dateTo = parseDateInputVN(document.getElementById('desktop-period-end')?.value || '');
+    advancedFilters.dateFrom = filterOverview.dateFrom;
+    advancedFilters.dateTo = filterOverview.dateTo;
     document.getElementById('desktop-period-sheet')?.remove();
     clearDashboardCache();
     updateDashboardContent();
 };
 
 function renderFilterStructures() {
-    const period = getDashboardFilterPeriod('structures');
-    return '<div class="card desktop-overview-filter">' +
-        '<div class="desktop-overview-filter-row">' +
-        '<span style="font-weight:600;">Lọc cấu kiện:</span>' +
-        '<button type="button" class="desktop-period-filter-btn" onclick="openDesktopPeriodSheet(\'structures\')"><span>' + periodButtonLabel(period) + '</span><small>' + periodLabel(period) + '</small></button>' +
-        '<button class="sm primary" onclick="applyFilterStructures()">Áp dụng</button>' +
-        '<button class="sm" onclick="resetFilterStructures()">Bỏ</button>' +
-        '</div></div>';
+    return '<div class="card" style="margin-bottom:16px;padding:10px 14px;"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><span style="font-weight:600;">🔧 LỌC CẤU KIỆN:</span><input type="date" id="fstr-date-from" value="' + filterStructures.dateFrom + '" style="width:130px;"><input type="date" id="fstr-date-to" value="' + filterStructures.dateTo + '" style="width:130px;"><button class="sm primary" onclick="applyFilterStructures()">🔍 Áp dụng</button><button class="sm" onclick="resetFilterStructures()">🗑️ Bỏ</button></div></div>';
 }
 window.applyFilterStructures = function() {
-    syncAdvancedFiltersForTab('structures');
+    filterStructures.dateFrom = document.getElementById('fstr-date-from')?.value || '';
+    filterStructures.dateTo = document.getElementById('fstr-date-to')?.value || '';
+    advancedFilters.dateFrom = filterStructures.dateFrom;
+    advancedFilters.dateTo = filterStructures.dateTo;
     clearDashboardCache(); updateDashboardContent();
 };
 window.resetFilterStructures = function() {
     filterStructures = { dateFrom: '', dateTo: '' };
-    advancedFilters.dateFrom = ''; advancedFilters.dateTo = '';
-    clearDashboardCache(); updateDashboardContent();
-};
-
-function renderFilterForecast() {
-    const period = getDashboardFilterPeriod('forecast');
-    return '<div class="card desktop-overview-filter">' +
-        '<div class="desktop-overview-filter-row">' +
-        '<span style="font-weight:600;">Lọc dự báo:</span>' +
-        '<button type="button" class="desktop-period-filter-btn" onclick="openDesktopPeriodSheet(\'forecast\')"><span>' + periodButtonLabel(period) + '</span><small>' + periodLabel(period) + '</small></button>' +
-        '<button class="sm primary" onclick="applyFilterForecast()">Áp dụng</button>' +
-        '<button class="sm" onclick="resetFilterForecast()">Bỏ</button>' +
-        '</div></div>';
-}
-window.applyFilterForecast = function() {
-    syncAdvancedFiltersForTab('forecast');
-    clearDashboardCache(); updateDashboardContent();
-};
-window.resetFilterForecast = function() {
-    filterForecast = { dateFrom: '', dateTo: '' };
     advancedFilters.dateFrom = ''; advancedFilters.dateTo = '';
     clearDashboardCache(); updateDashboardContent();
 };
