@@ -1,0 +1,21 @@
+{
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js",
+    "test:mobile": "node --no-warnings scripts/smoke-mobile-runtime.mjs",
+    "seed:demo": "node scripts/reset-demo-db.js --yes"
+  },
+  "dependencies": {
+    "@socket.io/redis-adapter": "^8.3.0",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
+    "pg": "^8.20.0",
+    "redis": "^5.12.1",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^4.3.0"
+  }
+}
