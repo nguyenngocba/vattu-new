@@ -1,0 +1,404 @@
+.m-project-detail-hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 17px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.11);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    0 14px 34px rgba(0,0,0,.28);
+}
+
+.m-project-detail-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: .92;
+  pointer-events: none;
+}
+
+.m-project-detail-hero::after {
+  content: "";
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  right: -58px;
+  top: -70px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.16);
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+.m-project-detail-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.m-project-detail-hero.safe::before {
+  background:
+    radial-gradient(circle at 84% 12%, rgba(100,210,255,.28), transparent 42%),
+    linear-gradient(145deg, rgba(20,125,105,.42), rgba(15,22,36,.76));
+}
+
+.m-project-detail-hero.warn::before {
+  background:
+    radial-gradient(circle at 84% 12%, rgba(250,199,117,.30), transparent 42%),
+    linear-gradient(145deg, rgba(186,117,23,.42), rgba(22,18,28,.78));
+}
+
+.m-project-detail-hero.danger::before {
+  background:
+    radial-gradient(circle at 84% 12%, rgba(255,127,120,.32), transparent 42%),
+    linear-gradient(145deg, rgba(163,45,45,.48), rgba(24,15,24,.78));
+}
+
+.m-project-detail-hero small,
+.m-project-detail-hero span {
+  display: block;
+  color: rgba(245,247,251,.66);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.m-project-detail-hero strong {
+  display: block;
+  margin: 5px 0 4px;
+  font-size: 23px;
+  line-height: 1.1;
+  color: #fff;
+  letter-spacing: 0;
+}
+
+.m-project-detail-pct {
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 950;
+  background: rgba(255,255,255,.13);
+  border: 1px solid rgba(255,255,255,.24);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+}
+
+.m-project-detail-bar {
+  height: 8px;
+  margin: 12px 0 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  overflow: hidden;
+}
+
+.m-project-detail-bar div {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.m-project-detail-bar.safe div {
+  background: linear-gradient(90deg, #20c997, #64d2ff);
+}
+
+.m-project-detail-bar.warn div {
+  background: linear-gradient(90deg, #f59e0b, #facc15);
+}
+
+.m-project-detail-bar.danger div {
+  background: linear-gradient(90deg, #ef4444, #fb7185);
+}
+
+.m-project-detail-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 16px;
+}
+
+.m-project-detail-kpis > div {
+  min-width: 0;
+  padding: 10px 9px;
+  border-radius: 15px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.052);
+}
+
+.m-project-detail-kpis small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.m-project-detail-kpis strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.m-project-detail-kpis .usage {
+  border-color: rgba(239,68,68,.2);
+  background: rgba(239,68,68,.08);
+}
+
+.m-project-detail-kpis .return {
+  border-color: rgba(34,197,94,.2);
+  background: rgba(34,197,94,.08);
+}
+
+.m-project-detail-kpis .net {
+  border-color: rgba(55,138,221,.22);
+  background: rgba(55,138,221,.09);
+}
+/* ===== MOBILE PROJECT DETAIL LOWER FIX ===== */
+#m-project-detail-modal .m-section-title {
+  margin: 16px 2px 9px;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+#m-project-detail-modal .m-project-detail-list {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 18px;
+}
+
+#m-project-detail-modal .m-project-detail-material {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(255,255,255,.07), rgba(255,255,255,.028));
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+#m-project-detail-modal .m-project-detail-material > div {
+  min-width: 0;
+}
+
+#m-project-detail-modal .m-project-detail-material strong {
+  display: block;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#m-project-detail-modal .m-project-detail-material small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+#m-project-detail-modal .m-project-detail-material > div:last-child {
+  text-align: right;
+  min-width: 92px;
+}
+
+#m-project-detail-modal .m-project-detail-material > div:last-child span {
+  display: block;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+#m-project-detail-modal .m-project-detail-material em {
+  display: block;
+  margin-top: 4px;
+  color: var(--accent-text);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+#m-project-detail-modal .m-project-detail-txn {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 11px;
+  min-height: 54px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(255,255,255,.065), rgba(255,255,255,.025));
+  border: 1px solid rgba(255,255,255,.075);
+}
+
+#m-project-detail-modal .m-project-detail-txn .m-txn-icon {
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  font-size: 15px !important;
+  display: grid !important;
+  place-items: center !important;
+}
+
+#m-project-detail-modal .m-project-detail-txn > div:nth-child(2) {
+  min-width: 0;
+}
+
+#m-project-detail-modal .m-project-detail-txn strong {
+  display: block;
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#m-project-detail-modal .m-project-detail-txn small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#m-project-detail-modal .m-project-detail-txn > span {
+  min-width: 86px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+#m-project-detail-modal .m-project-detail-txn > span.success {
+  color: #8fdc83;
+}
+
+#m-project-detail-modal .m-project-detail-txn > span.danger {
+  color: #ff7f78;
+}
+
+#m-project-detail-modal .m-project-detail-actions {
+  margin-bottom: 12px;
+}
+#m-project-detail-modal .m-project-detail-txn * {
+  pointer-events: auto !important;
+}
+
+#m-project-detail-modal .m-project-detail-txn .m-txn-icon {
+  margin: 0 !important;
+  border-radius: 10px !important;
+  align-self: center !important;
+}
+
+#m-project-detail-modal .m-project-detail-material,
+#m-project-detail-modal .m-project-detail-txn {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+#m-project-detail-modal .m-project-detail-list,
+#m-project-detail-modal .m-section-title {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+#m-project-detail-modal .m-project-detail-actions button {
+  min-width: 0 !important;
+  white-space: nowrap !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+.ios-liquid .m-project-bar {
+  height: 7px !important;
+  background: rgba(255,255,255,.105) !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+}
+
+.ios-liquid .m-project-fill {
+  height: 100% !important;
+  min-width: 3px;
+  border-radius: 999px !important;
+  box-shadow: 0 0 12px currentColor;
+}
+
+/* Light mode has to live in this lazy-loaded file so project detail overrides win. */
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero {
+  background:
+    radial-gradient(circle at 88% 10%, rgba(37,99,235,.12), transparent 36%),
+    linear-gradient(145deg, #fff, #eef6ff);
+  border-color: rgba(37,99,235,.16);
+  box-shadow: 0 14px 32px rgba(15,23,42,.08);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero.safe::before,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero.warn::before,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero.danger::before {
+  background:
+    radial-gradient(circle at 84% 12%, rgba(37,99,235,.14), transparent 42%),
+    linear-gradient(145deg, rgba(255,255,255,.62), rgba(238,246,255,.72));
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero::after {
+  background: rgba(37,99,235,.10);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero small,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero span,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-kpis small,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-material small,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-txn small {
+  color: #64748b;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero strong,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-pct,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-kpis strong,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-material strong,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-material > div:last-child span,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-txn strong {
+  color: #0f172a;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-pct,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-kpis > div,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-material,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-txn {
+  background: #fff;
+  border-color: rgba(148,163,184,.22);
+  box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-bar,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-bar {
+  background: #e2e8f0 !important;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-material em {
+  color: #1d4ed8;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-txn > span.success {
+  color: #047857;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-txn > span.danger {
+  color: #dc2626;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-actions button {
+  color: #334155;
+  background: #fff;
+  border-color: rgba(148,163,184,.24);
+}

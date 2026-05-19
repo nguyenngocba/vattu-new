@@ -2,6 +2,12 @@
 ├── .codex_backups
 │   ├── charts.before-tab-redesign.js
 │   └── desktop-dashboard.before-tab-redesign.css
+├── .env.example
+├── .gitignore
+├── DEPLOY.md
+├── README.md
+├── ai_context
+│   └── project_tree.txt
 ├── css
 │   ├── base.css
 │   ├── desktop
@@ -23,9 +29,50 @@
 │   │   ├── mobile-theme.css
 │   │   └── mobile-transactions.css
 │   └── style.css
-├── DEPLOY.md
-├── .env.example
-├── .gitignore
+├── frontend-react
+│   ├── .gitignore
+│   ├── README.md
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── public
+│   │   ├── favicon.svg
+│   │   └── icons.svg
+│   ├── src
+│   │   ├── App.css
+│   │   ├── App.tsx
+│   │   ├── app
+│   │   │   ├── AppLayout.tsx
+│   │   │   ├── RightPanel.tsx
+│   │   │   ├── Sidebar.tsx
+│   │   │   └── Topbar.tsx
+│   │   ├── assets
+│   │   │   ├── hero.png
+│   │   │   ├── react.svg
+│   │   │   └── vite.svg
+│   │   ├── engine
+│   │   │   ├── renderer
+│   │   │   ├── simulation
+│   │   │   ├── spatial
+│   │   │   └── viewport
+│   │   ├── index.css
+│   │   ├── main.tsx
+│   │   ├── modules
+│   │   │   ├── components
+│   │   │   ├── inventory
+│   │   │   ├── projects
+│   │   │   └── yard
+│   │   ├── pages
+│   │   ├── services
+│   │   ├── shared
+│   │   └── stores
+│   ├── tailwind.config.js
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   └── vite.config.ts
+├── frontend_package.txt
 ├── images
 │   ├── login-factory-bg.jpg
 │   ├── logo-bg.jpg
@@ -34,10 +81,10 @@
 │   ├── logo-ct.png
 │   ├── logo-ncc.png
 │   ├── logo-nk.png
-│   ├── logo.png
 │   ├── logo-qlk.png
 │   ├── logo-tk.png
 │   ├── logo-tv.png
+│   ├── logo.png
 │   ├── material-groups
 │   │   ├── bu-long-oc-vit.png
 │   │   ├── ong-thep.png
@@ -60,8 +107,8 @@
 │       ├── logo-tongcaukien.png
 │       ├── logo-tongcongtrinh.png
 │       ├── logo-tongnhacungcap.png
-│       ├── logo-tongquanlykho.png
 │       ├── logo-tongquan.png
+│       ├── logo-tongquanlykho.png
 │       ├── logo-tongvattu.png
 │       ├── logo-trahang.png
 │       ├── logo-trangchu.png
@@ -73,9 +120,9 @@
 │   ├── app.js
 │   ├── mobile
 │   │   ├── mobile_charts.js
+│   │   ├── mobile_dashboard.js
 │   │   ├── mobile_dashboard_data.js
 │   │   ├── mobile_dashboard_format.js
-│   │   ├── mobile_dashboard.js
 │   │   ├── mobile_dashboard_render.js
 │   │   ├── mobile_files.js
 │   │   ├── mobile_forms.js
@@ -108,10 +155,8 @@
 │       ├── transactions.js
 │       ├── uploads.js
 │       └── utils.js
-├── package.json
 ├── package-lock.json
-├── project_tree.txt
-├── README.md
+├── package.json
 ├── schema.sql
 ├── scripts
 │   ├── reset-demo-db.js
@@ -130,77 +175,14 @@
 │   │   ├── settings.js
 │   │   ├── structure-export-return.js
 │   │   ├── structure-production.js
+│   │   ├── structure-warehouse.js
 │   │   ├── structures-basic.js
 │   │   ├── structures.js
-│   │   ├── structure-warehouse.js
 │   │   ├── suppliers.js
 │   │   ├── transactions.js
 │   │   └── uploads.js
 │   └── utils
 │       └── ids.js
-├── server.js
-└── uploads
-    ├── produce
-    │   ├── produce_1778646586014_4omx_1778646585752.png
-    │   ├── produce_1778646640635_plak_1778646640338.png
-    │   └── produce_1778731280805_dwm3_1778731280805.txt
-    ├── purchase
-    │   ├── purchase_1778644283935_a094_1778644283691.png
-    │   ├── purchase_1778644576981_hyxa_1778644576709.png
-    │   ├── purchase_1778647851871_fyz4_1778647851576.png
-    │   ├── purchase_1778723001045_jnqy_1778723000930.txt
-    │   ├── purchase_1778739567706_dod8_1778739567773.txt
-    │   ├── purchase_1778739597538_uswi_1778739597593.txt
-    │   ├── purchase_1778819145279_mkl1_1778819145999.xlsx
-    │   ├── purchase_1778825875438_uczg_1778825876161.png
-    │   ├── purchase_1778827339348_lduz_1778827340080.png
-    │   ├── purchase_1778827710827_e3lk_1778827711590.png
-    │   ├── purchase_1778827716597_4b03_1778827717332.png
-    │   ├── purchase_1778827724730_nw15_1778827725483.png
-    │   ├── purchase_1778827724732_hood_1778827725499.png
-    │   ├── purchase_1778827724734_2i0a_1778827725514.png
-    │   ├── purchase_1778827896644_7i41_1778827897405.png
-    │   ├── purchase_1778827904455_kgmk_1778827905199.png
-    │   ├── purchase_1778828553709_iw4a_1778828554562.xls
-    │   ├── purchase_1778828563111_8cba_1778828563867.xlsx
-    │   ├── purchase_1778838593666_18yk_1778838594775.png
-    │   ├── purchase_1778838597965_egvk_1778838599067.xlsm
-    │   ├── purchase_1778842663388_grua_1778842664643.pdf
-    │   ├── purchase_1778842680735_2ahv_1778842681898.png
-    │   ├── purchase_1779088679895_6anc_1779088680281.png
-    │   ├── purchase_1779088687678_6sot_1779088688018.xls
-    │   └── purchase_1779089021349_dq9s_1779089021602.jpg
-    ├── return
-    │   ├── return_1778644701519_7h73_1778644701338.png
-    │   ├── return_1778644848950_o5ro_1778644848679.xlsm
-    │   └── return_1778646821301_pgvr_1778646821003.png
-    ├── return_structure
-    ├── structure_export
-    │   ├── structure_export_1778646710567_qle6_1778646710269.png
-    │   ├── structure_export_1778646749380_m0tq_1778646749104.png
-    │   ├── structure_export_1778731338525_tphv_1778731338514.txt
-    │   ├── structure_export_1778731965505_s4pd_1778731965505.txt
-    │   ├── structure_export_1778734964543_dv75_1778734964566.txt
-    │   ├── structure_export_1778739790391_0u07_1778739790451.txt
-    │   └── structure_export_1778739801865_f6t7_1778739801922.txt
-    ├── structure_return
-    │   ├── structure_return_1778646881763_ksbh_1778646881476.png
-    │   └── structure_return_1778739892815_me0j_1778739892871.txt
-    ├── temp
-    ├── transfer_sw
-    │   ├── transfer_sw_1778646764227_486l_1778646763933.png
-    │   ├── transfer_sw_1778739648164_ctar_1778739648216.txt
-    │   └── transfer_sw_1779087660902_nnb7_1779087661253.png
-    └── usage
-        ├── usage_1778644619371_2id6_1778644619099.png
-        ├── usage_1778644877766_tomz_1778644877579.xls
-        ├── usage_1778644968041_t9tp_1778644967813.xlsm
-        ├── usage_1778644995809_gqbr_1778644995512.xlsx
-        ├── usage_1778648084964_bizq_1778648084668.png
-        ├── usage_1778725004444_zbn9_1778725004351.txt
-        ├── usage_1778831995985_42i4_1778831996910.xlsm
-        ├── usage_1778841547370_p3l0_1778841548606.pdf
-        ├── usage_1778856659432_576q_1778856661019.pdf
-        └── usage_1779087765141_et1o_1779087765538.png
+└── server.js
 
-25 directories, 178 files
+35 directories, 150 files

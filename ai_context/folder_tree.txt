@@ -1,0 +1,15 @@
+/var/www/steeltrack/ai_context
+/var/www/steeltrack/ai_context/CURRENT_SYSTEM.md
+/var/www/steeltrack/ai_context/README.txt
+/var/www/steeltrack/ai_context/api_routes.txt
+/var/www/steeltrack/ai_context/backend_requirements.txt
+/var/www/steeltrack/ai_context/docker_files.txt
+/var/www/steeltrack/ai_context/file_sizes.txt
+/var/www/steeltrack/ai_context/folder_tree.txt
+/var/www/steeltrack/ai_context/important_files.txt
+/var/www/steeltrack/ai_context/module_analysis.md
+/var/www/steeltrack/ai_context/package_frontend.json
+/var/www/steeltrack/ai_context/postgres_databases.txt
+/var/www/steeltrack/ai_context/project_tree.txt
+/var/www/steeltrack/ai_context/schema.sql
+/var/www/steeltrack/ai_context/yard_vision.md

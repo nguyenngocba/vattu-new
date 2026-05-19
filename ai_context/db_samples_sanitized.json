@@ -1,0 +1,568 @@
+{
+    "sw_logs": [
+        {
+            "id": 4,
+            "qty": 12,
+            "cost": 26006473,
+            "note": "Chuyển sang kho CK",
+            "type": "transfer_to_sw",
+            "unit": "tấn",
+            "attachment": "[redacted/see dump]",
+            "created_at": "2026-05-18T14:03:00",
+            "material_id": "M001",
+            "material_name": "Thép hình H200x200x8x12"
+        },
+        {
+            "id": 5,
+            "qty": 9.455,
+            "cost": 25744612,
+            "note": "Chuyển sang kho CK",
+            "type": "transfer_to_sw",
+            "unit": "tấn",
+            "attachment": "[redacted/see dump]",
+            "created_at": "2026-05-18T14:03:00",
+            "material_id": "M010",
+            "material_name": "Ống thép D90x3.2"
+        },
+        {
+            "id": 3,
+            "qty": 11,
+            "cost": 24397967,
+            "note": "Chuyển sang kho CK",
+            "type": "transfer_to_sw",
+            "unit": "tấn",
+            "attachment": "[redacted/see dump]",
+            "created_at": "2026-05-18T14:00:00",
+            "material_id": "M006",
+            "material_name": "Thép tấm SS400 dày 10mm"
+        }
+    ],
+    "projects": [
+        {
+            "id": "P0015",
+            "name": "Kho hàng cảng Cát Lái",
+            "spent": 2311157653.82,
+            "budget": 5900000000.00
+        },
+        {
+            "id": "P0002",
+            "name": "Kho lạnh Mekong Logistics",
+            "spent": 3567322487.10,
+            "budget": 3650000000.00
+        },
+        {
+            "id": "P0028",
+            "name": "Kho lạnh thủy sản Vũng Tàu",
+            "spent": 2103845149.32,
+            "budget": 4550000000.00
+        },
+        {
+            "id": "P0036",
+            "name": "Kho ngoại quan Hiệp Phước",
+            "spent": 3504735613.10,
+            "budget": 4550000000.00
+        },
+        {
+            "id": "P0020",
+            "name": "Kho nguyên liệu Bến Lức",
+            "spent": 1181792123.03,
+            "budget": 4550000000.00
+        }
+    ],
+    "materials": [
+        {
+            "id": "M013",
+            "cat": "Bu lông - Ốc vít",
+            "low": 500,
+            "qty": 34066.000,
+            "cost": 23953.00,
+            "name": "Bu lông cường độ cao M20x70",
+            "note": "Dữ liệu mẫu sạch 2023-2026",
+            "unit": "cái"
+        },
+        {
+            "id": "M014",
+            "cat": "Bu lông - Ốc vít",
+            "low": 400,
+            "qty": 12352.000,
+            "cost": 28119.00,
+            "name": "Bu lông cường độ cao M22x80",
+            "note": "Dữ liệu mẫu sạch 2023-2026",
+            "unit": "cái"
+        },
+        {
+            "id": "M012",
+            "cat": "Bu lông - Ốc vít",
+            "low": 120,
+            "qty": 20423.000,
+            "cost": 74062.00,
+            "name": "Bu lông neo M24x700",
+            "note": "Dữ liệu mẫu sạch 2023-2026",
+            "unit": "cái"
+        },
+        {
+            "id": "M017",
+            "cat": "Vật tư hàn cắt",
+            "low": 150,
+            "qty": 1901.000,
+            "cost": 43853.00,
+            "name": "Đá cắt inox 355mm",
+            "note": "Dữ liệu mẫu sạch 2023-2026",
+            "unit": "cái"
+        },
+        {
+            "id": "M016",
+            "cat": "Vật tư hàn cắt",
+            "low": 600,
+            "qty": 5239.000,
+            "cost": 58692.00,
+            "name": "Dây hàn lõi thuốc E71T-1",
+            "note": "Dữ liệu mẫu sạch 2023-2026",
+            "unit": "kg"
+        }
+    ],
+    "suppliers": [
+        {
+            "id": "S0026",
+            "name": "Công ty CP Cơ Điện Vật Tư Long Thành",
+            "email": "ncc26@steeltrack.test",
+            "phone": "0915434775",
+            "address": "37 Đường công nghiệp 26, TP.HCM"
+        },
+        {
+            "id": "S0008",
+            "name": "Công ty CP Kim Khí Sài Gòn",
+            "email": "ncc08@steeltrack.test",
+            "phone": "0911521737",
+            "address": "19 Đường công nghiệp 8, TP.HCM"
+        },
+        {
+            "id": "S0015",
+            "name": "Công ty CP Thép Miền Tây",
+            "email": "ncc15@steeltrack.test",
+            "phone": "0913043474",
+            "address": "26 Đường công nghiệp 15, TP.HCM"
+        },
+        {
+            "id": "S0002",
+            "name": "Công ty CP Thép Nam Kim",
+            "email": "ncc02@steeltrack.test",
+            "phone": "0910217391",
+            "address": "13 Đường công nghiệp 2, TP.HCM"
+        },
+        {
+            "id": "S0020",
+            "name": "Công ty CP Thép Việt Úc",
+            "email": "ncc20@steeltrack.test",
+            "phone": "0914130429",
+            "address": "31 Đường công nghiệp 20, TP.HCM"
+        }
+    ],
+    "structures": [
+        {
+            "id": "K0029",
+            "qty": 10,
+            "cost": 18500000,
+            "name": "Bậc thang BT-01",
+            "note": "Dữ liệu mẫu cấu kiện nhà thép",
+            "type": null,
+            "unit": "cái",
+            "zone": null,
+            "layer": 1,
+            "width": 1.2,
+            "height": 0.8,
+            "length": 6,
+            "weight": 1200,
+            "rotation": 0,
+            "position_x": null,
+            "position_y": null,
+            "project_id": null
+        },
+        {
+            "id": "K0011",
+            "qty": 13,
+            "cost": 8500000,
+            "name": "Bản mã chân cột BMC-01",
+            "note": "Dữ liệu mẫu cấu kiện nhà thép",
+            "type": null,
+            "unit": "cái",
+            "zone": null,
+            "layer": 1,
+            "width": 1.2,
+            "height": 0.8,
+            "length": 6,
+            "weight": 1200,
+            "rotation": 0,
+            "position_x": null,
+            "position_y": null,
+            "project_id": null
+        },
+        {
+            "id": "K0012",
+            "qty": 15,
+            "cost": 9750000,
+            "name": "Bản mã liên kết BMLK-01",
+            "note": "Dữ liệu mẫu cấu kiện nhà thép",
+            "type": null,
+            "unit": "cái",
+            "zone": null,
+            "layer": 1,
+            "width": 1.2,
+            "height": 0.8,
+            "length": 6,
+            "weight": 1200,
+            "rotation": 0,
+            "position_x": null,
+            "position_y": null,
+            "project_id": null
+        },
+        {
+            "id": "K0024",
+            "qty": 22,
+            "cost": 12250000,
+            "name": "Bệ đỡ máy BDM-01",
+            "note": "Dữ liệu mẫu cấu kiện nhà thép",
+            "type": null,
+            "unit": "cái",
+            "zone": null,
+            "layer": 1,
+            "width": 1.2,
+            "height": 0.8,
+            "length": 6,
+            "weight": 1200,
+            "rotation": 0,
+            "position_x": null,
+            "position_y": null,
+            "project_id": null
+        },
+        {
+            "id": "K0014",
+            "qty": 19,
+            "cost": 12250000,
+            "name": "Cầu thang thép CT-01",
+            "note": "Dữ liệu mẫu cấu kiện nhà thép",
+            "type": null,
+            "unit": "cái",
+            "zone": null,
+            "layer": 1,
+            "width": 1.2,
+            "height": 0.8,
+            "length": 6,
+            "weight": 1200,
+            "rotation": 0,
+            "position_x": null,
+            "position_y": null,
+            "project_id": null
+        }
+    ],
+    "transactions": [
+        {
+            "id": "T1216",
+            "mid": "M011",
+            "qty": 2.651,
+            "date": "2026-05-31",
+            "note": "Trả vật tư dư cuối tháng từ Kho thép Phú Mỹ",
+            "type": "return",
+            "datetime": "2026-05-31T15:00:00",
+            "subtotal": 75278485.26,
+            "vat_rate": 0.0,
+            "attachment": "[redacted/see dump]",
+            "project_id": "P0007",
+            "unit_price": 28396260.00,
+            "vat_amount": 0.00,
+            "supplier_id": "",
+            "total_amount": 75278485.26
+        },
+        {
+            "id": "T1215",
+            "mid": "M001",
+            "qty": 3.608,
+            "date": "2026-05-26",
+            "note": "Xuất tuần 4 cho Trạm logistics Nhơn Trạch",
+            "type": "usage",
+            "datetime": "2026-05-26T14:00:00",
+            "subtotal": 93831354.58,
+            "vat_rate": 0.0,
+            "attachment": "[redacted/see dump]",
+            "project_id": "P0018",
+            "unit_price": 26006473.00,
+            "vat_amount": 0.00,
+            "supplier_id": "",
+            "total_amount": 93831354.58
+        },
+        {
+            "id": "T1213",
+            "mid": "M011",
+            "qty": 4.641,
+            "date": "2026-05-26",
+            "note": "Xuất tuần 4 cho Xưởng sản xuất nội thất Hóc Môn",
+            "type": "usage",
+            "datetime": "2026-05-26T11:00:00",
+            "subtotal": 131787042.66,
+            "vat_rate": 0.0,
+            "attachment": "[redacted/see dump]",
+            "project_id": "P0016",
+            "unit_price": 28396260.00,
+            "vat_amount": 0.00,
+            "supplier_id": "",
+            "total_amount": 131787042.66
+        },
+        {
+            "id": "T1211",
+            "mid": "M007",
+            "qty": 0.566,
+            "date": "2026-05-24",
+            "note": "Xuất tiếp sau nhập bù cho Kho hàng cảng Cát Lái",
+            "type": "usage",
+            "datetime": "2026-05-24T16:00:00",
+            "subtotal": 14822795.71,
+            "vat_rate": 0.0,
+            "attachment": "[redacted/see dump]",
+            "project_id": "P0015",
+            "unit_price": 26188685.00,
+            "vat_amount": 0.00,
+            "supplier_id": "",
+            "total_amount": 14822795.71
+        },
+        {
+            "id": "T1214",
+            "mid": "M008",
+            "qty": 5.810,
+            "date": "2026-05-24",
+            "note": "Xuất tuần 4 cho Nhà máy dược phẩm Tân Uyên",
+            "type": "usage",
+            "datetime": "2026-05-24T09:00:00",
+            "subtotal": 159261390.19,
+            "vat_rate": 0.0,
+            "attachment": "[redacted/see dump]",
+            "project_id": "P0017",
+            "unit_price": 27411599.00,
+            "vat_amount": 0.00,
+            "supplier_id": "",
+            "total_amount": 159261390.19
+        },
+        {
+            "id": "T1212",
+            "mid": "M005",
+            "qty": 8.410,
+            "date": "2026-05-21",
+            "note": "Xuất tuần 3 cho Xưởng sản xuất nội thất Hóc Môn",
+            "type": "usage",
+            "datetime": "2026-05-21T17:00:00",
+            "subtotal": 203662531.10,
+            "vat_rate": 0.0,
+            "attachment": "[redacted/see dump]",
+            "project_id": "P0016",
+            "unit_price": 24216710.00,
+            "vat_amount": 0.00,
+            "supplier_id": "",
+            "total_amount": 203662531.10
+        },
+        {
+            "id": "T1210",
+            "mid": "M007",
+            "qty": 4.155,
+            "date": "2026-05-21",
+            "note": "Nhập bù sau khi gần cạn tồn Thép tấm SS400 dày 16mm",
+            "type": "purchase",
+            "datetime": "2026-05-21T12:00:00",
+            "subtotal": 112187031.80,
+            "vat_rate": 10.0,
+            "attachment": "[redacted/see dump]",
+            "project_id": "",
+            "unit_price": 27000489.00,
+            "vat_amount": 11218703.18,
+            "supplier_id": "S0013",
+            "total_amount": 123405734.97
+        },
+        {
+            "id": "tvskh2605181423001",
+            "mid": "M010",
+            "qty": 333.000,
+            "date": "2026-05-18",
+            "note": "D90",
+            "type": "purchase",
+            "datetime": "2026-05-18T14:23:28",
+            "subtotal": 8572955796.00,
+            "vat_rate": 10.0,
+            "attachment": "[redacted/see dump]",
+            "project_id": "",
+            "unit_price": 25744612.00,
+            "vat_amount": 857295579.60,
+            "supplier_id": "S0001",
+            "total_amount": 9430251375.60
+        },
+        {
+            "id": "tvskh2605181418001",
+            "mid": "M020",
+            "qty": 2222.000,
+            "date": "2026-05-18",
+            "note": "test file",
+            "type": "purchase",
+            "datetime": "2026-05-18T14:17:31",
+            "subtotal": 423159902.00,
+            "vat_rate": 10.0,
+            "attachment": "[redacted/see dump]",
+            "project_id": "",
+            "unit_price": 190441.00,
+            "vat_amount": 42315990.20,
+            "supplier_id": "S0001",
+            "total_amount": 465475892.20
+        },
+        {
+            "id": "tvskh2605180703051995",
+            "mid": "M001",
+            "qty": 12.000,
+            "date": "2026-05-18",
+            "note": "Chuyển sang kho cấu kiện",
+            "type": "transfer_sw",
+            "datetime": "2026-05-18T14:03:00",
+            "subtotal": null,
+            "vat_rate": null,
+            "attachment": "[]",
+            "project_id": null,
+            "unit_price": null,
+            "vat_amount": null,
+            "supplier_id": null,
+            "total_amount": 0.00
+        }
+    ],
+    "structure_materials": [
+        {
+            "id": 1,
+            "unit": "tấn",
+            "quantity": 0.15,
+            "material_id": "M001",
+            "structure_id": "K0001",
+            "material_name": "Thép hình H200x200x8x12"
+        },
+        {
+            "id": 2,
+            "unit": "tấn",
+            "quantity": 0.23,
+            "material_id": "M002",
+            "structure_id": "K0001",
+            "material_name": "Thép hình H300x300x10x15"
+        },
+        {
+            "id": 3,
+            "unit": "tấn",
+            "quantity": 0.31,
+            "material_id": "M003",
+            "structure_id": "K0001",
+            "material_name": "Thép I250x125x6x9"
+        },
+        {
+            "id": 4,
+            "unit": "tấn",
+            "quantity": 0.15,
+            "material_id": "M004",
+            "structure_id": "K0002",
+            "material_name": "Thép U200x75x8.5"
+        },
+        {
+            "id": 5,
+            "unit": "tấn",
+            "quantity": 0.23,
+            "material_id": "M005",
+            "structure_id": "K0002",
+            "material_name": "Thép tấm SS400 dày 6mm"
+        },
+        {
+            "id": 6,
+            "unit": "tấn",
+            "quantity": 0.31,
+            "material_id": "M006",
+            "structure_id": "K0002",
+            "material_name": "Thép tấm SS400 dày 10mm"
+        },
+        {
+            "id": 7,
+            "unit": "tấn",
+            "quantity": 0.15,
+            "material_id": "M007",
+            "structure_id": "K0003",
+            "material_name": "Thép tấm SS400 dày 16mm"
+        },
+        {
+            "id": 8,
+            "unit": "tấn",
+            "quantity": 0.23,
+            "material_id": "M008",
+            "structure_id": "K0003",
+            "material_name": "Thép hộp 100x100x4"
+        },
+        {
+            "id": 9,
+            "unit": "tấn",
+            "quantity": 0.31,
+            "material_id": "M009",
+            "structure_id": "K0003",
+            "material_name": "Thép hộp 150x150x5"
+        },
+        {
+            "id": 10,
+            "unit": "tấn",
+            "quantity": 0.15,
+            "material_id": "M010",
+            "structure_id": "K0004",
+            "material_name": "Ống thép D90x3.2"
+        }
+    ],
+    "structure_warehouse": [
+        {
+            "qty": 9.455,
+            "cost": 25744612,
+            "note": "",
+            "unit": "tấn",
+            "material_id": "M010",
+            "material_name": "Ống thép D90x3.2"
+        },
+        {
+            "qty": 12,
+            "cost": 26006473,
+            "note": "",
+            "unit": "tấn",
+            "material_id": "M001",
+            "material_name": "Thép hình H200x200x8x12"
+        },
+        {
+            "qty": 11,
+            "cost": 24397967,
+            "note": "",
+            "unit": "tấn",
+            "material_id": "M006",
+            "material_name": "Thép tấm SS400 dày 10mm"
+        }
+    ],
+    "users_table_redacted": [
+        {
+            "id": "u1",
+            "name": "Admin",
+            "role": "admin",
+            "password": "[redacted]",
+            "username": "admin",
+            "permissions": {
+                "canExport": true,
+                "canImport": true,
+                "canEditMaterial": true,
+                "canDeleteProject": true,
+                "canAccessSettings": true,
+                "canCreateMaterial": true,
+                "canDeleteMaterial": true,
+                "canManageSupplier": true
+            }
+        },
+        {
+            "id": "u2",
+            "name": "Nhân viên kho",
+            "role": "user",
+            "password": "[redacted]",
+            "username": "staff",
+            "permissions": {
+                "canExport": true,
+                "canImport": true
+            }
+        }
+    ]
+}

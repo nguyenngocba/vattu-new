@@ -59,3 +59,17 @@
 ./js/mobile/mobile_dashboard.js
 ./scripts/reset-demo-db.js
 ./.codex_backups/charts.before-tab-redesign.js
+./frontend-react/eslint.config.js
+./frontend-react/src/App.tsx
+./frontend-react/src/main.tsx
+./frontend-react/src/app/AppLayout.tsx
+./frontend-react/src/app/Sidebar.tsx
+./frontend-react/src/app/Topbar.tsx
+./frontend-react/src/app/RightPanel.tsx
+./frontend-react/tsconfig.app.json
+./frontend-react/tsconfig.json
+./frontend-react/tsconfig.node.json
+./frontend-react/vite.config.ts
+./frontend-react/package.json
+./frontend-react/package-lock.json
+./frontend-react/tailwind.config.js

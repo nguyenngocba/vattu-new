@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hybrid System Test</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>🚀 STEELTRACK HYBRID SYSTEM</h1>
+    <p>Nếu bạn thấy dòng này, server đang chạy!</p>
+    <p>Thời gian hiện tại: <span id="time"></span></p>
+    
+    <h2>Kiểm tra kết nối backend:</h2>
+    <button onclick="testBackend()">Kiểm tra API</button>
+    <pre id="result"></pre>
+    
+    <script>
+        document.getElementById('time').innerText = new Date().toLocaleString();
+        
+        async function testBackend() {
+            const result = document.getElementById('result');
+            result.innerText = 'Đang gọi API /api/v1/materials...\n';
+            try {
+                const res = await fetch('/api/v1/materials');
+                const data = await res.json();
+                result.innerText = '✅ Kết nối thành công!\nSố lượng vật tư: ' + data.length;
+            } catch (err) {
+                result.innerText = '❌ Lỗi: ' + err.message + '\nKiểm tra backend đã chạy chưa?';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+CURRENT_SYSTEM.md	6663 bytes
+README.txt	357 bytes
+api_routes.txt	432 bytes
+backend_requirements.txt	67 bytes
+docker_files.txt	0 bytes
+folder_tree.txt	709 bytes
+important_files.txt	2125 bytes
+module_analysis.md	6065 bytes
+package_frontend.json	409 bytes
+postgres_databases.txt	712 bytes
+project_tree.txt	6760 bytes
+schema.sql	16978 bytes
+yard_vision.md	4831 bytes

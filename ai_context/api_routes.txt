@@ -1,0 +1,15 @@
+server/routes/auth.js
+server/routes/data.js
+server/routes/forecast.js
+server/routes/index.js
+server/routes/materials.js
+server/routes/projects.js
+server/routes/settings.js
+server/routes/structure-export-return.js
+server/routes/structure-production.js
+server/routes/structure-warehouse.js
+server/routes/structures-basic.js
+server/routes/structures.js
+server/routes/suppliers.js
+server/routes/transactions.js
+server/routes/uploads.js

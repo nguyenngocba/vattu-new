@@ -1,0 +1,48 @@
+table_name	constraint_type	constraint_name	column_name	foreign_table	foreign_column
+categories	CHECK	2200_16777_1_not_null			
+categories	PRIMARY KEY	categories_pkey	id	categories	id
+categories	UNIQUE	categories_name_key	name	categories	name
+logs	CHECK	2200_16855_1_not_null			
+logs	PRIMARY KEY	logs_pkey	id	logs	id
+materials	CHECK	2200_16720_1_not_null			
+materials	CHECK	2200_16720_2_not_null			
+materials	CHECK	materials_qty_nonnegative		materials	qty
+materials	PRIMARY KEY	materials_pkey	id	materials	id
+project_material_usage	CHECK	2200_17057_1_not_null			
+project_material_usage	CHECK	2200_17057_2_not_null			
+project_material_usage	PRIMARY KEY	project_material_usage_pkey	project_id	project_material_usage	project_id
+project_material_usage	PRIMARY KEY	project_material_usage_pkey	project_id	project_material_usage	material_id
+project_material_usage	PRIMARY KEY	project_material_usage_pkey	material_id	project_material_usage	project_id
+project_material_usage	PRIMARY KEY	project_material_usage_pkey	material_id	project_material_usage	material_id
+project_schedules	CHECK	2200_17049_1_not_null			
+project_schedules	PRIMARY KEY	project_schedules_pkey	project_id	project_schedules	project_id
+projects	CHECK	2200_16740_1_not_null			
+projects	CHECK	2200_16740_2_not_null			
+projects	PRIMARY KEY	projects_pkey	id	projects	id
+structure_materials	CHECK	2200_17079_1_not_null			
+structure_materials	CHECK	2200_17079_2_not_null			
+structure_materials	CHECK	2200_17079_6_not_null			
+structure_materials	FOREIGN KEY	structure_materials_structure_id_fkey	structure_id	structures	id
+structure_materials	PRIMARY KEY	structure_materials_pkey	id	structure_materials	id
+structure_warehouse	CHECK	2200_17093_1_not_null			
+structure_warehouse	CHECK	structure_warehouse_qty_nonnegative		structure_warehouse	qty
+structure_warehouse	PRIMARY KEY	structure_warehouse_pkey	material_id	structure_warehouse	material_id
+structures	CHECK	2200_17067_1_not_null			
+structures	CHECK	2200_17067_2_not_null			
+structures	CHECK	structures_qty_nonnegative		structures	qty
+structures	PRIMARY KEY	structures_pkey	id	structures	id
+suppliers	CHECK	2200_16747_1_not_null			
+suppliers	CHECK	2200_16747_2_not_null			
+suppliers	PRIMARY KEY	suppliers_pkey	id	suppliers	id
+sw_logs	CHECK	2200_17107_1_not_null			
+sw_logs	PRIMARY KEY	sw_logs_pkey	id	sw_logs	id
+transactions	CHECK	2200_16732_1_not_null			
+transactions	CHECK	transactions_type_check		transactions	type
+transactions	PRIMARY KEY	transactions_pkey	id	transactions	id
+units	CHECK	2200_16787_1_not_null			
+units	PRIMARY KEY	units_pkey	id	units	id
+units	UNIQUE	units_name_key	name	units	name
+users_table	CHECK	2200_16755_1_not_null			
+users_table	PRIMARY KEY	users_table_pkey	id	users_table	id
+users_table	UNIQUE	users_table_username_key	username	users_table	username
+(46 rows)

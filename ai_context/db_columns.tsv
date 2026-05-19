@@ -1,0 +1,95 @@
+table_name	column_name	data_type	is_nullable	column_default
+categories	id	integer	NO	nextval('categories_id_seq'::regclass)
+categories	name	character varying	YES	
+logs	id	character varying	NO	
+logs	timestamp	timestamp without time zone	YES	now()
+logs	user_id	character varying	YES	
+logs	user_name	character varying	YES	
+logs	action	character varying	YES	
+logs	details	text	YES	
+materials	id	character varying	NO	
+materials	name	character varying	NO	
+materials	cat	character varying	YES	
+materials	unit	character varying	YES	
+materials	qty	numeric	YES	0
+materials	cost	numeric	YES	0
+materials	low	integer	YES	5
+materials	note	text	YES	''::text
+project_material_usage	project_id	text	NO	
+project_material_usage	material_id	text	NO	
+project_material_usage	used_qty	numeric	YES	
+project_schedules	project_id	text	NO	
+project_schedules	data	jsonb	YES	
+projects	id	character varying	NO	
+projects	name	character varying	NO	
+projects	budget	numeric	YES	0
+projects	spent	numeric	YES	0
+structure_materials	structure_id	text	NO	
+structure_materials	material_id	text	NO	
+structure_materials	material_name	text	YES	
+structure_materials	unit	text	YES	
+structure_materials	quantity	numeric	YES	1
+structure_materials	id	integer	NO	nextval('structure_materials_id_seq'::regclass)
+structure_warehouse	material_id	text	NO	
+structure_warehouse	material_name	text	YES	
+structure_warehouse	unit	text	YES	''::text
+structure_warehouse	qty	numeric	YES	0
+structure_warehouse	cost	numeric	YES	0
+structure_warehouse	note	text	YES	''::text
+structures	id	text	NO	
+structures	name	text	NO	
+structures	unit	text	YES	'cái'::text
+structures	qty	numeric	YES	0
+structures	cost	numeric	YES	0
+structures	note	text	YES	''::text
+structures	type	text	YES	
+structures	zone	text	YES	
+structures	position_x	integer	YES	
+structures	position_y	integer	YES	
+structures	layer	integer	YES	1
+structures	rotation	numeric	YES	0
+structures	length	numeric	YES	6
+structures	width	numeric	YES	1.2
+structures	height	numeric	YES	0.8
+structures	weight	numeric	YES	1200
+structures	project_id	text	YES	
+suppliers	id	character varying	NO	
+suppliers	name	character varying	NO	
+suppliers	phone	character varying	YES	
+suppliers	email	character varying	YES	
+suppliers	address	text	YES	
+sw_logs	id	integer	NO	nextval('sw_logs_id_seq'::regclass)
+sw_logs	material_id	text	YES	
+sw_logs	material_name	text	YES	
+sw_logs	qty	numeric	YES	
+sw_logs	unit	text	YES	
+sw_logs	cost	numeric	YES	
+sw_logs	note	text	YES	
+sw_logs	attachment	text	YES	'[]'::text
+sw_logs	created_at	timestamp without time zone	YES	now()
+sw_logs	type	character varying	YES	'transfer'::character varying
+transactions	id	character varying	NO	
+transactions	mid	character varying	YES	
+transactions	supplier_id	character varying	YES	
+transactions	project_id	character varying	YES	
+transactions	date	date	YES	
+transactions	datetime	timestamp without time zone	YES	
+transactions	type	character varying	YES	
+transactions	qty	numeric	YES	
+transactions	unit_price	numeric	YES	
+transactions	vat_rate	numeric	YES	
+transactions	subtotal	numeric	YES	
+transactions	vat_amount	numeric	YES	
+transactions	total_amount	numeric	YES	
+transactions	note	text	YES	
+transactions	attachment	text	YES	
+transactions	invoice_image	text	YES	
+units	id	integer	NO	nextval('units_id_seq'::regclass)
+units	name	character varying	YES	
+users_table	id	character varying	NO	
+users_table	name	character varying	YES	
+users_table	username	character varying	YES	
+users_table	password	character varying	YES	
+users_table	role	character varying	YES	
+users_table	permissions	jsonb	YES	'{}'::jsonb
+(93 rows)

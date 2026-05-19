@@ -1,0 +1,73 @@
+/* ===== Mobile form sticky submit ===== */
+.ios-liquid .m-modal .m-submit {
+    position: sticky;
+    bottom: 12px;
+    z-index: 25;
+    margin-top: 14px;
+}
+
+.ios-liquid .m-submit.loading,
+.ios-liquid .m-submit:disabled {
+    opacity: .72;
+    cursor: wait;
+    filter: saturate(.85);
+}
+
+.ios-liquid .m-summary {
+    position: sticky;
+    bottom: 78px;
+    z-index: 24;
+    backdrop-filter: blur(24px) saturate(145%);
+    -webkit-backdrop-filter: blur(24px) saturate(145%);
+}
+/* ===== Mobile native select options ===== */
+.ios-liquid select,
+.ios-liquid select option,
+.ios-liquid .m-field select,
+.ios-liquid .m-field select option {
+  background-color: #151827 !important;
+  color: #f5f7fb !important;
+}
+
+.ios-liquid select option:checked,
+.ios-liquid .m-field select option:checked {
+  background-color: #0a84ff !important;
+  color: #ffffff !important;
+}
+
+.ios-liquid select option:hover,
+.ios-liquid .m-field select option:hover {
+  background-color: #24304a !important;
+  color: #ffffff !important;
+}
+.ios-liquid .m-txn-item {
+  position: relative;
+  overflow: visible;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light select,
+.m-modal.ios-liquid.m-wh-theme-light select option,
+.m-modal.ios-liquid.m-wh-theme-light .m-field select,
+.m-modal.ios-liquid.m-wh-theme-light .m-field select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light select option:checked,
+.m-modal.ios-liquid.m-wh-theme-light .m-field select option:checked {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light select option:hover,
+.m-modal.ios-liquid.m-wh-theme-light .m-field select option:hover {
+  background-color: #eaf2ff !important;
+  color: #0f172a !important;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-summary {
+  color: #0f172a;
+  background: rgba(255,255,255,.94);
+  border-color: rgba(148,163,184,.22);
+  box-shadow: 0 12px 28px rgba(15,23,42,.08);
+}

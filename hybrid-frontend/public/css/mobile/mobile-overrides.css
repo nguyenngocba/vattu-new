@@ -1,0 +1,221 @@
+/* ========== ICON GIAO DỊCH MOBILE ========== */
+.m-txn-icon,
+.m-txn-detail-icon {
+    display: grid !important;
+    place-items: center !important;
+}
+
+.m-txn-icon-img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    display: block;
+}
+
+.m-txn-detail-icon .m-txn-icon-img {
+    width: 34px;
+    height: 34px;
+}
+
+#m-project-detail-modal .m-project-detail-txn .m-txn-icon-img,
+#m-material-detail-modal .m-material-txn .m-txn-icon-img {
+    width: 24px !important;
+    height: 24px !important;
+}
+/* ========== BỎ KHUNG NỀN ICON GIAO DỊCH PNG ========== */
+.ios-liquid .m-txn-icon:has(.m-txn-icon-img),
+.m-txn-icon:has(.m-txn-icon-img),
+.m-txn-detail-icon:has(.m-txn-icon-img) {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.m-txn-icon-img {
+    width: 34px !important;
+    height: 34px !important;
+    object-fit: contain !important;
+    display: block !important;
+}
+/* ========== CHỪA CHỖ CHO BOTTOM TAB Ở TRANG CHỦ ========== */
+.mobile-app.ios-liquid {
+    padding-bottom: 112px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ========== PHÂN TRANG GIAO DỊCH MOBILE ========== */
+#m-txn-list {
+    padding-bottom: 18px !important;
+}
+
+#m-txn-list .m-pagination {
+    position: relative !important;
+    z-index: 1 !important;
+    margin: 12px 0 18px !important;
+    padding: 10px 8px !important;
+    border-radius: 16px !important;
+    background: rgba(255,255,255,.06) !important;
+    border: 1px solid rgba(255,255,255,.08) !important;
+}
+
+/* Chừa riêng cho khối giao dịch gần đây vì nằm sát tab dưới */
+.mobile-app.ios-liquid > .m-section:last-of-type {
+    margin-bottom: 118px !important;
+}
+
+/* ========== LIGHT MODE: GIAO DỊCH GẦN ĐÂY TRANG CHỦ ========== */
+.mobile-app.ios-liquid.m-wh-theme-light > .m-section {
+    background: #fff !important;
+    border: 1px solid rgba(148,163,184,.18) !important;
+    box-shadow: 0 10px 26px rgba(15,23,42,.06) !important;
+    color: #0f172a !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light .m-section-title {
+    color: #0f172a !important;
+    text-shadow: none !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-txn-item {
+    display: grid !important;
+    grid-template-columns: 42px minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 12px !important;
+    border-radius: 16px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 8px 20px rgba(15,23,42,.06) !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-txn-item:active {
+    background: #f8fafc !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-txn-name {
+    color: #0f172a !important;
+    font-size: 13px !important;
+    font-weight: 900 !important;
+    line-height: 1.25 !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-txn-meta {
+    color: #475569 !important;
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+    margin-top: 3px !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-txn-amount {
+    padding: 5px 7px !important;
+    border-radius: 999px !important;
+    font-size: 11px !important;
+    line-height: 1.1 !important;
+    font-weight: 950 !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-txn-amount.success,
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-txn-amount.info {
+    color: #047857 !important;
+    background: #ecfdf5 !important;
+    border-color: #bbf7d0 !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-txn-amount.danger {
+    color: #dc2626 !important;
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-txn-icon {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    display: grid !important;
+    place-items: center !important;
+    border-radius: 13px !important;
+    background: #eef6ff !important;
+    border: 1px solid rgba(37,99,235,.14) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7) !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-txn-icon:has(.m-txn-icon-img) {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-txn-icon-img {
+    width: 30px !important;
+    height: 30px !important;
+    filter: none !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-pagination {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: inset 0 1px 0 #fff !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-page-limit,
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-page-btn {
+    color: #0f172a !important;
+    background: #fff !important;
+    border-color: #cbd5e1 !important;
+}
+
+.mobile-app.ios-liquid.m-wh-theme-light #m-txn-list .m-page-info {
+    color: #475569 !important;
+    font-weight: 800 !important;
+}
+/* ========== FILE ĐÍNH KÈM TRONG CHI TIẾT GIAO DỊCH ========== */
+.m-txn-detail-panel {
+    overflow-x: hidden !important;
+}
+
+.m-txn-file-list {
+    display: grid !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+.m-txn-file-item {
+    display: grid !important;
+    grid-template-columns: 92px minmax(0, 1fr) !important;
+    align-items: start !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 11px 12px !important;
+    box-sizing: border-box !important;
+    text-decoration: none !important;
+    overflow: hidden !important;
+}
+
+.m-txn-file-item span {
+    display: block !important;
+    min-width: 0 !important;
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+    font-weight: 900 !important;
+    white-space: normal !important;
+}
+
+.m-txn-file-item small {
+    display: block !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin-top: 0 !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+}

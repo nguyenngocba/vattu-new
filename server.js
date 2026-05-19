@@ -9,6 +9,8 @@ const { registerRoutes } = require('./server/routes');
 const uploadsRoutes = require('./server/routes/uploads');
 
 const app = express();
+const cors = require('cors');
+app.use(cors({ origin: 'http://172.168.53.114:5176' }));
 const server = http.createServer(app);
 const PORT = Number(process.env.PORT || 3000);
 

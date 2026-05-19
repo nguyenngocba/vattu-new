@@ -1,0 +1,263 @@
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);}
+.login-card{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--rl);padding:36px 32px;width:100%;max-width:400px;}
+/* Dark login */
+.login-wrap {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 25% 12%, rgba(31,122,255,.22), transparent 32%),
+        radial-gradient(circle at 80% 18%, rgba(16,185,129,.14), transparent 30%),
+        linear-gradient(180deg, #020915 0%, #03111f 48%, #020813 100%);
+}
+
+.login-wrap::before {
+    content: "";
+    position: absolute;
+    inset: -30%;
+    background:
+        linear-gradient(115deg, transparent 0 46%, rgba(96,165,250,.08) 50%, transparent 54% 100%),
+        radial-gradient(circle, rgba(125,211,252,.09) 0 1px, transparent 1px);
+    background-size: 100% 100%, 34px 34px;
+    animation: loginAmbientMove 18s linear infinite;
+    pointer-events: none;
+}
+
+.login-card {
+    position: relative;
+    z-index: 1;
+    background:
+        linear-gradient(145deg, rgba(12,32,52,.94), rgba(5,18,32,.96)),
+        radial-gradient(circle at 12% 0, rgba(31,122,255,.18), transparent 36%);
+    border: 1px solid rgba(125,211,252,.18);
+    box-shadow: 0 0 44px rgba(37,99,235,.20), 0 26px 80px rgba(0,0,0,.46);
+    color: #e8f1ff;
+    animation: loginCardFloat 7s ease-in-out infinite;
+}
+
+.login-card input,
+.login-card select,
+.login-card textarea {
+    background: rgba(7, 22, 38, .92);
+    border-color: rgba(125,211,252,.16);
+    color: #e8f1ff;
+}
+
+.login-card .form-label {
+    color: #a9bdd3;
+}
+
+.login-card img {
+    filter: drop-shadow(0 0 12px rgba(96,165,250,.18));
+}
+
+@keyframes loginAmbientMove {
+    0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    100% { transform: translate3d(34px, 34px, 0) rotate(1deg); }
+}
+
+@keyframes loginCardFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-wrap::before,
+    .login-card {
+        animation: none;
+    }
+}
+/* Login final dark visual */
+.login-wrap {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 24% 14%, rgba(31,122,255,.28), transparent 30%),
+        radial-gradient(circle at 78% 16%, rgba(16,185,129,.16), transparent 28%),
+        linear-gradient(180deg, #01060d 0%, #03111f 52%, #01050b 100%) !important;
+}
+
+.login-wrap::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background:
+        linear-gradient(rgba(1, 6, 13, .58), rgba(1, 6, 13, .82)),
+        url("/images/login-factory-bg.jpg") center center / cover no-repeat,
+        url("/images/login-steel-bg.svg") center bottom / cover no-repeat;
+    opacity: .72;
+    filter: blur(2px) saturate(.9) brightness(.76);
+    transform: scale(1.035);
+}
+
+.login-wrap::before {
+    content: none;
+}
+
+.login-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    z-index: 1;
+    background:
+        linear-gradient(145deg, rgba(12,32,52,.95), rgba(5,18,32,.97)),
+        radial-gradient(circle at 18% 0, rgba(31,122,255,.20), transparent 38%) !important;
+    border: 1px solid rgba(125,211,252,.18) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 0 50px rgba(37,99,235,.18), 0 28px 90px rgba(0,0,0,.56) !important;
+    color: #e8f1ff;
+    animation: none !important;
+}
+
+.login-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.login-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    padding: 2px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: conic-gradient(
+        from var(--login-border-angle, 0deg),
+        rgba(96,165,250,.12),
+        rgba(96,165,250,.95),
+        rgba(16,185,129,.52),
+        rgba(96,165,250,.14),
+        rgba(96,165,250,.12)
+    );
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    animation: loginBorderSweep 12s linear infinite;
+}
+
+.login-card::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    z-index: 0;
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(12,32,52,.98), rgba(5,18,32,.98));
+    pointer-events: none;
+}
+
+.login-card input,
+.login-card select,
+.login-card textarea {
+    background: rgba(7, 22, 38, .94) !important;
+    border-color: rgba(125,211,252,.18) !important;
+    color: #e8f1ff !important;
+}
+
+.login-card input::placeholder {
+    color: rgba(203,213,225,.58);
+}
+
+.login-card .form-label {
+    color: #a9bdd3;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .08em;
+}
+
+.login-card button.primary {
+    background: linear-gradient(135deg, #1f7aff, #0757c7) !important;
+    border-color: rgba(96,165,250,.70) !important;
+    box-shadow: 0 0 22px rgba(31,122,255,.24);
+}
+
+.login-card img {
+    filter: drop-shadow(0 0 14px rgba(96,165,250,.22));
+}
+
+.login-mode-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.login-mode-option {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 9px 12px;
+    border: 1px solid rgba(125,211,252,.16);
+    border-radius: 12px;
+    background: rgba(7, 22, 38, .76);
+    color: #cbd5e1;
+    cursor: pointer;
+    font-weight: 750;
+    transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease;
+}
+
+.login-mode-option:hover {
+    border-color: rgba(96,165,250,.48);
+    background: rgba(31,122,255,.12);
+    color: #f8fbff;
+}
+
+.login-mode-option.active,
+.login-mode-option:has(input:checked) {
+    border-color: rgba(96,165,250,.72);
+    background: linear-gradient(135deg, rgba(31,122,255,.28), rgba(7,87,199,.18));
+    color: #fff;
+    box-shadow: 0 0 20px rgba(31,122,255,.16);
+}
+
+.login-mode-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.login-mode-option span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.login-mode-option span::before {
+    content: "";
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(203,213,225,.62);
+    background: rgba(3,13,26,.78);
+    box-shadow: inset 0 0 0 3px rgba(3,13,26,.78);
+}
+
+.login-mode-option.active span::before,
+.login-mode-option:has(input:checked) span::before,
+.login-mode-option input:checked + span::before {
+    border-color: #60a5fa;
+    background: #60a5fa;
+    box-shadow: inset 0 0 0 3px rgba(3,13,26,.92), 0 0 12px rgba(96,165,250,.34);
+}
+
+.login-mode-option:focus-within {
+    outline: none;
+}
+
+@property --login-border-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@keyframes loginBorderSweep {
+    to { --login-border-angle: 360deg; }
+}

@@ -1,0 +1,7 @@
+type	count	total_amount	total_qty
+purchase	347	138470942084.15	903776.826
+return	17	934090617.30	403.885
+structure_export	30	1770000000.00	120.000
+transfer_sw	3	0.00	32.455
+usage	855	106909196547.25	823910.466
+(5 rows)

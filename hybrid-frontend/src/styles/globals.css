@@ -1,0 +1,17 @@
+@import './base.css';
+@import './style.css';
+@import './desktop/desktop-login.css';
+@import './desktop/desktop-layout.css';
+@import './desktop/desktop-entities.css';
+@import './desktop/desktop-responsive.css';
+@import './desktop/desktop-print.css';
+@import './desktop/desktop-dashboard.css';
+@import './desktop/desktop-theme-dark.css';
+@import './mobile/mobile-base.css';
+@import './mobile/mobile-theme.css';
+@import './mobile/mobile-home.css';
+@import './mobile/mobile-transactions.css';
+@import './mobile/mobile-stock.css';
+@import './mobile/mobile-projects.css';
+@import './mobile/mobile-forms.css';
+@import './mobile/mobile-overrides.css';
