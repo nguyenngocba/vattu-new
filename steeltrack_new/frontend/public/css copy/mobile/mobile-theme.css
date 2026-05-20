@@ -1,0 +1,896 @@
+/* ===== MOBILE IOS LIQUID THEME ===== */
+.mobile-app.ios-liquid,
+.m-modal.ios-liquid {
+    min-height: 100dvh;
+    color: rgba(245,247,251,.88);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, sans-serif;
+    background:
+        radial-gradient(circle at 16% 6%, rgba(0,122,255,.20), transparent 34%),
+        radial-gradient(circle at 84% 12%, rgba(175,82,222,.14), transparent 32%),
+        radial-gradient(circle at 50% 96%, rgba(48,209,88,.08), transparent 38%),
+        linear-gradient(160deg, #000 0%, #050711 46%, #000 100%);
+    overflow-x: hidden;
+}
+
+.ios-liquid .m-header,
+.ios-liquid .m-sidebar,
+.ios-liquid .m-menu,
+.ios-liquid .m-modal-hd,
+.ios-liquid .m-tab-bar {
+    background: rgba(18,20,30,.58);
+    backdrop-filter: blur(30px) saturate(150%);
+    -webkit-backdrop-filter: blur(30px) saturate(150%);
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.16),
+        0 18px 48px rgba(0,0,0,.34);
+}
+
+.ios-liquid .m-btn,
+.ios-liquid .m-section,
+.ios-liquid .m-kpi-card,
+.ios-liquid .m-chart-card,
+.ios-liquid .m-stock-item,
+.ios-liquid .m-project-item,
+.ios-liquid .m-summary,
+.ios-liquid .m-field input,
+.ios-liquid .m-field select,
+.ios-liquid .m-search {
+    background: linear-gradient(145deg, rgba(255,255,255,.13), rgba(255,255,255,.045));
+    backdrop-filter: blur(24px) saturate(145%);
+    -webkit-backdrop-filter: blur(24px) saturate(145%);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 24px;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.18),
+        inset 0 -14px 28px rgba(255,255,255,.025),
+        0 18px 38px rgba(0,0,0,.30);
+    color: rgba(245,247,251,.88);
+}
+
+.ios-liquid .m-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 12px;
+    align-items: stretch;
+}
+
+.ios-liquid .m-btn {
+    min-height: 108px;
+    height: 100%;
+}
+
+.ios-liquid .m-btn-icon {
+    opacity: .95;
+    filter: saturate(.95) brightness(.98) drop-shadow(0 8px 14px rgba(0,0,0,.30));
+}
+
+.ios-liquid .m-txn-item {
+    background: rgba(255,255,255,.065);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 20px;
+    margin-bottom: 10px;
+    backdrop-filter: blur(18px) saturate(135%);
+    -webkit-backdrop-filter: blur(18px) saturate(135%);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.10),
+        0 10px 24px rgba(0,0,0,.20);
+}
+
+.ios-liquid .m-txn-name {
+    color: rgba(245,247,251,.78);
+}
+
+.ios-liquid .m-txn-meta,
+.ios-liquid .m-btn-sub,
+.ios-liquid .m-stock-meta,
+.ios-liquid .m-project-meta,
+.ios-liquid .m-kpi-label {
+    color: rgba(245,247,251,.50);
+}
+
+.ios-liquid.m-modal,
+.ios-liquid .m-modal {
+    background:
+        radial-gradient(circle at 16% 6%, rgba(0,122,255,.22), transparent 34%),
+        radial-gradient(circle at 84% 12%, rgba(175,82,222,.16), transparent 32%),
+        radial-gradient(circle at 50% 96%, rgba(48,209,88,.10), transparent 38%),
+        linear-gradient(160deg, #000 0%, #050711 46%, #000 100%);
+}
+
+.ios-liquid .m-modal {
+    padding-bottom: 92px;
+}
+
+.ios-liquid .m-modal-hd {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    min-height: 56px;
+    color: rgba(245,247,251,.92);
+}
+
+.ios-liquid .m-back {
+    background: rgba(255,255,255,.11);
+    color: rgba(245,247,251,.92);
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 999px;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.14),
+        0 8px 18px rgba(0,0,0,.22);
+}
+
+.ios-liquid .m-submit {
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 22px;
+    background: linear-gradient(145deg, rgba(10,132,255,.82), rgba(64,156,255,.58));
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.24),
+        0 16px 34px rgba(10,132,255,.24);
+}
+
+.ios-liquid .m-stock-item,
+.ios-liquid .m-project-item {
+    margin: 10px 12px;
+    padding: 14px;
+    border-radius: 22px;
+}
+
+.ios-liquid .m-stock-name,
+.ios-liquid .m-project-name,
+.ios-liquid .m-section-title {
+    color: rgba(248,251,255,.88);
+    text-shadow: 0 1px 12px rgba(0,0,0,.42);
+}
+
+.ios-liquid .m-stock-qty-val {
+    color: rgba(245,247,251,.92);
+    font-weight: 800;
+}
+
+.ios-liquid .m-stock-qty-unit {
+    color: rgba(245,247,251,.52);
+}
+
+.ios-liquid .m-text-red,
+.ios-liquid .m-stock-qty.m-text-red .m-stock-qty-val {
+    color: #ff7a70 !important;
+}
+
+.ios-liquid .m-project-pct {
+    color: rgba(245,247,251,.88);
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 999px;
+    padding: 4px 10px;
+}
+
+.ios-liquid .m-project-bar,
+.ios-liquid .m-bar-wrap {
+    background: rgba(255,255,255,.105);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.ios-liquid .m-project-fill,
+.ios-liquid .m-bar-fill {
+    border-radius: 999px;
+    filter: saturate(.95) brightness(.96);
+}
+
+.ios-liquid #m-dash-content {
+    padding: 14px 10px 110px !important;
+}
+
+.ios-liquid .m-section {
+    margin: 14px 10px !important;
+    padding: 16px !important;
+    border-radius: 26px;
+}
+
+.ios-liquid .m-section-title {
+    display: flex;
+    align-items: center;
+    min-height: 22px;
+    margin: 0 0 14px 0 !important;
+    padding: 0 !important;
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.25;
+    letter-spacing: .01em;
+}
+
+.ios-liquid .m-chart-card {
+    padding: 16px !important;
+    border-radius: 22px;
+    background: linear-gradient(145deg, rgba(255,255,255,.105), rgba(255,255,255,.04));
+    border: 1px solid rgba(255,255,255,.11);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.14),
+        0 12px 28px rgba(0,0,0,.24);
+    color: rgba(245,247,251,.82);
+}
+
+.ios-liquid .m-chart-card span,
+.ios-liquid .m-kpi-value,
+.ios-liquid .m-pro-value,
+.ios-liquid .m-pro-mini strong {
+    font-variant-numeric: tabular-nums;
+}
+
+.ios-liquid .m-chart-card span {
+    font-size: 13px;
+    line-height: 1.25;
+}
+
+.ios-liquid .m-chart-card span[style*="font-weight:700"] {
+    color: rgba(248,251,255,.88);
+    font-weight: 850 !important;
+}
+
+.ios-liquid .m-bar-wrap {
+    height: 9px;
+    margin-top: 6px;
+}
+
+.ios-liquid .m-bar-fill {
+    min-width: 3px;
+    box-shadow: 0 0 12px rgba(55,138,221,.22);
+}
+
+.ios-liquid .m-kpi-grid {
+    gap: 12px;
+    margin: 12px 0 16px;
+}
+
+.ios-liquid .m-kpi-card {
+    min-height: 84px;
+    padding: 15px 16px !important;
+    border-radius: 22px;
+    align-items: flex-start !important;
+    text-align: left !important;
+}
+
+.ios-liquid .m-kpi-label {
+    width: 100%;
+    margin-bottom: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    text-align: left !important;
+}
+
+.ios-liquid .m-kpi-value {
+    width: 100%;
+    margin-top: 0 !important;
+    text-align: left !important;
+    font-size: clamp(18px, 4vw, 22px);
+    font-weight: 900;
+    line-height: 1.1;
+    color: rgba(248,251,255,.92);
+}
+
+.ios-liquid .m-kpi-card[style*="#378ADD"] .m-kpi-value,
+.ios-liquid .m-pro-mini.blue strong {
+    color: #7cc2ff;
+}
+
+.ios-liquid .m-kpi-card[style*="#dc2626"] .m-kpi-value,
+.ios-liquid .m-pro-mini.red strong {
+    color: #ff8a82;
+}
+
+.ios-liquid .m-kpi-card[style*="#16a34a"] .m-kpi-value,
+.ios-liquid .m-pro-mini.green strong {
+    color: #68e08f;
+}
+
+.ios-liquid .m-kpi-card[style*="#ea580c"] .m-kpi-value {
+    color: #ffb454;
+}
+
+.ios-liquid .m-tab-bar {
+    margin: 10px 10px 12px !important;
+    padding: 6px !important;
+    border-radius: 24px;
+    gap: 6px;
+}
+
+.ios-liquid .m-tab {
+    padding: 9px 12px;
+    line-height: 1.15;
+    color: rgba(245,247,251,.58);
+    border-radius: 999px;
+}
+
+.ios-liquid .m-tab.active {
+    color: rgba(245,247,251,.95);
+    background: rgba(255,255,255,.16);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.18),
+        0 8px 18px rgba(0,0,0,.20);
+}
+
+.ios-liquid .m-bottom-safe {
+    height: 92px;
+}
+
+.ios-liquid .m-bottom-tab {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 50;
+    height: 68px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 68px 1fr 1fr;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    background: rgba(18,20,30,.62);
+    backdrop-filter: blur(30px) saturate(155%);
+    -webkit-backdrop-filter: blur(30px) saturate(155%);
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 28px;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.16),
+        0 20px 50px rgba(0,0,0,.36);
+}
+
+.ios-liquid .m-tab-btn {
+    height: 52px;
+    border: 0;
+    background: transparent;
+    color: rgba(245,247,251,.54);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    border-radius: 20px;
+    font-weight: 700;
+}
+
+.ios-liquid .m-tab-btn span {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.ios-liquid .m-tab-btn small {
+    font-size: 10px;
+}
+
+.ios-liquid .m-tab-btn.active {
+    color: rgba(245,247,251,.94);
+    background: rgba(255,255,255,.13);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+}
+
+.ios-liquid .m-tab-fab {
+    width: 58px;
+    height: 58px;
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 50%;
+    color: #fff;
+    font-size: 34px;
+    line-height: 1;
+    background: linear-gradient(145deg, rgba(10,132,255,.95), rgba(100,210,255,.72));
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.34),
+        0 16px 32px rgba(10,132,255,.32);
+}
+
+.ios-liquid .m-action-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(0,0,0,.34);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.ios-liquid .m-action-panel {
+    width: calc(100% - 24px);
+    max-width: 520px;
+    margin: 0 12px 16px;
+    padding: 10px;
+    border-radius: 28px;
+    background: rgba(22,24,34,.78);
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.16),
+        0 24px 70px rgba(0,0,0,.46);
+}
+
+.ios-liquid .m-action-grabber {
+    width: 42px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.28);
+    margin: 4px auto 12px;
+}
+
+.ios-liquid .m-action-panel button {
+    width: 100%;
+    height: 52px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 18px;
+    background: rgba(255,255,255,.10);
+    color: rgba(245,247,251,.92);
+    font-weight: 800;
+}
+
+.ios-liquid .m-action-panel button.danger {
+    color: #ff7a70;
+}
+
+.ios-liquid .m-pro-hero {
+    margin: 12px 0 14px;
+    padding: 18px;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    border-radius: 30px;
+    background:
+        radial-gradient(circle at 20% 10%, rgba(10,132,255,.32), transparent 38%),
+        linear-gradient(145deg, rgba(255,255,255,.16), rgba(255,255,255,.055));
+    border: 1px solid rgba(255,255,255,.16);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.20),
+        0 22px 50px rgba(0,0,0,.34);
+    backdrop-filter: blur(26px) saturate(150%);
+    -webkit-backdrop-filter: blur(26px) saturate(150%);
+}
+
+.ios-liquid .m-pro-hero > div:first-child {
+    min-width: 0;
+    flex: 1;
+}
+
+.ios-liquid .m-pro-eyebrow,
+.ios-liquid .m-pro-sub {
+    font-weight: 700;
+    color: rgba(245,247,251,.58);
+}
+
+.ios-liquid .m-pro-eyebrow {
+    font-size: 12px;
+}
+
+.ios-liquid .m-pro-sub {
+    margin-top: 6px;
+    font-size: 12px;
+}
+
+.ios-liquid .m-pro-value {
+    margin-top: 8px;
+    font-size: clamp(32px, 5.4vw, 46px);
+    line-height: 1;
+    font-weight: 900;
+    color: #f8fbff;
+}
+
+.ios-liquid .m-pro-ring {
+    width: 88px;
+    height: 88px;
+    flex: 0 0 88px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(circle, rgba(255,159,10,.26), rgba(255,255,255,.06) 58%),
+        conic-gradient(from 180deg, #ff9f0a, rgba(255,255,255,.10), #0a84ff, #ff9f0a);
+    box-shadow:
+        inset 0 0 0 8px rgba(0,0,0,.42),
+        0 18px 34px rgba(255,159,10,.16);
+}
+
+.ios-liquid .m-pro-ring span {
+    color: #fff;
+    font-size: 24px;
+    font-weight: 850;
+}
+
+.ios-liquid .m-pro-ring small {
+    color: rgba(245,247,251,.68);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.ios-liquid .m-pro-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+    align-items: stretch;
+}
+
+.ios-liquid .m-pro-mini {
+    min-height: 72px;
+    padding: 14px;
+    border-radius: 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: linear-gradient(145deg, rgba(255,255,255,.13), rgba(255,255,255,.045));
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.16),
+        0 14px 30px rgba(0,0,0,.24);
+}
+
+.ios-liquid .m-pro-mini small {
+    display: block;
+    text-align: left;
+    color: rgba(245,247,251,.54);
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 7px;
+}
+
+.ios-liquid .m-pro-mini strong {
+    display: block;
+    text-align: left;
+    font-size: clamp(15px, 3.5vw, 20px);
+    line-height: 1.1;
+    font-weight: 850;
+    word-break: keep-all;
+    color: rgba(245,247,251,.92);
+}
+
+.ios-liquid .m-pro-mini.blue { box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 14px 30px rgba(10,132,255,.15); }
+.ios-liquid .m-pro-mini.red { box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 14px 30px rgba(255,69,58,.14); }
+.ios-liquid .m-pro-mini.green { box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 14px 30px rgba(48,209,88,.13); }
+.ios-liquid .m-pro-mini.purple { box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 14px 30px rgba(191,90,242,.13); }
+
+/* ===== MOBILE LIGHT THEME - APP WIDE ===== */
+.m-modal.ios-liquid.m-wh-theme-light {
+    --text: #0f172a;
+    --muted: #64748b;
+    --hint: #94a3b8;
+    --surface: #ffffff;
+    --surface2: #f8fafc;
+    --surface3: #e2e8f0;
+    --border: rgba(148,163,184,.18);
+    --border2: rgba(148,163,184,.28);
+    --accent: #2563eb;
+    --accent-text: #1d4ed8;
+    --accent-bg: rgba(37,99,235,.10);
+    --success-text: #047857;
+    --success-bg: rgba(16,185,129,.12);
+    --warn-text: #b45309;
+    --warn-bg: rgba(245,158,11,.14);
+    --danger-text: #dc2626;
+    --danger-bg: rgba(220,38,38,.10);
+    color: #0f172a;
+    background:
+        radial-gradient(circle at 16% 6%, rgba(37,99,235,.10), transparent 34%),
+        radial-gradient(circle at 84% 12%, rgba(14,165,233,.10), transparent 32%),
+        linear-gradient(180deg, #f8fafc 0%, #eef3f9 100%);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-modal-hd {
+    color: #0f172a;
+    background: rgba(255,255,255,.88);
+    border-color: rgba(148,163,184,.24);
+    box-shadow: 0 8px 22px rgba(15,23,42,.08);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-back {
+    color: #0f172a;
+    background: #fff;
+    border-color: rgba(148,163,184,.32);
+    box-shadow: 0 6px 16px rgba(15,23,42,.08);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-stock-item,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-item,
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-item,
+.m-modal.ios-liquid.m-wh-theme-light .m-summary,
+.m-modal.ios-liquid.m-wh-theme-light .m-section,
+.m-modal.ios-liquid.m-wh-theme-light .m-chart-card,
+.m-modal.ios-liquid.m-wh-theme-light .m-kpi-card,
+.m-modal.ios-liquid.m-wh-theme-light .m-btn,
+.m-modal.ios-liquid.m-wh-theme-light .m-field input,
+.m-modal.ios-liquid.m-wh-theme-light .m-field select,
+.m-modal.ios-liquid.m-wh-theme-light .m-field textarea,
+.m-modal.ios-liquid.m-wh-theme-light .m-search,
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-grid > div,
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-section {
+    color: #0f172a;
+    background: #fff;
+    border-color: rgba(148,163,184,.22);
+    box-shadow: 0 8px 24px rgba(15,23,42,.07);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-stock-name,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-name,
+.m-modal.ios-liquid.m-wh-theme-light .m-section-title,
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-section-title,
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-hero h3,
+.m-modal.ios-liquid.m-wh-theme-light .m-kpi-value,
+.m-modal.ios-liquid.m-wh-theme-light .m-chart-card span[style*="font-weight:700"],
+.m-modal.ios-liquid.m-wh-theme-light .m-stock-qty-val,
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-name,
+.m-modal.ios-liquid.m-wh-theme-light .m-field label {
+    color: #0f172a;
+    text-shadow: none;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-stock-meta,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-meta,
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-meta,
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-hero p,
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-hero span,
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-grid small,
+.m-modal.ios-liquid.m-wh-theme-light .m-material-hero small,
+.m-modal.ios-liquid.m-wh-theme-light .m-material-hero span,
+.m-modal.ios-liquid.m-wh-theme-light .m-material-kpis small,
+.m-modal.ios-liquid.m-wh-theme-light .m-material-txn small,
+.m-modal.ios-liquid.m-wh-theme-light .m-btn-sub,
+.m-modal.ios-liquid.m-wh-theme-light .m-kpi-label,
+.m-modal.ios-liquid.m-wh-theme-light .m-stock-qty-unit,
+.m-modal.ios-liquid.m-wh-theme-light .m-chart-card span:not([style*="font-weight:700"]) {
+    color: #64748b;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-field input,
+.m-modal.ios-liquid.m-wh-theme-light .m-field select,
+.m-modal.ios-liquid.m-wh-theme-light .m-field textarea,
+.m-modal.ios-liquid.m-wh-theme-light .m-search {
+    caret-color: #2563eb;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-field input::placeholder,
+.m-modal.ios-liquid.m-wh-theme-light .m-field textarea::placeholder,
+.m-modal.ios-liquid.m-wh-theme-light .m-search::placeholder {
+    color: #94a3b8;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-material-hero,
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-hero,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero,
+.m-modal.ios-liquid.m-wh-theme-light .m-pro-hero {
+    color: #0f172a;
+    background:
+        radial-gradient(circle at 88% 10%, rgba(37,99,235,.12), transparent 36%),
+        linear-gradient(145deg, #fff, #eef6ff);
+    border-color: rgba(37,99,235,.16);
+    box-shadow: 0 14px 32px rgba(15,23,42,.08);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero.safe::before,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero.warn::before,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero.danger::before {
+    background:
+        radial-gradient(circle at 84% 12%, rgba(37,99,235,.14), transparent 42%),
+        linear-gradient(145deg, rgba(255,255,255,.62), rgba(238,246,255,.72));
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero::after {
+    background: rgba(37,99,235,.10);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero small,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero span,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-kpis small,
+.m-modal.ios-liquid.m-wh-theme-light .m-pro-eyebrow,
+.m-modal.ios-liquid.m-wh-theme-light .m-pro-sub,
+.m-modal.ios-liquid.m-wh-theme-light .m-pro-mini small {
+    color: #64748b;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-hero strong,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-pct,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-kpis strong,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-material strong,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-material > div:last-child span,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-txn strong {
+    color: #0f172a;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-pct {
+    background: #fff;
+    border-color: rgba(37,99,235,.18);
+    box-shadow: 0 8px 20px rgba(15,23,42,.07);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-bar,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-bar,
+.m-modal.ios-liquid.m-wh-theme-light .m-bar-wrap {
+    background: #e2e8f0 !important;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-material small,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-txn small {
+    color: #64748b;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-material em {
+    color: #1d4ed8;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-material-hero strong,
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-grid strong,
+.m-modal.ios-liquid.m-wh-theme-light .m-material-kpis strong,
+.m-modal.ios-liquid.m-wh-theme-light .m-material-txn strong,
+.m-modal.ios-liquid.m-wh-theme-light .m-pro-mini strong,
+.m-modal.ios-liquid.m-wh-theme-light .m-pro-value {
+    color: #0f172a;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-material-status,
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-avatar {
+    color: #fff;
+    background: linear-gradient(145deg, #2563eb, #0ea5e9);
+    border-color: rgba(37,99,235,.2);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-material-kpis > div,
+.m-modal.ios-liquid.m-wh-theme-light .m-material-txn,
+.m-modal.ios-liquid.m-wh-theme-light .m-pro-mini,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-kpis > div,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-material,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-txn {
+    background: #fff;
+    border-color: rgba(148,163,184,.22);
+    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-actions button,
+.m-modal.ios-liquid.m-wh-theme-light .m-project-detail-actions button,
+.m-modal.ios-liquid.m-wh-theme-light .m-stock-filter button,
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-filter button {
+    color: #334155;
+    background: #fff !important;
+    border-color: rgba(148,163,184,.24) !important;
+    box-shadow: 0 6px 16px rgba(15,23,42,.05);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-stock-filter button.active,
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-filter button.active {
+    color: #fff;
+    background: linear-gradient(145deg, #2563eb, #0ea5e9) !important;
+    border-color: rgba(37,99,235,.36) !important;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-amount.success,
+.m-modal.ios-liquid.m-wh-theme-light .m-material-txn span.success,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-txn > span.success {
+    color: #047857 !important;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-amount.danger,
+.m-modal.ios-liquid.m-wh-theme-light .m-material-txn span.danger,
+.m-modal.ios-liquid.m-wh-theme-light#m-project-detail-modal .m-project-detail-txn > span.danger,
+.m-modal.ios-liquid.m-wh-theme-light .m-text-red,
+.m-modal.ios-liquid.m-wh-theme-light .m-stock-qty.m-text-red .m-stock-qty-val {
+    color: #dc2626 !important;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-icon:not(:has(.m-txn-icon-img)) {
+    background: #eaf2ff !important;
+    border-color: rgba(37,99,235,.14);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light select,
+.m-modal.ios-liquid.m-wh-theme-light select option,
+.m-modal.ios-liquid.m-wh-theme-light .m-field select,
+.m-modal.ios-liquid.m-wh-theme-light .m-field select option {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light select option:checked,
+.m-modal.ios-liquid.m-wh-theme-light .m-field select option:checked {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-action-sheet {
+    background: rgba(15,23,42,.26);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-action-panel {
+    background: rgba(255,255,255,.94);
+    border-color: rgba(148,163,184,.22);
+    box-shadow: 0 24px 60px rgba(15,23,42,.18);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-action-grabber {
+    background: rgba(100,116,139,.32);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-action-panel button {
+    color: #0f172a;
+    background: #f8fafc;
+    border-color: rgba(148,163,184,.22);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-detail-panel,
+.m-txn-detail-overlay.m-wh-theme-light .m-txn-detail-panel {
+    --text: #0f172a;
+    --muted: #64748b;
+    --surface2: #ffffff;
+    --bg: #f8fafc;
+    --border: rgba(148,163,184,.18);
+    --border2: rgba(148,163,184,.28);
+    color: #0f172a;
+    background: linear-gradient(180deg, #ffffff, #f8fafc);
+    border-color: rgba(148,163,184,.28);
+    box-shadow: 0 -18px 50px rgba(15,23,42,.18);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-detail-card,
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-detail-note,
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-file-empty,
+.m-txn-detail-overlay.m-wh-theme-light .m-txn-detail-card,
+.m-txn-detail-overlay.m-wh-theme-light .m-txn-detail-note,
+.m-txn-detail-overlay.m-wh-theme-light .m-txn-file-empty {
+    background: #fff;
+    border-color: rgba(148,163,184,.22);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-file-item,
+.m-txn-detail-overlay.m-wh-theme-light .m-txn-file-item {
+    background: #eef6ff;
+    border-color: rgba(37,99,235,.20);
+    color: #0f172a;
+}
+
+.m-txn-detail-overlay.m-wh-theme-light .m-txn-detail-close {
+    color: #0f172a;
+    background: #e2e8f0;
+}
+
+.m-txn-detail-overlay.m-wh-theme-light .m-action-grabber {
+    background: rgba(100,116,139,.32);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-section button {
+    color: #334155;
+    border-bottom-color: rgba(148,163,184,.22);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-section button strong {
+    color: #2563eb;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-perms span,
+.m-modal.ios-liquid.m-wh-theme-light .m-profile-perms em {
+    color: #1d4ed8;
+    background: #dbeafe;
+}
+
+.m-wh-theme-light .m-bottom-tab,
+.m-modal.ios-liquid.m-wh-theme-light .m-bottom-tab {
+    background: rgba(255,255,255,.92);
+    border-color: rgba(148,163,184,.22);
+    box-shadow: 0 -10px 28px rgba(15,23,42,.10);
+}
+
+.m-wh-theme-light .m-tab-btn,
+.m-modal.ios-liquid.m-wh-theme-light .m-tab-btn {
+    color: #64748b;
+}
+
+.m-wh-theme-light .m-tab-btn.active,
+.m-modal.ios-liquid.m-wh-theme-light .m-tab-btn.active {
+    color: #2563eb;
+}
+
+.m-wh-theme-light .m-tab-fab,
+.m-modal.ios-liquid.m-wh-theme-light .m-tab-fab {
+    color: #fff;
+    background: linear-gradient(145deg, #2563eb, #0ea5e9);
+}

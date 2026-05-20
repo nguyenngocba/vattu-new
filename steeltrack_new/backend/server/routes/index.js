@@ -1,6 +1,5 @@
 const authRoutes = require('./auth');
 const dataRoutes = require('./data');
-const materialsRoutes = require('./materials');
 const transactionsRoutes = require('./transactions');
 const projectsRoutes = require('./projects');
 const suppliersRoutes = require('./suppliers');
@@ -11,7 +10,6 @@ const forecastRoutes = require('./forecast');
 function registerRoutes(app, context) {
   app.use(authRoutes(context));
   app.use(dataRoutes(context));
-  app.use(materialsRoutes(context));
   app.use(transactionsRoutes(context));
   app.use(projectsRoutes(context));
   app.use(suppliersRoutes(context));

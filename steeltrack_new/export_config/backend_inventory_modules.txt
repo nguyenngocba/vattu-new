@@ -1,0 +1,13 @@
+total 0
+drwxr-xr-x. 10 root root 163 May 19 17:56 .
+drwxr-xr-x.  9 root root 115 May 19 17:12 ..
+drwxr-xr-x.  2 root root  35 May 19 17:33 controllers
+drwxr-xr-x.  2 root root   6 May 19 17:25 dto
+drwxr-xr-x.  2 root root   6 May 19 17:25 events
+-rw-r--r--.  1 root root   0 May 19 17:25 .gitkeep
+-rw-r--r--.  1 root root   0 May 19 17:33 index.js
+drwxr-xr-x.  2 root root  35 May 19 17:33 repositories
+drwxr-xr-x.  2 root root  22 May 19 17:33 routes
+drwxr-xr-x.  2 root root  32 May 19 17:33 services
+drwxr-xr-x.  2 root root   6 May 19 17:25 types
+drwxr-xr-x.  2 root root   6 May 19 17:25 validators

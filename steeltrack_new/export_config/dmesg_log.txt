@@ -1,0 +1,50 @@
+[   13.284051] systemd[1]: plymouth-switch-root.service: Deactivated successfully.
+[   13.284123] systemd[1]: Stopped Plymouth switch root service.
+[   13.284384] systemd[1]: systemd-fsck-root.service: Deactivated successfully.
+[   13.284436] systemd[1]: Stopped File System Check on Root Device.
+[   13.284574] systemd[1]: Stopped Journal Service.
+[   13.287264] systemd[1]: Starting Journal Service...
+[   13.289082] systemd[1]: Starting Load Kernel Modules...
+[   13.291296] systemd[1]: Starting Generate network units from Kernel command line...
+[   13.291419] systemd[1]: TPM2 PCR Machine ID Measurement was skipped because of an unmet condition check (ConditionPathExists=/sys/firmware/efi/efivars/StubPcrKernelImage-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f).
+[   13.292862] systemd[1]: Starting Remount Root and Kernel File Systems...
+[   13.293077] systemd[1]: Repartition Root Disk was skipped because no trigger condition checks were met.
+[   13.294627] systemd[1]: Starting Coldplug All udev Devices...
+[   13.299560] systemd[1]: Activated swap /dev/mapper/rl-swap.
+[   13.301035] systemd[1]: Reached target Swaps.
+[   13.312818] systemd[1]: Mounted POSIX Message Queue File System.
+[   13.313141] systemd[1]: Mounted Kernel Debug File System.
+[   13.313777] systemd[1]: Mounted Kernel Trace File System.
+[   13.314097] systemd[1]: Mounted Huge Pages File System.
+[   13.343895] systemd[1]: Finished Read and set NIS domainname from /etc/sysconfig/network.
+[   13.369436] systemd[1]: Finished Generate network units from Kernel command line.
+[   13.458572] systemd[1]: Finished Create List of Static Device Nodes.
+[   13.507923] systemd[1]: Started Journal Service.
+[   13.702037] systemd-journald[771]: Received client request to flush runtime journal.
+[   16.061541] vmw_vmci 0000:00:07.7: Using capabilities 0xc
+[   16.079021] piix4_smbus 0000:00:07.3: SMBus Host Controller not enabled!
+[   16.100672] Guest personality initialized and is active
+[   16.107604] VMCI host device registered (name=vmci, major=10, minor=123)
+[   16.107609] Initialized host personality
+[   16.155066] input: PC Speaker as /devices/platform/pcspkr/input/input5
+[   16.175200] RAPL PMU: API unit is 2^-32 Joules, 0 fixed counters, 10737418240 ms ovfl timer
+[   16.291403] XFS (sda1): Mounting V5 Filesystem 812d0aa6-5f1b-4ff6-aee3-e17663f34208
+[   16.630135] XFS (sda1): Starting recovery (logdev: internal)
+[   16.754609] XFS (sda1): Ending recovery (logdev: internal)
+[   16.975328] XFS (dm-2): Mounting V5 Filesystem be3216fc-6406-445f-acb0-9f31f9017839
+[   17.289301] XFS (dm-2): Starting recovery (logdev: internal)
+[   17.425594] XFS (dm-2): Ending recovery (logdev: internal)
+[   21.543578] NET: Registered PF_VSOCK protocol family
+[   29.203744] vmxnet3 0000:0b:00.0 ens192: intr type 3, mode 0, 5 vectors allocated
+[   29.205259] vmxnet3 0000:0b:00.0 ens192: NIC Link is Up 10000 Mbps
+[   31.240359] block dm-0: the capability attribute has been deprecated.
+[   34.061412] systemd-journald[771]: Time jumped backwards, rotating.
+[249137.156895] SELinux:  Converting 531 SID table entries...
+[249137.167008] SELinux:  policy capability network_peer_controls=1
+[249137.167013] SELinux:  policy capability open_perms=1
+[249137.167015] SELinux:  policy capability extended_socket_class=1
+[249137.167016] SELinux:  policy capability always_check_network=0
+[249137.167018] SELinux:  policy capability cgroup_seclabel=1
+[249137.167019] SELinux:  policy capability nnp_nosuid_transition=1
+[249137.167021] SELinux:  policy capability genfs_seclabel_symlinks=1
+[249147.737147] systemd-rc-local-generator[195673]: /etc/rc.d/rc.local is not marked executable, skipping.

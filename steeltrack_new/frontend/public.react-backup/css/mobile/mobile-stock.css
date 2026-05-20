@@ -1,0 +1,324 @@
+.m-stock-filter {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 10px 0 0;
+}
+
+.m-stock-filter button {
+  min-width: 0;
+  padding: 8px 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(245,247,251,.62);
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+.m-stock-filter button.active {
+  color: #fff;
+  background: linear-gradient(145deg, rgba(48,209,88,.78), rgba(100,210,255,.42));
+  border-color: rgba(255,255,255,.18);
+}
+.ios-liquid .m-txn-filter {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0 0 12px;
+}
+
+.ios-liquid .m-txn-filter button {
+  min-width: 0;
+  height: 34px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 850;
+  color: rgba(245,247,251,.62);
+  background: linear-gradient(145deg, rgba(255,255,255,.10), rgba(255,255,255,.035)) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    0 8px 18px rgba(0,0,0,.18);
+}
+
+.ios-liquid .m-txn-filter button.active {
+  color: #fff;
+  background: linear-gradient(145deg, rgba(10,132,255,.88), rgba(100,210,255,.55)) !important;
+  border-color: rgba(255,255,255,.22) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.26),
+    0 10px 22px rgba(10,132,255,.26);
+}
+#m-material-detail-modal .m-material-hero,
+#m-structure-detail-modal .m-material-hero,
+#m-supplier-detail-modal .m-material-hero {
+  margin-bottom: 12px;
+  padding: 18px 16px;
+  border-radius: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  background:
+    radial-gradient(circle at 88% 10%, rgba(255,255,255,.18), transparent 36%),
+    linear-gradient(145deg, rgba(10,132,255,.22), rgba(255,255,255,.055));
+  border: 1px solid rgba(255,255,255,.13);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 14px 34px rgba(0,0,0,.26);
+}
+
+#m-material-detail-modal .m-material-hero.danger,
+#m-structure-detail-modal .m-material-hero.danger,
+#m-supplier-detail-modal .m-material-hero.danger {
+  background:
+    radial-gradient(circle at 88% 10%, rgba(255,127,120,.22), transparent 38%),
+    linear-gradient(145deg, rgba(163,45,45,.30), rgba(255,255,255,.055));
+}
+
+#m-material-detail-modal .m-material-hero small,
+#m-material-detail-modal .m-material-hero span,
+#m-structure-detail-modal .m-material-hero small,
+#m-structure-detail-modal .m-material-hero span,
+#m-supplier-detail-modal .m-material-hero small,
+#m-supplier-detail-modal .m-material-hero span {
+  display: block;
+  color: rgba(245,247,251,.58);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+#m-material-detail-modal .m-material-hero strong,
+#m-structure-detail-modal .m-material-hero strong,
+#m-supplier-detail-modal .m-material-hero strong {
+  display: block;
+  margin: 6px 0 5px;
+  color: #fff;
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 950;
+}
+
+#m-material-detail-modal .m-material-status,
+#m-structure-detail-modal .m-material-status,
+#m-supplier-detail-modal .m-material-status {
+  min-width: 70px;
+  height: 70px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 950;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.20);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+#m-material-detail-modal .m-material-kpis,
+#m-structure-detail-modal .m-material-kpis,
+#m-supplier-detail-modal .m-material-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+#m-material-detail-modal .m-material-kpis > div,
+#m-structure-detail-modal .m-material-kpis > div,
+#m-supplier-detail-modal .m-material-kpis > div {
+  min-width: 0;
+  padding: 11px 9px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.09);
+}
+
+#m-material-detail-modal .m-material-kpis small,
+#m-structure-detail-modal .m-material-kpis small,
+#m-supplier-detail-modal .m-material-kpis small {
+  display: block;
+  color: rgba(245,247,251,.50);
+  font-size: 10px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+#m-material-detail-modal .m-material-kpis strong,
+#m-structure-detail-modal .m-material-kpis strong,
+#m-supplier-detail-modal .m-material-kpis strong {
+  display: block;
+  margin-top: 5px;
+  color: rgba(248,251,255,.92);
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+#m-material-detail-modal .m-project-detail-actions,
+#m-structure-detail-modal .m-project-detail-actions,
+#m-supplier-detail-modal .m-project-detail-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+#m-material-detail-modal .m-project-detail-actions button,
+#m-structure-detail-modal .m-project-detail-actions button,
+#m-supplier-detail-modal .m-project-detail-actions button {
+  height: 42px;
+  border-radius: 14px;
+  font-weight: 900;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+#m-material-detail-modal .m-material-txn,
+#m-structure-detail-modal .m-material-txn,
+#m-supplier-detail-modal .m-material-txn {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  padding: 11px 12px;
+  margin-bottom: 8px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,.07), rgba(255,255,255,.025));
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+#m-material-detail-modal .m-material-txn .m-txn-icon,
+#m-structure-detail-modal .m-material-txn .m-txn-icon,
+#m-supplier-detail-modal .m-material-txn .m-txn-icon {
+  width: 34px !important;
+  height: 34px !important;
+  display: grid !important;
+  place-items: center !important;
+}
+
+#m-material-detail-modal .m-material-txn strong,
+#m-structure-detail-modal .m-material-txn strong,
+#m-supplier-detail-modal .m-material-txn strong {
+  display: block;
+  color: rgba(248,251,255,.90);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+#m-material-detail-modal .m-material-txn small,
+#m-structure-detail-modal .m-material-txn small,
+#m-supplier-detail-modal .m-material-txn small {
+  display: block;
+  margin-top: 3px;
+  color: rgba(245,247,251,.48);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+#m-material-detail-modal .m-material-txn span,
+#m-structure-detail-modal .m-material-txn span,
+#m-supplier-detail-modal .m-material-txn span {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+#m-material-detail-modal .m-material-txn span.success,
+#m-structure-detail-modal .m-material-txn span.success,
+#m-supplier-detail-modal .m-material-txn span.success {
+  color: #8fdc83;
+}
+
+#m-material-detail-modal .m-material-txn span.danger,
+#m-structure-detail-modal .m-material-txn span.danger,
+#m-supplier-detail-modal .m-material-txn span.danger {
+  color: #ff7f78;
+}
+
+/* Light mode has to live in this file because stock/detail CSS is loaded lazily. */
+.m-modal.ios-liquid.m-wh-theme-light .m-stock-filter button,
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-filter button {
+  color: #334155;
+  background: #fff !important;
+  border-color: rgba(148,163,184,.24) !important;
+  box-shadow: 0 6px 16px rgba(15,23,42,.05);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light .m-stock-filter button.active,
+.m-modal.ios-liquid.m-wh-theme-light .m-txn-filter button.active {
+  color: #fff;
+  background: linear-gradient(145deg, #2563eb, #0ea5e9) !important;
+  border-color: rgba(37,99,235,.36) !important;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light#m-material-detail-modal .m-material-hero,
+.m-modal.ios-liquid.m-wh-theme-light#m-structure-detail-modal .m-material-hero,
+.m-modal.ios-liquid.m-wh-theme-light#m-supplier-detail-modal .m-material-hero {
+  background:
+    radial-gradient(circle at 88% 10%, rgba(37,99,235,.12), transparent 36%),
+    linear-gradient(145deg, #fff, #eef6ff);
+  border-color: rgba(37,99,235,.16);
+  box-shadow: 0 14px 32px rgba(15,23,42,.08);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light#m-material-detail-modal .m-material-hero small,
+.m-modal.ios-liquid.m-wh-theme-light#m-material-detail-modal .m-material-hero span,
+.m-modal.ios-liquid.m-wh-theme-light#m-structure-detail-modal .m-material-hero small,
+.m-modal.ios-liquid.m-wh-theme-light#m-structure-detail-modal .m-material-hero span,
+.m-modal.ios-liquid.m-wh-theme-light#m-supplier-detail-modal .m-material-hero small,
+.m-modal.ios-liquid.m-wh-theme-light#m-supplier-detail-modal .m-material-hero span,
+.m-modal.ios-liquid.m-wh-theme-light#m-material-detail-modal .m-material-kpis small,
+.m-modal.ios-liquid.m-wh-theme-light#m-structure-detail-modal .m-material-kpis small,
+.m-modal.ios-liquid.m-wh-theme-light#m-supplier-detail-modal .m-material-kpis small,
+.m-modal.ios-liquid.m-wh-theme-light#m-material-detail-modal .m-material-txn small,
+.m-modal.ios-liquid.m-wh-theme-light#m-structure-detail-modal .m-material-txn small,
+.m-modal.ios-liquid.m-wh-theme-light#m-supplier-detail-modal .m-material-txn small {
+  color: #64748b;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light#m-material-detail-modal .m-material-hero strong,
+.m-modal.ios-liquid.m-wh-theme-light#m-structure-detail-modal .m-material-hero strong,
+.m-modal.ios-liquid.m-wh-theme-light#m-supplier-detail-modal .m-material-hero strong,
+.m-modal.ios-liquid.m-wh-theme-light#m-material-detail-modal .m-material-kpis strong,
+.m-modal.ios-liquid.m-wh-theme-light#m-structure-detail-modal .m-material-kpis strong,
+.m-modal.ios-liquid.m-wh-theme-light#m-supplier-detail-modal .m-material-kpis strong,
+.m-modal.ios-liquid.m-wh-theme-light#m-material-detail-modal .m-material-txn strong,
+.m-modal.ios-liquid.m-wh-theme-light#m-structure-detail-modal .m-material-txn strong,
+.m-modal.ios-liquid.m-wh-theme-light#m-supplier-detail-modal .m-material-txn strong {
+  color: #0f172a;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light#m-material-detail-modal .m-material-kpis > div,
+.m-modal.ios-liquid.m-wh-theme-light#m-structure-detail-modal .m-material-kpis > div,
+.m-modal.ios-liquid.m-wh-theme-light#m-supplier-detail-modal .m-material-kpis > div,
+.m-modal.ios-liquid.m-wh-theme-light#m-material-detail-modal .m-material-txn,
+.m-modal.ios-liquid.m-wh-theme-light#m-structure-detail-modal .m-material-txn,
+.m-modal.ios-liquid.m-wh-theme-light#m-supplier-detail-modal .m-material-txn {
+  background: #fff;
+  border-color: rgba(148,163,184,.22);
+  box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light#m-material-detail-modal .m-project-detail-actions button,
+.m-modal.ios-liquid.m-wh-theme-light#m-structure-detail-modal .m-project-detail-actions button,
+.m-modal.ios-liquid.m-wh-theme-light#m-supplier-detail-modal .m-project-detail-actions button {
+  color: #334155;
+  background: #fff;
+  border-color: rgba(148,163,184,.24);
+}
+
+.m-modal.ios-liquid.m-wh-theme-light#m-material-detail-modal .m-material-txn span.success,
+.m-modal.ios-liquid.m-wh-theme-light#m-structure-detail-modal .m-material-txn span.success,
+.m-modal.ios-liquid.m-wh-theme-light#m-supplier-detail-modal .m-material-txn span.success {
+  color: #047857;
+}
+
+.m-modal.ios-liquid.m-wh-theme-light#m-material-detail-modal .m-material-txn span.danger,
+.m-modal.ios-liquid.m-wh-theme-light#m-structure-detail-modal .m-material-txn span.danger,
+.m-modal.ios-liquid.m-wh-theme-light#m-supplier-detail-modal .m-material-txn span.danger {
+  color: #dc2626;
+}

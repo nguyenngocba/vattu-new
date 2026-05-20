@@ -1,0 +1,21 @@
+.
+├── backend
+│   ├── node_modules
+│   ├── server
+│   └── src
+├── database
+├── export_config
+├── frontend
+│   ├── node_modules
+│   ├── public
+│   ├── public.react-backup
+│   ├── src
+│   └── src.react-backup
+├── react-app
+│   ├── node_modules
+│   ├── public
+│   └── src
+└── scripts
+    └── visual-diffs
+
+18 directories

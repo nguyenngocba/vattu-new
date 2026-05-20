@@ -1,0 +1,343 @@
+=== react-app/src/modules/inventory/components/InventoryTable/index.tsx ===
+import React, { useState } from 'react';
+import { Material } from '../../services/materialService';
+
+interface Props {
+  materials: Material[];
+  onRowClick: (m: Material) => void;
+  onEdit?: (m: Material) => void;
+  onDelete?: (id: string) => void;
+}
+
+export const InventoryTable: React.FC<Props> = ({ materials, onRowClick, onEdit, onDelete }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+  const totalPages = Math.ceil(materials.length / pageSize);
+  const paginated = materials.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const getStatusBadge = (m: Material) => {
+    const qty = m.qty || 0;
+    const low = m.low || 0;
+    if (qty <= 0) return { label: 'Hết hàng', className: 'danger', icon: '!' };
+    if (qty <= low) return { label: 'Sắp hết', className: 'warn', icon: '▲' };
+    // TODO: slow moving
+    return { label: 'Tốt', className: 'good', icon: '✓' };
+  };
+
+  return (
+    <div className="card inventory-table-card">
+      <div className="sec-title">📋 DANH SÁCH VẬT TƯ TỒN KHO</div>
+      <div className="tbl-wrap">
+        <table style={{ minWidth: 1000 }}>
+          <thead>
+            <tr><th>STT</th><th>Mã</th><th>Tên</th><th>Loại</th><th>ĐVT</th><th>Tồn kho</th><th>Đơn giá</th><th>Tổng giá trị</th><th>TT</th><th>Ghi chú</th><th>Thao tác</th></tr>
+          </thead>
+          <tbody>
+            {paginated.map((m, idx) => {
+              const status = getStatusBadge(m);
+              return (
+                <tr key={m.id} onClick={() => onRowClick(m)} style={{ cursor: 'pointer' }}>
+                  <td>{((currentPage - 1) * pageSize) + idx + 1}</td>
+                  <td>{m.id}</td>
+                  <td><strong>{m.name}</strong></td>
+                  <td>{m.cat}</td>
+                  <td>{m.unit}</td>
+                  <td>{m.qty?.toLocaleString('vi-VN')}</td>
+                  <td>{m.cost?.toLocaleString('vi-VN')} đ</td>
+                  <td>{((m.qty || 0) * (m.cost || 0)).toLocaleString('vi-VN')} đ</td>
+                  <td><span className={`inventory-status-badge ${status.className}`}><b>{status.icon}</b>{status.label}</span></td>
+                  <td>{m.note?.substring(0, 30) || '—'}</td>
+                  <td>
+                    {onEdit && <button className="sm" onClick={(e) => { e.stopPropagation(); onEdit(m); }}>Sửa</button>}
+                    {onDelete && <button className="sm danger-btn" onClick={(e) => { e.stopPropagation(); onDelete(m.id); }}>Xóa</button>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ marginTop: 12, display: 'flex', justifyContent: 'center', gap: 10 }}>
+        <button className="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>◀ Trang trước</button>
+        <span>Trang {currentPage} / {totalPages}</span>
+        <button className="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>Trang sau ▶</button>
+      </div>
+    </div>
+  );
+};
+=== react-app/src/modules/inventory/components/InventoryWorkspace/index.tsx ===
+import React, { useState, useEffect } from 'react';
+import { fetchMaterials, Material, deleteMaterial } from '../../services/materialService';
+import { onDataChanged } from '../../../../services/socket';
+import { InventoryDrawer } from '../InventoryDrawer';
+import { InventoryKPIs } from '../InventoryKPIs';
+import { InventoryFilters } from '../InventoryFilters';
+import { InventoryTable } from '../InventoryTable';
+import { InventoryCharts } from '../InventoryCharts';
+
+export const InventoryWorkspace: React.FC = () => {
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [filtered, setFiltered] = useState<Material[]>([]);
+  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    keyword: '',
+    category: 'all',
+    status: 'all',
+    lowStockOnly: false,
+    showFavoritesOnly: false,
+    minStock: '',
+    maxStock: '',
+  });
+
+  const loadMaterials = async () => {
+    setLoading(true);
+    const data = await fetchMaterials();
+    setMaterials(data);
+    applyFilters(data, filters);
+    setLoading(false);
+  };
+
+  const applyFilters = (data: Material[], currentFilters: typeof filters) => {
+    let result = [...data];
+    if (currentFilters.keyword) {
+      const kw = currentFilters.keyword.toLowerCase();
+      result = result.filter(m => m.name.toLowerCase().includes(kw) || m.id.toLowerCase().includes(kw));
+    }
+    if (currentFilters.category !== 'all') {
+      result = result.filter(m => m.cat === currentFilters.category);
+    }
+    if (currentFilters.minStock) {
+      result = result.filter(m => m.qty >= Number(currentFilters.minStock));
+    }
+    if (currentFilters.maxStock) {
+      result = result.filter(m => m.qty <= Number(currentFilters.maxStock));
+    }
+    if (currentFilters.status === 'low') {
+      result = result.filter(m => m.qty > 0 && m.qty <= m.low);
+    } else if (currentFilters.status === 'out') {
+      result = result.filter(m => m.qty <= 0);
+    }
+    setFiltered(result);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Xóa vật tư này?')) {
+      await deleteMaterial(id);
+      loadMaterials();
+    }
+  };
+
+  useEffect(() => {
+    loadMaterials();
+    const unsubscribe = onDataChanged(() => loadMaterials());
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    applyFilters(materials, filters);
+  }, [filters, materials]);
+
+  if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
+
+  return (
+    <div className="inventory-workbench">
+      <InventoryKPIs materials={materials} />
+      <InventoryFilters filters={filters} setFilters={setFilters} />
+      <InventoryTable materials={filtered} onRowClick={(m) => setSelectedMaterial(m)} onDelete={handleDelete} />
+      {selectedMaterial && (
+        <InventoryDrawer
+          material={selectedMaterial}
+          onClose={() => setSelectedMaterial(null)}
+          onUpdate={loadMaterials}
+        />
+      )}
+      <InventoryCharts materials={materials} />
+    </div>
+  );
+};=== react-app/src/modules/inventory/components/InventoryKPIs/index.tsx ===
+import React from 'react';
+import { Material } from '../../services/materialService';
+
+interface Props { materials: Material[]; }
+
+export const InventoryKPIs: React.FC<Props> = ({ materials }) => {
+  const totalValue = materials.reduce((sum, m) => sum + (m.qty || 0) * (m.cost || 0), 0);
+  const totalQty = materials.reduce((sum, m) => sum + (m.qty || 0), 0);
+  const lowCount = materials.filter(m => (m.qty || 0) <= (m.low || 0)).length;
+  const outCount = materials.filter(m => (m.qty || 0) <= 0).length;
+
+  // TODO: slow moving (dựa trên transactions – sẽ thêm sau)
+  const slowCount = 0;
+
+  return (
+    <div className="inventory-kpi-strip">
+      <div className="inventory-kpi-card blue">
+        <small>Tổng giá trị tồn kho</small>
+        <strong>{totalValue.toLocaleString('vi-VN')} ₫</strong>
+        <em>{materials.length} chủng loại</em>
+      </div>
+      <div className="inventory-kpi-card green">
+        <small>Tổng số vật tư</small>
+        <strong>{totalQty.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}</strong>
+        <em>Khối lượng/số lượng</em>
+      </div>
+      <div className="inventory-kpi-card red">
+        <small>Sắp hết hàng</small>
+        <strong>{lowCount}</strong>
+        <em>{outCount} hết hàng</em>
+      </div>
+      <div className="inventory-kpi-card purple">
+        <small>Chậm luân chuyển</small>
+        <strong>{slowCount}</strong>
+        <em>Trên 90 ngày</em>
+      </div>
+    </div>
+  );
+};
+=== react-app/src/modules/inventory/components/InventoryFilters/index.tsx ===
+import React from 'react';
+
+interface Props {
+  filters: any;
+  setFilters: (f: any) => void;
+}
+
+export const InventoryFilters: React.FC<Props> = ({ filters, setFilters }) => {
+  const categories = ['all', 'Thép hình', 'Thép tấm', 'Thép hộp', 'Ống thép', 'Bu lông - ốc vít', 'Vật tư hàn cắt', 'Sơn - Chống gỉ'];
+
+  return (
+    <div className="card inventory-filter-card">
+      <div className="sec-title">🔍 TÌM KIẾM NÂNG CAO</div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+        <input
+          type="text"
+          placeholder="Tên hoặc mã..."
+          value={filters.keyword}
+          onChange={e => setFilters({ ...filters, keyword: e.target.value })}
+          style={{ flex: 2, padding: 8 }}
+        />
+        <select value={filters.category} onChange={e => setFilters({ ...filters, category: e.target.value })} style={{ padding: 8 }}>
+          {categories.map(c => <option key={c} value={c}>{c === 'all' ? '📂 Tất cả' : c}</option>)}
+        </select>
+        <input type="number" placeholder="Tồn ≥" value={filters.minStock} onChange={e => setFilters({ ...filters, minStock: e.target.value })} style={{ width: 100 }} />
+        <input type="number" placeholder="Tồn ≤" value={filters.maxStock} onChange={e => setFilters({ ...filters, maxStock: e.target.value })} style={{ width: 100 }} />
+        <button className="sm" onClick={() => setFilters({ keyword: '', category: 'all', minStock: '', maxStock: '', status: 'all', lowStockOnly: false, showFavoritesOnly: false })}>🗑️ Xóa bộ lọc</button>
+      </div>
+      <div className="inventory-status-filter">
+        <button data-status="all" className={filters.status === 'all' ? 'active' : ''} onClick={() => setFilters({ ...filters, status: 'all' })}><span>Tất cả</span><b>{filters.status === 'all' ? '●' : ''}</b></button>
+        <button data-status="low" className={filters.status === 'low' ? 'active' : ''} onClick={() => setFilters({ ...filters, status: 'low' })}><span>Sắp hết</span><b>!</b></button>
+        <button data-status="out" className={filters.status === 'out' ? 'active' : ''} onClick={() => setFilters({ ...filters, status: 'out' })}><span>Hết hàng</span><b>✗</b></button>
+        <button data-status="slow" className={filters.status === 'slow' ? 'active' : ''} onClick={() => setFilters({ ...filters, status: 'slow' })}><span>Chậm luân chuyển</span><b>↺</b></button>
+      </div>
+    </div>
+  );
+};
+=== react-app/src/modules/inventory/components/InventoryDrawer/index.tsx ===
+import React, { useState } from 'react';
+import { Material } from '../../services/materialService';
+
+interface Props {
+  material: Material;
+  onClose: () => void;
+  onUpdate: () => void;
+}
+
+export const InventoryDrawer: React.FC<Props> = ({ material, onClose }) => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const tabs = ['overview', 'transactions', 'analytics', 'suppliers', 'files'];
+
+  return (
+    <div className="material-detail-drawer" style={{ position: 'fixed', right: 0, top: 0, width: 550, height: '100%', background: 'var(--card-bg)', zIndex: 1000, padding: 20, boxShadow: '-2px 0 10px rgba(0,0,0,0.5)', overflowY: 'auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <h2>{material.name}</h2>
+        <button onClick={onClose} className="xbtn">✕</button>
+      </div>
+      <div className="material-drawer-tabs" style={{ display: 'flex', gap: 10, borderBottom: '1px solid #444', marginBottom: 20 }}>
+        {tabs.map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className={activeTab === tab ? 'active' : ''} style={{ padding: '8px 16px', background: 'none', border: 'none', cursor: 'pointer', color: activeTab === tab ? 'var(--accent)' : '#aaa' }}>
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </div>
+      <div className="material-drawer-content">
+        {activeTab === 'overview' && (
+          <div className="grid2">
+            <div><small>Mã</small><strong>{material.id}</strong></div>
+            <div><small>Loại</small><strong>{material.cat}</strong></div>
+            <div><small>Đơn vị</small><strong>{material.unit}</strong></div>
+            <div><small>Tồn kho</small><strong>{material.qty}</strong></div>
+            <div><small>Đơn giá</small><strong>{material.cost?.toLocaleString('vi-VN')} đ</strong></div>
+            <div><small>Ngưỡng cảnh báo</small><strong>{material.low}</strong></div>
+            <div className="full"><small>Ghi chú</small><strong>{material.note || '—'}</strong></div>
+          </div>
+        )}
+        {activeTab === 'transactions' && <div>📭 Sẽ hiển thị lịch sử giao dịch sau</div>}
+        {activeTab === 'analytics' && <div>📊 Biểu đồ phân tích sẽ được thêm sau</div>}
+        {activeTab === 'suppliers' && <div>🏭 Nhà cung cấp sẽ hiển thị ở đây</div>}
+        {activeTab === 'files' && <div>📎 File đính kèm sẽ hiển thị ở đây</div>}
+      </div>
+    </div>
+  );
+};
+=== react-app/src/modules/inventory/components/InventoryCharts/index.tsx ===
+import React from 'react';
+import { Material } from '../../services/materialService';
+
+interface Props { materials: Material[]; }
+
+export const InventoryCharts: React.FC<Props> = () => {
+  return <div className="inventory-charts-placeholder" style={{ display: 'none' }}></div>;
+};
+=== react-app/src/modules/inventory/components/AddMaterialModal/index.tsx ===
+import React, { useState } from 'react';
+import { upsertMaterial, Material } from '../../services/materialService';
+
+interface Props {
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export const AddMaterialModal: React.FC<Props> = ({ onClose, onSuccess }) => {
+  const [form, setForm] = useState<Partial<Material>>({
+    id: '',
+    name: '',
+    cat: '',
+    unit: '',
+    qty: 0,
+    cost: 0,
+    low: 5,
+    note: ''
+  });
+
+  const handleSubmit = async () => {
+    if (!form.id || !form.name) return alert('Vui lòng nhập mã và tên');
+    const res = await upsertMaterial(form as Material);
+    if (res.success) {
+      onSuccess();
+      onClose();
+    } else alert('Lỗi khi lưu');
+  };
+
+  return (
+    <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', zIndex: 2000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <div className="modal" style={{ background: '#1e1e2f', padding: 24, borderRadius: 8, width: 500 }}>
+        <h2>➕ Thêm vật tư mới</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <input placeholder="Mã *" value={form.id} onChange={e => setForm({...form, id: e.target.value})} />
+          <input placeholder="Tên *" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+          <input placeholder="Danh mục" value={form.cat} onChange={e => setForm({...form, cat: e.target.value})} />
+          <input placeholder="Đơn vị" value={form.unit} onChange={e => setForm({...form, unit: e.target.value})} />
+          <input type="number" placeholder="Số lượng" value={form.qty} onChange={e => setForm({...form, qty: parseFloat(e.target.value)})} />
+          <input type="number" placeholder="Đơn giá" value={form.cost} onChange={e => setForm({...form, cost: parseFloat(e.target.value)})} />
+          <input type="number" placeholder="Ngưỡng cảnh báo" value={form.low} onChange={e => setForm({...form, low: parseFloat(e.target.value)})} />
+        </div>
+        <textarea placeholder="Ghi chú" value={form.note} onChange={e => setForm({...form, note: e.target.value})} style={{ width: '100%', marginTop: 10 }} />
+        <div style={{ marginTop: 20, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button onClick={onClose}>Hủy</button>
+          <button className="primary" onClick={handleSubmit}>Lưu</button>
+        </div>
+      </div>
+    </div>
+  );
+};
